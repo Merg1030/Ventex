@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Warehouse Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { 
+      background: #181a23; 
+      color: #fff; 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      margin: 0; 
+      display: flex;
+    }
+    
+    /* Sidebar Styles */
+    .sidebar {
+      width: 250px;
+      background: #1f2232;
+      height: 100vh;
+      padding: 20px 0;
+      position: fixed;
+      left: 0;
+      top: 0;
+      overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+    }
+    
+    .sidebar-header {
+      padding: 0 20px 20px;
+      border-bottom: 1px solid #31405c;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .sidebar-header h3 {
+      color: #90caf9;
+      margin: 0;
+      font-size: 1.5em;
+    }
+    
+    .nav-item {
+      padding: 12px 20px;
+      color: #b0bec5;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    
+    .nav-item:hover, .nav-item.active {
+      background: #23263a;
+      color: #90caf9;
+      border-left: 4px solid #90caf9;
+    }
+    
+    .nav-item i {
+      margin-right: 10px;
+      width: 20px;
+      text-align: center;
+    }
+    
+    /* Toggle buttons */
+    .toggle-container {
+      display: flex;
+      margin: 15px 20px;
+      background: #23263a;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .toggle-btn {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      background: transparent;
+      color: #b0bec5;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .toggle-btn.active {
+      background: #90caf9;
+      color: #1f2232;
+      font-weight: bold;
+    }
+    
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 250px;
+      padding: 20px;
+    }
+    
+    .container {  
+      margin: 30px auto; 
+      background: #23263a; 
+      border-radius: 12px; 
+      padding: 32px 16px; 
+      box-shadow: 0 2px 16px #0005; 
+    }
+    
+    h2 { 
+      font-size: 2.2em; 
+      margin-bottom: 12px; 
+      text-align: center; 
+      color: #90caf9; 
+    }
+    
+    .currency-note {
+      text-align: center;
+      color: #b0bec5;
+      margin-bottom: 20px;
+      font-style: italic;
+    }
+    
+    .cards { 
+      display: flex; 
+      gap: 16px; 
+      flex-wrap: wrap; 
+      justify-content: space-between; 
+      margin-bottom: 32px;
+    }
+    
+    .card {
+      flex: 1 1 220px; 
+      background: #252a3d; 
+      border-radius: 10px; 
+      padding: 22px 18px;
+      min-width: 200px; 
+      margin: 0 8px; 
+      box-shadow: 0 2px 8px #0003;
+      display: flex; 
+      flex-direction: column; 
+      align-items: flex-start;
+    }
+    
+    .card-title { 
+      color: #90caf9; 
+      font-size: 1.08em; 
+      margin-bottom: 6px;
+    }
+    
+    .card-value { 
+      font-size: 2em; 
+      font-weight: bold; 
+      margin-bottom: 4px; 
+      color: #fff;
+    }
+    
+    .card-small { 
+      font-size: 0.97em; 
+      color: #b0bec5;
+    }
+    
+    .flex-row { 
+      display: flex; 
+      gap: 20px; 
+      flex-wrap: wrap; 
+    }
+    
+    .dashboard-section { 
+      background: #202234; 
+      border-radius: 10px; 
+      padding: 18px 12px; 
+      margin-bottom: 24px;
+      transition: all 0.3s ease;
+    }
+    
+    .section-title { 
+      color: #90caf9; 
+      font-size: 1.15em; 
+      font-weight: bold; 
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .toggle-section-btn {
+      background: #374062;
+      color: #90caf9;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 0.8em;
+      transition: all 0.3s;
+    }
+    
+    .toggle-section-btn:hover {
+      background: #90caf9;
+      color: #1f2232;
+    }
+    
+    .warehouse-table, .sales-table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin: 10px 0;
+      transition: all 0.3s ease;
+    }
+    
+    .warehouse-table th, .warehouse-table td, .sales-table th, .sales-table td {
+      border: 1px solid #31405c; 
+      padding: 8px 12px; 
+      text-align: left;
+    }
+    
+    .warehouse-table th, .sales-table th { 
+      background: #374062; 
+      color: #90caf9; 
+    }
+    
+    .warehouse-table td, .sales-table td { 
+      background: #23263a; 
+    }
+    
+    .good-stock { 
+      color: #43a047; 
+      font-weight: bold;
+    }
+    
+    .low-stock { 
+      color: #fbc02d; 
+      font-weight: bold;
+    }
+    
+    .out-stock { 
+      color: #e53935; 
+      font-weight: bold;
+    }
+    
+    .chart-bar-bg {
+      height:18px;
+      background:#2c3a4f;
+      border-radius:4px;
+      overflow:hidden;
+    }
+    
+    .chart-bar-fill {
+      height:100%;
+      border-radius:4px;
+    }
+    
+    .refresh-btn { 
+      background:#90caf9;
+      color:#181a23;
+      border:none;
+      padding:7px 16px;
+      border-radius:4px;
+      font-weight:bold;
+      cursor:pointer;
+      margin-bottom:16px;
+    }
+    
+    .refresh-btn:hover { 
+      background:#6fb5ee; 
+    }
+    
+    /* Mobile Responsiveness */
+    .menu-toggle {
+      display: none;
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      background: #90caf9;
+      color: #181a23;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      z-index: 1001;
+      cursor: pointer;
+    }
+    
+    @media (max-width: 1024px) {
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+      
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      
+      .main-content {
+        margin-left: 0;
+      }
+      
+      .menu-toggle {
+        display: block;
+      }
+    }
+    
+    @media (max-width: 800px) {
+      .cards { 
+        flex-direction: column; 
+      }
+      
+      .card { 
+        min-width: 0; 
+        margin: 8px 0;
+      }
+      
+      .flex-row { 
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Mobile Menu Toggle Button -->
+  <button id="menuToggle" class="menu-toggle">☰</button>
+  
+  <!-- Sidebar Navigation -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h3>Roof Connect</h3>
+      <p style="color: #b0bec5; font-size: 0.9em; margin: 5px 0 0;">Warehouse Dashboard</p>
+    </div>
+    
+    <a href="warehouse.html" class="nav-item active">
+      <i class="fas fa-warehouse"></i> Warehouse
+    </a>
+    
+    <a href="sale.html" class="nav-item">
+      <i class="fas fa-cash-register"></i> Sales
+    </a>
+    
+    <a href="employees.html" class="nav-item">
+      <i class="fas fa-users"></i> Employees
+    </a>
+    
+    <a href="accounts.html" class="nav-item">
+      <i class="fas fa-chart-line"></i> Accounts
+    </a>
+    
+    <a href="man-report.html" class="nav-item">
+      <i class="fas fa-file-alt"></i> Reports
+    </a>
+    
+    <div class="toggle-container">
+      <button class="toggle-btn active" id="toggleInventory">Inventory</button>
+      <button class="toggle-btn" id="toggleSales">Sales</button>
+    </div>
+  </div>
+  
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="container">
+      <h2>Warehouse & Sales Dashboard</h2>
+      <p class="currency-note">All currency values shown in Zambian Kwacha (ZMW)</p>
+      
+      <div class="cards">
+        <div class="card">
+          <div class="card-title">Total Inventory Items</div>
+          <div class="card-value" id="totalItems">0</div>
+          <div class="card-small">Unique products in warehouse</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Total Stock</div>
+          <div class="card-value" id="totalStock">0</div>
+          <div class="card-small">Sum of all units in warehouse</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Low Stock Items (&le;5)</div>
+          <div class="card-value" id="lowStock">0</div>
+          <div class="card-small">Attention needed!</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Out of Stock</div>
+          <div class="card-value" id="outStock">0</div>
+          <div class="card-small">No units in warehouse</div>
+        </div>
+      </div>
+      
+      <div class="cards">
+        <div class="card">
+          <div class="card-title">Total Orders (Invoices)</div>
+          <div class="card-value" id="totalOrders">0</div>
+          <div class="card-small">Completed or pending sales</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Total Sales</div>
+          <div class="card-value" id="totalSales">ZMW 0</div>
+          <div class="card-small">Sum of all invoice sales</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Today's Sales</div>
+          <div class="card-value" id="todaySales">ZMW 0</div>
+          <div class="card-small">Sales made today</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Total Quotations</div>
+          <div class="card-value" id="totalQuotations">ZMW 0</div>
+          <div class="card-small">Quotations issued</div>
+        </div>
+      </div>
+      
+      <div class="flex-row">
+        <div class="dashboard-section" id="inventorySection">
+          <div class="section-title">
+            <span>Warehouse Inventory</span>
+            <div>
+              <button id="refreshBtn" class="refresh-btn">Refresh</button>
+              <button class="toggle-section-btn" id="toggleInventoryTable">
+                <i class="fas fa-eye-slash"></i> Hide
+              </button>
+            </div>
+          </div>
+          <table class="warehouse-table" id="inventoryTable">
+            <thead>
+              <tr>
+                <th>Code</th><th>Name</th><th>Category</th>
+                <th>Price (ZMW)</th><th>Stock</th><th>Stock Bar</th>
+              </tr>
+            </thead>
+            <tbody id="warehouseTbody"></tbody>
+          </table>
+        </div>
+        
+        <div class="dashboard-section" id="salesSection">
+          <div class="section-title">
+            <span>Recent Sales & Quotations (last 20)</span>
+            <button class="toggle-section-btn" id="toggleSalesTable">
+              <i class="fas fa-eye-slash"></i> Hide
+            </button>
+          </div>
+          <table class="sales-table" id="salesTable">
+            <thead>
+              <tr>
+                <th>Order #</th><th>Customer</th><th>Type</th>
+                <th>Date</th><th>Status</th><th>Total (ZMW)</th><th>Items</th>
+              </tr>
+            </thead>
+            <tbody id="salesTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyBe80piQUIDk-ZQkG-g8qQt5GSyG8OMEpc",
+      authDomain: "ventex-8a99b.firebaseapp.com",
+      projectId: "ventex-8a99b",
+      storageBucket: "ventex-8a99b.appspot.com",
+      messagingSenderId: "221902916669",
+      appId: "1:221902916669:web:3218ca7a4256ef86cbae54",
+      measurementId: "G-JJHSK9Q9XT"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let inventory = [];
+    let sales = [];
+
+    // Format currency as Zambian Kwacha
+    function formatCurrency(amount) {
+      return `ZMW ${parseFloat(amount).toLocaleString('en-ZA', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+
+    async function fetchInventory() {
+      const snapshot = await getDocs(collection(db, "inventory"));
+      inventory = [];
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        data.id = docSnap.id;
+        inventory.push(data);
+      });
+      renderInventoryTable();
+      renderWarehouseSummary();
+    }
+
+    // Real-time sales fetching
+    function observeSales() {
+      const salesQuery = query(collection(db, "orders"), orderBy("date", "desc"), limit(50));
+      onSnapshot(salesQuery, (snapshot) => {
+        sales = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          sales.push({
+            id: docSnap.id,
+            orderNumber: data.orderNumber,
+            date: data.date,
+            customerName: data.customerName,
+            total: data.total,
+            status: data.status,
+            items: data.items,
+            type: data.type || "invoice"
+          });
+        });
+        renderSalesTable();
+        renderSalesSummary();
+      });
+    }
+
+    // --- Renderers ---
+    function renderWarehouseSummary() {
+      // Calculate totals
+      const totalItems = inventory.length;
+      const totalStock = inventory.reduce((sum, item) => sum + Number(item.stock || 0), 0);
+      const lowStock = inventory.filter(item => item.stock !== undefined && item.stock <= 5 && item.stock > 0).length;
+      const outStock = inventory.filter(item => item.stock !== undefined && item.stock == 0).length;
+      document.getElementById('totalItems').textContent = totalItems;
+      document.getElementById('totalStock').textContent = totalStock;
+      document.getElementById('lowStock').textContent = lowStock;
+      document.getElementById('outStock').textContent = outStock;
+    }
+
+    function renderSalesSummary() {
+      let totalSales = sales.filter(s=>s.type==="invoice").reduce((sum, s) => sum + (s.total || 0), 0);
+      let totalQuotations = sales.filter(s=>s.type==="quotation").reduce((sum, s) => sum + (s.total || 0), 0);
+      let today = new Date().toISOString().split('T')[0];
+      let todaySales = sales.filter(s => s.date === today && s.type==="invoice").reduce((sum, s) => sum + (s.total || 0), 0);
+
+      document.getElementById('totalSales').textContent = formatCurrency(totalSales);
+      document.getElementById('todaySales').textContent = formatCurrency(todaySales);
+      document.getElementById('totalQuotations').textContent = formatCurrency(totalQuotations);
+      document.getElementById('totalOrders').textContent = sales.filter(s=>s.type==="invoice").length;
+    }
+
+    function renderInventoryTable() {
+      const tbody = document.getElementById('warehouseTbody');
+      tbody.innerHTML = "";
+      inventory.forEach(item => {
+        let stockClass = "good-stock";
+        if (item.stock == 0) stockClass = "out-stock";
+        else if (item.stock <= 5) stockClass = "low-stock";
+        tbody.innerHTML += `
+          <tr>
+            <td>${item.code}</td>
+            <td>${item.name}</td>
+            <td>${item.category || "-"}</td>
+            <td>${formatCurrency(item.price)}</td>
+            <td class="${stockClass}">${item.stock}</td>
+            <td>
+              <div class="chart-bar-bg">
+                <div class="chart-bar-fill" style="width:${Math.min(item.stock/100*100,100)}%;background:${
+                  item.stock==0?"#e53935":item.stock<=5?"#fbc02d":"#43a047"
+                }"></div>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderSalesTable() {
+      const tbody = document.getElementById('salesTbody');
+      tbody.innerHTML = "";
+      sales.slice(0,20).forEach(sale => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${sale.orderNumber}</td>
+            <td>${sale.customerName}</td>
+            <td>${sale.type==="quotation" ? `<span style="color:#fbc02d">Quotation</span>` : "Invoice"}</td>
+            <td>${sale.date}</td>
+            <td>${sale.status}</td>
+            <td>${formatCurrency(sale.total)}</td>
+            <td>
+              <details>
+                <summary style="cursor:pointer;color:#90caf9;">View</summary>
+                <ul style="padding-left:18px;">
+                ${sale.items.map(item =>
+                  `<li>${item.name} (${item.code}) x${item.quantity} - ${formatCurrency(item.price * item.quantity)}</li>`
+                ).join("")}
+                </ul>
+              </details>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // Toggle table visibility
+    function setupToggleButtons() {
+      const toggleInventoryBtn = document.getElementById('toggleInventory');
+      const toggleSalesBtn = document.getElementById('toggleSales');
+      const toggleInventoryTableBtn = document.getElementById('toggleInventoryTable');
+      const toggleSalesTableBtn = document.getElementById('toggleSalesTable');
+      
+      const inventorySection = document.getElementById('inventorySection');
+      const salesSection = document.getElementById('salesSection');
+      const inventoryTable = document.getElementById('inventoryTable');
+      const salesTable = document.getElementById('salesTable');
+      
+      // Toggle entire sections
+      toggleInventoryBtn.addEventListener('click', () => {
+        inventorySection.style.display = inventorySection.style.display === 'none' ? 'block' : 'none';
+        toggleInventoryBtn.classList.toggle('active', inventorySection.style.display !== 'none');
+      });
+      
+      toggleSalesBtn.addEventListener('click', () => {
+        salesSection.style.display = salesSection.style.display === 'none' ? 'block' : 'none';
+        toggleSalesBtn.classList.toggle('active', salesSection.style.display !== 'none');
+      });
+      
+      // Toggle individual tables
+      toggleInventoryTableBtn.addEventListener('click', () => {
+        inventoryTable.style.display = inventoryTable.style.display === 'none' ? 'table' : 'none';
+        toggleInventoryTableBtn.innerHTML = inventoryTable.style.display === 'none' ? 
+          '<i class="fas fa-eye"></i> Show' : '<i class="fas fa-eye-slash"></i> Hide';
+      });
+      
+      toggleSalesTableBtn.addEventListener('click', () => {
+        salesTable.style.display = salesTable.style.display === 'none' ? 'table' : 'none';
+        toggleSalesTableBtn.innerHTML = salesTable.style.display === 'none' ? 
+          '<i class="fas fa-eye"></i> Show' : '<i class="fas fa-eye-slash"></i> Hide';
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('refreshBtn').onclick = () => {
+        fetchInventory();
+      };
+      
+      // Mobile menu toggle
+      const menuToggle = document.getElementById('menuToggle');
+      const sidebar = document.getElementById('sidebar');
+      
+      if (menuToggle && sidebar) {
+        menuToggle.addEventListener('click', () => {
+          sidebar.classList.toggle('open');
+        });
+      }
+      
+      // Setup toggle functionality
+      setupToggleButtons();
+    });
+
+    window.onload = async () => {
+      await fetchInventory();
+      observeSales();
+    };
+  </script>
+</body>
+</html>

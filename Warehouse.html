@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery Inventory</title>
+    <!-- Font Awesome for sidebar icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-bg: #23263a;
+            --sidebar-hover: #374062;
+            --main-bg: #181a23;
+            --panel-bg: #25273b;
+            --highlight: #90caf9;
+            --accent: #43a047;
+            --table-header-bg: #374062;
+            --table-row-bg: #262a40;
+            --table-row-alt: #222843;
+            --table-row-hover: #374062;
+            --text-main: #fff;
+            --text-accent: #90caf9;
+            --border: #31405c;
+        }
+        body {
+            background: var(--main-bg);
+            color: var(--text-main);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 210px;
+            background: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 0;
+            box-shadow: 2px 0 12px #0003;
+            min-height: 100vh;
+        }
+        .sidebar .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 26px;
+            cursor: pointer;
+            color: var(--text-main);
+            font-size: 1.07em;
+            transition: background 0.28s;
+            border-left: 4px solid transparent;
+            text-decoration: none;
+        }
+        .sidebar .menu-item:hover {
+            background: var(--sidebar-hover);
+            border-left: 4px solid var(--highlight);
+        }
+        .sidebar i {
+            font-size: 20px;
+            min-width: 22px;
+        }
+        .main-container {
+            flex-grow: 1;
+            padding: 30px 24px;
+            background: var(--main-bg);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            min-width: 0;
+        }
+        .HEADER {
+            text-align: center;
+            color: var(--highlight);
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        .panel {
+            background: var(--panel-bg);
+            border-radius: 11px;
+            box-shadow: 0 2px 18px #0002;
+            padding: 24px 16px;
+            margin-bottom: 18px;
+        }
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .search-bar, .action-button {
+            padding: 12px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--highlight);
+            background: var(--sidebar-bg);
+            color: var(--text-main);
+            font-size: 1em;
+            transition: background 0.28s, color 0.28s;
+        }
+        .search-bar:focus { outline: 2px solid var(--highlight);}
+        .action-button {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            font-weight: bold;
+        }
+        .action-button:hover {
+            background: var(--highlight);
+            color: #181a23;
+        }
+        .form-container {
+            display: none;
+            margin-bottom: 20px;
+        }
+        .toggle-button {
+            margin-bottom: 8px;
+            background: var(--highlight);
+            color: #222;
+            border: none;
+            font-weight: bold;
+            padding: 7px 18px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 13px 8px;
+            text-align: left;
+        }
+        th {
+            background: var(--table-header-bg);
+            color: var(--text-accent);
+            font-size: 1.01em;
+            border-bottom: 2px solid var(--border);
+        }
+        tbody tr {
+            background: var(--table-row-bg);
+            transition: background 0.28s;
+        }
+        tbody tr:nth-child(even) {
+            background: var(--table-row-alt);
+        }
+        tbody tr:hover {
+            background: var(--table-row-hover);
+        }
+        .scroll-container {
+            overflow-y: auto;
+            flex-grow: 1;
+            background: var(--panel-bg);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px #0002;
+            padding: 16px 0 0 0;
+        }
+        /* Responsive styles */
+        @media (max-width: 900px) {
+            .sidebar { width: 56px; padding: 8px 0; }
+            .sidebar .menu-item span { display: none; }
+            .main-container { padding: 12px 2vw; }
+            .search-bar, .action-button { flex: 1 1 46%; }
+            .HEADER { font-size: 1.6em;}
+        }
+        @media (max-width: 520px) {
+            .search-bar, .action-button { flex: 1 1 100%; }
+        }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBe80piQUIDk-ZQkG-g8qQt5GSyG8OMEpc",
+            authDomain: "ventex-8a99b.firebaseapp.com",
+            projectId: "ventex-8a99b",
+            storageBucket: "ventex-8a99b.appspot.com",
+            messagingSenderId: "221902916669",
+            appId: "1:221902916669:web:3218ca7a4256ef86cbae54",
+            measurementId: "G-JJHSK9Q9XT"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+
+        let inventory = [];
+
+        async function fetchInventory() {
+            const querySnapshot = await getDocs(collection(db, "inventory"));
+            inventory = [];
+            querySnapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                data.id = docSnap.id;
+                inventory.push(data);
+            });
+            displayInventory();
+        }
+
+        function toggleForm() {
+            const formContainer = document.querySelector('.form-container');
+            if (formContainer.style.display === 'none' || formContainer.style.display === '') {
+                formContainer.style.display = 'block';
+                document.querySelector('.toggle-button').textContent = 'Hide Form';
+            } else {
+                formContainer.style.display = 'none';
+                document.querySelector('.toggle-button').textContent = 'Show Form';
+            }
+        }
+
+        function addRow() {
+            const tableBody = document.querySelector('#salesTable tbody');
+            const newRow = tableBody.insertRow();
+            newRow.innerHTML = `
+                <td><input type="date" class="date" required></td>
+                <td><input type="text" class="code" required></td>
+                <td><input type="text" class="item_name" readonly></td>
+                <td><input type="number" class="price" step="0.01" required></td>
+                <td><input type="number" class="quantity" required></td>
+            `;
+        }
+
+        async function submitSales(event) {
+            event.preventDefault();
+            const salesData = [];
+            const rows = document.querySelectorAll('#salesTable tbody tr');
+            for (const row of rows) {
+                const date = row.querySelector('.date').value;
+                const code = row.querySelector('.code').value.toUpperCase();
+                const price = parseFloat(row.querySelector('.price').value);
+                const quantity = parseInt(row.querySelector('.quantity').value);
+                const item = inventory.find(i => i.code === code);
+                if (item && !isNaN(quantity)) {
+                    item.stock -= quantity;
+                    item.sold += quantity;
+                    salesData.push({ date, code, price, quantity });
+                    const itemRef = doc(db, "inventory", item.id);
+                    await updateDoc(itemRef, {
+                        stock: item.stock,
+                        sold: item.sold
+                    });
+                    await addDoc(collection(db, "sales"), { date, code, price, quantity });
+                }
+            }
+            alert('Sales recorded successfully!');
+            document.querySelector('#salesForm').reset();
+            displayInventory();
+        }
+
+        function searchInventory() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase();
+            const table = document.getElementById('inventoryTable');
+            const tr = table.getElementsByTagName('tr');
+            for (let i = 1; i < tr.length; i++) {
+                const td = tr[i].getElementsByTagName('td')[1];
+                if (td) {
+                    const txtValue = td.textContent || td.innerText;
+                    tr[i].style.display = txtValue.toLowerCase().includes(filter) ? '' : 'none';
+                }
+            }
+        }
+
+        async function addNewInventory() {
+            const code = prompt("Enter new product code:");
+            const name = prompt("Enter new product name:");
+            const description = prompt("Enter product description:");
+            const price = parseFloat(prompt("Enter new product price:"));
+            const stock = parseInt(prompt("Enter initial stock quantity:"));
+            if (code && name && !isNaN(price) && !isNaN(stock)) {
+                const newItem = { 
+                    code: code.toUpperCase(), 
+                    name, 
+                    description: description || "",
+                    price, 
+                    stock, 
+                    sold: 0 
+                };
+                const docRef = await addDoc(collection(db, "inventory"), newItem);
+                newItem.id = docRef.id;
+                inventory.push(newItem);
+                displayInventory();
+                alert(`Added new item: ${name}.`);
+            } else {
+                alert("Invalid input. Please try again.");
+            }
+        }
+
+        function displayInventory() {
+            const inventoryTableBody = document.querySelector('#inventoryTable tbody');
+            inventoryTableBody.innerHTML = '';
+            let totalStockValue = 0;
+            inventory.forEach(item => {
+                const stockValue = item.price * item.stock;
+                totalStockValue += stockValue;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.code}</td>
+                    <td>${item.name}</td>
+                    <td>${item.description || "-"}</td>
+                    <td>$${item.price.toFixed(2)}</td>
+                    <td>${item.stock}</td>
+                    <td>${item.sold || 0}</td>
+                    <td>$${stockValue.toFixed(2)}</td>
+                `;
+                inventoryTableBody.appendChild(row);
+            });
+            const totalRow = document.createElement('tr');
+            totalRow.innerHTML = `
+                <td colspan="6" style="text-align: right;"><strong>Total Stock Value:</strong></td>
+                <td><strong>$${totalStockValue.toFixed(2)}</strong></td>
+            `;
+            inventoryTableBody.appendChild(totalRow);
+        }
+
+        window.toggleForm = toggleForm;
+        window.addRow = addRow;
+        window.submitSales = submitSales;
+        window.searchInventory = searchInventory;
+        window.addNewInventory = addNewInventory;
+        window.displayInventory = displayInventory;
+
+        window.onload = fetchInventory;
+    </script>
+</head>
+<body>
+    <div class="sidebar">
+        
+        <div class="menu-item" onclick="window.location.href='grv.html'">
+            <i class="fas fa-file-invoice"></i>
+            <span>GRV</span>
+        </div>
+        <div class="menu-item" onclick="window.location.href='orders.html'">
+            <i class="fas fa-shopping-cart"></i>
+            <span>Orders</span>
+        </div>
+        <a href="inventory-outflow-report.html" class="menu-item">
+            <i class="fas fa-chart-line"></i>
+            <span>Inventory Outflow Report</span>
+        </a>
+    </div>
+    <div class="main-container">
+        <div class="HEADER">Inventory Management</div>
+        <div class="panel">
+            <div class="buttons">
+                <input type="text" id="searchInput" class="search-bar" onkeyup="searchInventory()" placeholder="Search product names...">
+                <button class="action-button" onclick="addNewInventory()">Add New Inventory</button>
+               
+            </div>
+            <div class="form-container">
+                <form id="salesForm" onsubmit="submitSales(event);">
+                    <table id="salesTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Product Code</th>
+                                <th>Product Name</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Sales rows will be added here dynamically -->
+                        </tbody>
+                    </table>
+                    <button type="button" class="action-button" onclick="addRow()">Add Row</button>
+                    <button type="submit" class="action-button">Record Sales</button>
+                </form>
+            </div>
+        </div>
+        <div class="scroll-container">
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>Product Code</th>
+                        <th>Product Name</th>
+                        <th>Product Description</th>
+                        <th>Product Price</th>
+                        <th>Available Stock</th>
+                        <th>Sold</th>
+                        <th>Stock Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Inventory data will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

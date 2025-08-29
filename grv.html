@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Goods Received Vouchers (GRVs)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { background: #181a23; color: #fff; font-family: Arial, sans-serif; margin: 0; }
+    .container {  margin: 30px auto; background: #23263a; border-radius: 12px; padding: 32px 16px; box-shadow: 0 2px 16px #0005; }
+    h2 { font-size: 2.2em; margin-bottom: 12px; text-align: center; color: #90caf9; }
+    .batch-form { background: #262a40; border-radius: 10px; padding: 20px; margin-bottom: 28px; }
+    .flex-row { display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+    .flex-row input, .flex-row select { flex: 1; min-width: 120px; padding: 8px; border-radius: 4px; border: 1px solid #555; background: #23263a; color: #fff; }
+    .flex-row button { background: #90caf9; color: #181a23; border: none; padding: 9px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    .flex-row button:hover { background: #6fb5ee; }
+    .item-list { margin: 10px 0 18px 0; }
+    .item-list-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    .item-list-table th, .item-list-table td { border: 1px solid #31405c; padding: 7px 4px; text-align: left; }
+    .item-list-table th { background: #374062; }
+    .item-list-table td { background: #222843; }
+    .grv-table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+    .grv-table th, .grv-table td { border: 1px solid #31405c; padding: 10px 6px; }
+    .grv-table th { background: #90caf9; color: #23263a; }
+    .grv-table td { background: #242d45; cursor: pointer; }
+    .grv-table tr:hover td { background: #374062; }
+    .modal { display: none; position: fixed; z-index: 99999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background: #000b; }
+    .modal-content { background: #21263b; margin: 5% auto; padding: 25px; border-radius: 12px; width: 95%; max-width: 600px; color: #fff; }
+    .close { float: right; color: #aaa; font-size: 28px; cursor: pointer; font-weight: bold; }
+    .close:hover { color: #fff; }
+    @media (max-width: 600px) {
+      .container { padding: 8px 2px; }
+      .flex-row { flex-direction: column; }
+    }
+  </style>
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+    // Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBe80piQUIDk-ZQkG-g8qQt5GSyG8OMEpc",
+      authDomain: "ventex-8a99b.firebaseapp.com",
+      projectId: "ventex-8a99b",
+      storageBucket: "ventex-8a99b.appspot.com",
+      messagingSenderId: "221902916669",
+      appId: "1:221902916669:web:3218ca7a4256ef86cbae54",
+      measurementId: "G-JJHSK9Q9XT"
+    };
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let inventory = [];
+    let grvs = []; // List of all GRVs (vouchers)
+
+    // Fetch inventory for item dropdown
+    async function fetchInventory() {
+      inventory = [];
+      const snapshot = await getDocs(collection(db, "inventory"));
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        data.id = docSnap.id;
+        inventory.push(data);
+      });
+      populateItemSelect();
+    }
+
+    // Fetch all GRVs
+    async function fetchGRVs() {
+      grvs = [];
+      const snapshot = await getDocs(collection(db, "grvs"));
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        data.id = docSnap.id;
+        grvs.push(data);
+      });
+      grvs.sort((a, b) => b.number - a.number); // Latest first
+      renderGRVTable();
+    }
+
+    // Populate item select dropdown
+    function populateItemSelect() {
+      const select = document.getElementById('itemSelect');
+      select.innerHTML = `<option value="">Select item</option>`;
+      inventory.forEach(item => {
+        select.innerHTML += `<option value="${item.code}">${item.name} (${item.code})</option>`;
+      });
+    }
+
+    // Add item to batch list (not yet submitted)
+    let batchItems = [];
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('addItemBtn').onclick = function(e) {
+        e.preventDefault();
+        const code = document.getElementById('itemSelect').value;
+        const quantity = parseInt(document.getElementById('itemQty').value);
+        const price = parseFloat(document.getElementById('itemPrice').value);
+
+        if (!code || isNaN(quantity) || isNaN(price)) {
+          alert('Fill all fields to add item!');
+          return;
+        }
+        const invItem = inventory.find(it => it.code === code);
+        if (!invItem) {
+          alert('Item not found in inventory!');
+          return;
+        }
+        batchItems.push({
+          code,
+          name: invItem.name,
+          quantity,
+          price,
+          total: +(quantity * price).toFixed(2)
+        });
+        renderBatchItems();
+        document.getElementById('itemSelect').value = '';
+        document.getElementById('itemQty').value = '';
+        document.getElementById('itemPrice').value = '';
+      };
+
+      document.getElementById('submitBatchBtn').onclick = async function(e) {
+        e.preventDefault();
+        if (batchItems.length === 0) {
+          alert('Add at least one item!');
+          return;
+        }
+        // Get next GRV number
+        let grvNumber = (grvs[0]?.number ?? 22) + 1;
+        const date = new Date().toISOString().split('T')[0];
+        // Save to Firestore
+        const grvEntry = {
+          number: grvNumber,
+          date,
+          items: batchItems.map(item => ({...item})),
+          total: batchItems.reduce((sum, it) => sum + it.total, 0)
+        };
+        try {
+          const docRef = await addDoc(collection(db, "grvs"), grvEntry);
+          grvEntry.id = docRef.id;
+          // Update inventory stocks
+          for (const item of batchItems) {
+            const invItem = inventory.find(i => i.code === item.code);
+            if (invItem) {
+              invItem.stock += item.quantity;
+              await updateDoc(doc(db, "inventory", invItem.id), {stock: invItem.stock});
+            }
+          }
+          grvs.unshift(grvEntry);
+          renderGRVTable();
+          batchItems = [];
+          renderBatchItems();
+          alert(`GRV #${grvNumber} saved!`);
+        } catch (e) {
+          alert('Error saving GRV. Check console.');
+          console.error(e);
+        }
+      };
+      // Modal close
+      document.getElementById('closeModal').onclick = function(){ document.getElementById('detailModal').style.display = 'none'; };
+      window.onclick = function(ev) {
+        if (ev.target == document.getElementById('detailModal')) document.getElementById('detailModal').style.display = 'none';
+      };
+    });
+
+    function renderBatchItems() {
+      const list = document.getElementById('itemListTbody');
+      list.innerHTML = '';
+      batchItems.forEach((item, i) => {
+        list.innerHTML += `<tr>
+          <td>${item.code}</td>
+          <td>${item.name}</td>
+          <td>${item.quantity}</td>
+          <td>${item.price}</td>
+          <td>${item.total}</td>
+          <td><button onclick="removeBatchItem(${i})" style="background:#c62828;color:#fff;padding:2px 8px;border-radius:3px;border:none;">X</button></td>
+        </tr>`;
+      });
+    }
+    window.removeBatchItem = function(idx) {
+      batchItems.splice(idx, 1);
+      renderBatchItems();
+    }
+
+    function renderGRVTable() {
+      const tbl = document.getElementById('grvTableBody');
+      tbl.innerHTML = '';
+      if (grvs.length === 0) {
+        tbl.innerHTML = `<tr><td colspan="4" style="text-align:center;">No GRVs yet</td></tr>`;
+        return;
+      }
+      grvs.forEach(grv => {
+        tbl.innerHTML += `<tr onclick="showGRVDetail('${grv.id}')">
+          <td>GRV #${grv.number}</td>
+          <td>${grv.date}</td>
+          <td>${grv.items.length}</td>
+          <td>${grv.total.toFixed(2)}</td>
+        </tr>`;
+      });
+    }
+
+    window.showGRVDetail = function(grvId) {
+      const grv = grvs.find(g => g.id === grvId);
+      if (!grv) return;
+      let html = `<h3 style="margin-top:0;">Goods Received Voucher #${grv.number}</h3>
+        <p><b>Date:</b> ${grv.date}</p>
+        <table class="item-list-table">
+          <thead>
+            <tr><th>Code</th><th>Name</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+          </thead>
+          <tbody>
+            ${grv.items.map(item => `<tr>
+              <td>${item.code}</td>
+              <td>${item.name}</td>
+              <td>${item.quantity}</td>
+              <td>${item.price}</td>
+              <td>${item.total}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        <b style="float:right;">Voucher Total: ${grv.total.toFixed(2)}</b>`;
+      document.getElementById('modalContent').innerHTML = html;
+      document.getElementById('detailModal').style.display = 'block';
+    }
+
+    // On load
+    window.onload = async () => {
+      await fetchInventory();
+      await fetchGRVs();
+    };
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h2>Goods Received Vouchers (GRVs)</h2>
+    <div class="batch-form">
+      <form id="batchForm">
+        <div class="flex-row">
+          <select id="itemSelect"></select>
+          <input type="number" id="itemQty" placeholder="Quantity" min="1">
+          <input type="number" id="itemPrice" placeholder="Price per unit" min="0" step="0.01">
+          <button id="addItemBtn">Add Item</button>
+        </div>
+      </form>
+      <div class="item-list">
+        <table class="item-list-table">
+          <thead>
+            <tr><th>Code</th><th>Name</th><th>Qty</th><th>Price</th><th>Total</th><th>Remove</th></tr>
+          </thead>
+          <tbody id="itemListTbody">
+            <!-- Items go here -->
+          </tbody>
+        </table>
+        <button id="submitBatchBtn" style="width:200px;display:block;margin:12px auto 0 auto;">Submit as GRV</button>
+      </div>
+    </div>
+    <hr style="margin:28px 0 18px 0;border:0;border-top:1px solid #374062;">
+    <h3 style="margin:0 0 10px 0;text-align:center;">GRV Table</h3>
+    <table class="grv-table">
+      <thead>
+        <tr>
+          <th>GRV Number</th>
+          <th>Date</th>
+          <th>Items</th>
+          <th>Total Value</th>
+        </tr>
+      </thead>
+      <tbody id="grvTableBody">
+        <!-- GRV rows -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal for GRV detail -->
+  <div id="detailModal" class="modal">
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+</body>
+</html>

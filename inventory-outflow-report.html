@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta viewport="content=width=device-width, initial-scale=1.0">
+  <title>Inventory Outflow Report</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    body {
+      background: #181a23; color: #fff; font-family: Arial, sans-serif; margin: 0; min-height: 100vh;
+    }
+    .main-container {
+      padding: 30px 24px;
+      display: flex;
+      flex-direction: column;
+    }
+    .HEADER { text-align: center; color: #90caf9; font-size: 2em; margin-bottom: 20px;}
+    .filter-bar {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 16px;
+    }
+    .filter-bar label { color: #90caf9; font-weight: 500; }
+    .filter-bar input[type="date"] {
+      padding: 8px 10px; border-radius: 5px; border: 1px solid #374062; background: #222843; color: #fff;
+      font-size: 1em;
+    }
+    .back-btn {
+      background: #374062;
+      color: #90caf9;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 18px;
+      font-size: 1em;
+      font-weight: bold;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-right: 16px;
+      transition: background 0.18s;
+    }
+    .back-btn:hover {
+      background: #222843;
+      color: #fff;
+    }
+    table { width: 100%; border-collapse: collapse; border-radius: 8px; overflow: hidden; }
+    th, td { padding: 12px; text-align: left; }
+    th { background: #374062; color: #90caf9; border-bottom: 2px solid #31405c; }
+    tbody tr:nth-child(even) { background: #222843; }
+    tbody tr:nth-child(odd) { background: #262a40; }
+    tbody tr:hover { background: #374062; }
+    .scroll-container { flex-grow: 1; overflow-y: auto; border-radius: 10px; background: #25273b; box-shadow: 0 2px 10px #0002; padding: 10px; }
+    @media (max-width:700px){.main-container{padding:8px;}}
+    @media (max-width:500px){.filter-bar{flex-direction:column; align-items:flex-start;}}
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBe80piQUIDk-ZQkG-g8qQt5GSyG8OMEpc",
+      authDomain: "ventex-8a99b.firebaseapp.com",
+      projectId: "ventex-8a99b",
+      storageBucket: "ventex-8a99b.appspot.com",
+      messagingSenderId: "221902916669",
+      appId: "1:221902916669:web:3218ca7a4256ef86cbae54",
+      measurementId: "G-JJHSK9Q9XT"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let allRows = [];
+
+    function formatDate(dateStr) {
+      if (!dateStr) return "-";
+      const d = new Date(dateStr);
+      if (isNaN(d)) return dateStr;
+      // yyyy-mm-dd format
+      return d.toISOString().slice(0, 10);
+    }
+
+    // Loads all orders and stores all outflow rows in allRows
+    async function fetchOutflow() {
+      const querySnapshot = await getDocs(collection(db, "orders"));
+      allRows = [];
+      querySnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const orderDate = data.date ? formatDate(data.date) : "-";
+        const customer = data.customerName || "-";
+        if (Array.isArray(data.items)) {
+          data.items.forEach(item => {
+            allRows.push({
+              date: orderDate,
+              customer,
+              code: item.code || "-",
+              name: item.name || "",
+              quantity: item.quantity || 0,
+              total: (item.price * item.quantity) || 0
+            });
+          });
+        }
+      });
+      renderTable();
+    }
+
+    // Filters allRows by date range and renders the table
+    function renderTable() {
+      const tbody = document.querySelector("#outflowTable tbody");
+      tbody.innerHTML = "";
+      const from = document.getElementById('fromDate').value;
+      const to = document.getElementById('toDate').value;
+      let filtered = allRows;
+      if (from) {
+        filtered = filtered.filter(row => row.date >= from);
+      }
+      if (to) {
+        filtered = filtered.filter(row => row.date <= to);
+      }
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#90caf9;">No outflow found for selected range.</td></tr>`;
+        return;
+      }
+      filtered.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.date}</td>
+          <td>${row.customer}</td>
+          <td>${row.code}</td>
+          <td>${row.name}</td>
+          <td>${row.quantity}</td>
+          <td>ZMW ${row.total.toFixed(2)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.onload = fetchOutflow;
+    window.filterOutflow = renderTable;
+    window.goBackWarehouse = function() {
+      window.location.href = "warehouse.html";
+    }
+  </script>
+</head>
+<body>
+  <div class="main-container">
+    <div style="display: flex; align-items:center; justify-content: space-between; margin-bottom:14px;">
+      <button class="back-btn" onclick="goBackWarehouse()"><i class="fas fa-arrow-left"></i> Back to Warehouse</button>
+      <span class="HEADER">Inventory Outflow Report</span>
+    </div>
+    <div class="filter-bar">
+      <label for="fromDate">From</label>
+      <input type="date" id="fromDate" onchange="filterOutflow()">
+      <label for="toDate">To</label>
+      <input type="date" id="toDate" onchange="filterOutflow()">
+    </div>
+    <div class="scroll-container">
+      <table id="outflowTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Product Code</th>
+            <th>Product Name</th>
+            <th>Quantity</th>
+            <th>Total Value (ZMW)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Outflow data will be loaded here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

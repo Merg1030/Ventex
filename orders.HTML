@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orders Approval</title>
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<style>
+  :root { --main-bg: #f5f7fa; --accent: #90caf9; --danger: #e57373; --success: #43a047; --text-main: #23263a; --text-light: #fff; }
+  body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--main-bg); color: var(--text-main); min-height: 100vh; }
+  .container {  margin: 32px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(36,44,66,0.08); padding: 38px 30px; }
+  .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+  .back-btn { background: var(--accent); color: #fff; border: none; padding: 11px 28px; border-radius: 8px; font-weight: 600; font-size: 1.09em; cursor: pointer; transition: background 0.2s; }
+  .back-btn:hover { background: #1976d2; }
+  h2.HEADER { color: var(--accent); font-size: 2.1em; letter-spacing: 2px; margin: 0; }
+  .filters { display: flex; align-items: center; gap: 18px; margin-bottom: 18px; }
+  .search-bar { padding: 9px 14px; border-radius: 7px; border: 1px solid #b0bec5; font-size: 1em; width: 320px; background: #fff; outline: none; transition: border 0.2s; }
+  .search-bar:focus { border: 1.5px solid var(--accent); }
+  .day-filter { padding: 8px 11px; border-radius: 7px; border: 1px solid #b0bec5; background: #fff; font-size: 1em; }
+  .scroll-container { border-radius: 10px; box-shadow: 0 2px 8px rgba(36, 44, 66, 0.06); padding: 0; overflow-x: auto; max-height: 72vh; }
+  table { width: 100%; border-collapse: collapse; min-width: 850px; background: #fff; }
+  th, td { padding: 13px 10px; text-align: left; border-bottom: 1px solid #e0e7ef; font-size: 1em; vertical-align: middle; }
+  th { background: #e3eafc; color: var(--text-main); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  tr.pending { background: #e3f2fd; }
+  tr.approved { background: #e8f5e9; }
+  .approve-btn { background: var(--success); color: #fff; border: none; padding: 7px 22px; border-radius: 4px; font-weight: 600; cursor: pointer; transition: background 0.2s; font-size: 1em; }
+  .approve-btn:disabled { background: #bdbdbd; cursor: not-allowed; }
+  .status-badge { padding: 5px 13px; border-radius: 15px; font-size: 0.95em; font-weight: 600; display: inline-block; color: #fff; }
+  .status-pending { background: #fbc02d; color: #23263a; }
+  .status-approved { background: var(--success); }
+  .status-rejected { background: var(--danger); }
+  .invoice-btn { background: #38bdf8; color: #fff; border: none; padding: 7px 22px; border-radius: 4px; font-weight: 600; cursor: pointer; transition: background 0.2s; font-size: 1em; }
+  .invoice-btn:disabled { background: #bdbdbd; cursor: not-allowed; }
+  .action-cell { display: flex; align-items: center; gap: 12px; }
+  @media (max-width: 600px) { .container { padding: 10px 2px; } .filters { flex-direction: column; gap: 8px; } table { font-size: 0.97em; } }
+  /* Invoice Modal */
+  .modal {display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; overflow:auto;}
+  .modal-content {background:#fff; width:90%; max-width:700px; border-radius:16px; padding:25px; box-shadow:0 10px 40px rgba(0,0,0,0.1); max-height:90vh; overflow-y:auto;}
+  .modal-header {display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;}
+  .close-modal {background:none; border:none; font-size:1.5rem; cursor:pointer; color:#64748b;}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="top-bar">
+    <button class="back-btn" id="backBtn">Back to Dashboard</button>
+    <h2 class="HEADER">Orders Approval</h2>
+  </div>
+  <div class="filters">
+    <input type="text" id="searchOrderInput" class="search-bar" onkeyup="searchOrders()" placeholder="Search for orders...">
+    <input type="date" id="dayFilterInput" class="day-filter" onchange="searchOrders()" />
+  </div>
+  <div class="scroll-container">
+    <table id="ordersTable">
+      <thead>
+        <tr>
+          <th>Order #</th>
+          <th>Customer</th>
+          <th>Invoice #</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th style="text-align:center;">View Invoice</th>
+          <th style="text-align:center;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Populated dynamically -->
+      </tbody>
+    </table>
+  </div>
+</div>
+<!-- INVOICE MODAL -->
+<div class="modal" id="invoice-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-file-invoice"></i> Invoice</h2>
+      <button class="close-modal" onclick="closeInvoiceModal()">&times;</button>
+    </div>
+    <div id="invoice-content"></div>
+    <div style="margin-top: 20px; text-align: right;">
+      <button class="invoice-btn" onclick="printInvoice()">Print</button>
+      <button class="invoice-btn" onclick="downloadInvoice()">Download PDF</button>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyBe80piQUIDk-ZQkG-g8qQt5GSyG8OMEpc",
+  authDomain: "ventex-8a99b.firebaseapp.com",
+  projectId: "ventex-8a99b",
+  storageBucket: "ventex-8a99b.appspot.com",
+  messagingSenderId: "221902916669",
+  appId: "1:221902916669:web:3218ca7a4256ef86cbae54",
+  measurementId: "G-JJHSK9Q9XT"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let orders = [];
+let inventory = {};
+const companyDetails = {
+  name: "ROOF CONNECT LTD",
+  location: "Plot No 111828, Kasuba Road, Light Industrial Area, Lusaka",
+  cell: "+260 953561193, +260 961696422, +260 964752363",
+  email: "Roofconnectzambia2017@gmail.com",
+  tpin: "1005679427",
+  bank: {
+    acc: "0335827534010",
+    branch: "Industrial Branch",
+    branchCode: "200033",
+    swift: "FMBZZMLK",
+    bankName: "Access Bank"
+  }
+};
+
+function getLoggedInUser() {
+  return localStorage.getItem("roofconnect_user")?.toLowerCase() || "";
+}
+
+// Set back button logic based on user
+function setBackBtn() {
+  const user = getLoggedInUser();
+  const btn = document.getElementById("backBtn");
+  if (user === "sales1" || user === "sales2") {
+    btn.textContent = "Back to Dashboard";
+    btn.onclick = () => window.location.href = "saledashboard.html";
+  } else if (user === "warehouse") {
+    btn.textContent = "Back to Dashboard";
+    btn.onclick = () => window.location.href = "warehouse.html";
+  } else if (user === "george") {
+    btn.textContent = "Back to Dashboard";
+    btn.onclick = () => window.location.href = "dashboard.html";
+  } else {
+    btn.textContent = "Back";
+    btn.onclick = () => window.history.back();
+  }
+}
+
+async function fetchInventory() {
+  inventory = {};
+  const invSnap = await getDocs(collection(db, "inventory"));
+  invSnap.forEach(docSnap => {
+    const data = docSnap.data();
+    data.id = docSnap.id;
+    inventory[data.code] = data;
+  });
+}
+
+async function fetchOrders() {
+  await fetchInventory();
+  orders = [];
+  const snapshot = await getDocs(collection(db, "orders"));
+  snapshot.forEach((docSnap) => {
+    const data = docSnap.data();
+    orders.push({
+      dbid: docSnap.id,
+      orderNumber: data.orderNumber ?? docSnap.id,
+      invoiceNumber: data.invoiceNumber ?? "",
+      customerName: data.customerName ?? "",
+      date: data.date ?? "", // should be in ISO format
+      items: data.items ?? [],
+      status: data.status ?? "pending",
+      customerTPIN: data.customerTpin ?? ""
+    });
+  });
+  displayOrders();
+}
+
+function getStatusBadge(status) {
+  if (status === "approved") return `<span class="status-badge status-approved">Approved</span>`;
+  if (status === "rejected") return `<span class="status-badge status-rejected">Rejected</span>`;
+  return `<span class="status-badge status-pending">Pending</span>`;
+}
+
+function displayOrders(filteredList = null) {
+  const tableBody = document.querySelector('#ordersTable tbody');
+  tableBody.innerHTML = '';
+  const displayList = filteredList || orders;
+  const user = getLoggedInUser();
+  const canApprove = user === "george" || user === "warehouse";
+  if (displayList.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#aaa;">No orders found.</td></tr>`;
+    return;
+  }
+  displayList.forEach((order) => {
+    // Format date
+    let orderDate = "";
+    if (order.date) {
+      const d = new Date(order.date);
+      if (!isNaN(d.getTime())) orderDate = d.toLocaleDateString();
+    }
+    const rowClass = order.status === "pending" ? "pending"
+                  : (order.status === "approved" ? "approved" : "");
+
+    // Action column at the end, View Invoice column before that
+    tableBody.innerHTML += `<tr class="${rowClass}">
+      <td>${order.orderNumber}</td>
+      <td>${order.customerName}</td>
+      <td>${order.invoiceNumber}</td>
+      <td>${orderDate}</td>
+      <td>${getStatusBadge(order.status)}</td>
+      <td style="text-align:center;">
+        <button class="invoice-btn" onclick="window.viewInvoice('${order.dbid}')">View Invoice</button>
+      </td>
+      <td style="text-align:center;">
+        <div class="action-cell">
+          ${order.status === "pending" && canApprove ? `<button class="approve-btn" onclick="window.approveOrder('${order.dbid}', this)">Approve</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  });
+}
+
+// Search and filter
+window.searchOrders = function() {
+  const term = document.getElementById('searchOrderInput').value.toLowerCase();
+  const dateStr = document.getElementById('dayFilterInput').value;
+  let filtered = [...orders];
+  if (term) {
+    filtered = filtered.filter(order =>
+      (order.orderNumber+"").toLowerCase().includes(term) ||
+      (order.customerName ?? "").toLowerCase().includes(term) ||
+      (order.invoiceNumber ?? "").toLowerCase().includes(term)
+    );
+  }
+  if (dateStr) {
+    filtered = filtered.filter(order => {
+      if (!order.date) return false;
+      const d = new Date(order.date);
+      // Compare date only (YYYY-MM-DD)
+      const orderDay = d.toISOString().slice(0,10);
+      return orderDay === dateStr;
+    });
+  }
+  displayOrders(filtered);
+};
+
+window.approveOrder = async function(orderId, btn) {
+  btn.disabled = true;
+  btn.textContent = "Approving...";
+  try {
+    const orderRef = doc(db, "orders", orderId);
+    const orderSnap = await getDoc(orderRef);
+    if (!orderSnap.exists()) throw "Order not found";
+    const orderData = orderSnap.data();
+    if (orderData.status && orderData.status !== "pending") {
+      alert("Order already processed!");
+      await fetchOrders();
+      return;
+    }
+    await updateDoc(orderRef, { status: "approved" });
+    alert("Order approved!");
+    await fetchOrders();
+  } catch (e) {
+    console.error(e);
+    alert("Failed to approve order.");
+    btn.disabled = false;
+    btn.textContent = "Approve";
+  }
+};
+
+// Invoice Modal Logic
+window.viewInvoice = async function(orderId) {
+  try {
+    const orderRef = doc(db, "orders", orderId);
+    const orderSnap = await getDoc(orderRef);
+    if (!orderSnap.exists()) {
+      alert("Order not found!");
+      return;
+    }
+    const order = orderSnap.data();
+    document.getElementById("invoice-modal").style.display = "flex";
+    renderInvoiceContent(order);
+  } catch (e) {
+    alert("Failed to load invoice.");
+  }
+};
+
+function renderInvoiceContent(order) {
+  let subtotal = 0;
+  (order.items || []).forEach(item => {
+    subtotal += item.price * item.quantity;
+  });
+  const vatRate = 0.16;
+  const vat = subtotal * vatRate;
+  const total = subtotal + vat;
+  const date = order.date ? new Date(order.date).toLocaleDateString() : "";
+  const companyBlockTopRight = `
+    <div style="text-align: right; font-size:1.05rem; margin-bottom:6px;">
+      <strong style="font-size:1.25rem; color:#1e293b;">${companyDetails.name}</strong><br>
+      <span>${companyDetails.location}</span><br>
+      <span>TPIN: ${companyDetails.tpin}</span><br>
+      <span>Cell: ${companyDetails.cell}</span><br>
+      <span>Email: ${companyDetails.email}</span>
+    </div>
+  `;
+  const bankBlockBottomLeft = `
+    <div style="font-size:0.98rem; margin-top:30px; text-align:left;">
+      <strong>Banking Details</strong><br>
+      Acc No: ${companyDetails.bank.acc}<br>
+      Branch: ${companyDetails.bank.branch}<br>
+      Branch Code: ${companyDetails.bank.branchCode}<br>
+      SWIFT Code: ${companyDetails.bank.swift}<br>
+      Bank Name: ${companyDetails.bank.bankName}
+    </div>
+  `;
+  document.getElementById("invoice-content").innerHTML = `
+    <div class="invoice">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div style="font-size:2rem; font-weight:700; color:#0ea5e9;">TAX INVOICE</div>
+        ${companyBlockTopRight}
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
+        <div>
+          <span style="font-size:1.08rem; font-weight:600;">Invoice No: </span>${order.invoiceNumber}<br>
+          <span style="font-size:1.08rem; font-weight:600;">Order No: </span>${order.orderNumber}<br>
+          <span style="font-size:1.08rem; font-weight:600;">Date: </span>${date}
+        </div>
+      </div>
+      <div class="invoice-details" style="margin-top:20px;">
+        <div>
+          <h3>Bill To:</h3>
+          <p>${order.customerName ? order.customerName : "Cash Sale"}</p>
+          ${order.customerTpin ? `<p>TPIN: ${order.customerTpin}</p>` : ""}
+        </div>
+        <div style="text-align: right;">
+          <h3>Status:</h3>
+          <p>${order.status ? order.status : ''}</p>
+        </div>
+      </div>
+      <table class="invoice-table" style="width:100%; border-collapse:collapse; margin:20px 0;">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Unit Price (ZMW)</th>
+            <th>Total (ZMW)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(order.items || []).map(item => `
+            <tr>
+              <td>${item.name}</td>
+              <td>${item.quantity}</td>
+              <td>${item.price.toFixed(2)}</td>
+              <td>${(item.price * item.quantity).toFixed(2)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div class="invoice-totals" style="text-align:right;">
+        <div>Subtotal: ZMW ${subtotal.toFixed(2)}</div>
+        <div>VAT (16%): ZMW ${vat.toFixed(2)}</div>
+        <div class="invoice-total" style="font-size:1.2rem; font-weight:700; border-top:2px solid #1e293b; padding-top:10px;">Total: ZMW ${total.toFixed(2)}</div>
+      </div>
+      ${bankBlockBottomLeft}
+    </div>
+  `;
+}
+
+window.closeInvoiceModal = function() {
+  document.getElementById("invoice-modal").style.display = "none";
+};
+
+window.printInvoice = function() {
+  window.print();
+};
+
+window.downloadInvoice = function() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const invoiceHtml = document.getElementById("invoice-content").querySelector('.invoice');
+  doc.html(invoiceHtml, {
+    callback: function(doc) {
+      doc.save('invoice.pdf');
+    },
+    x: 10,
+    y: 10
+  });
+};
+
+window.onload = () => {
+  setBackBtn();
+  fetchOrders();
+};
+</script>
+</body>
+</html>

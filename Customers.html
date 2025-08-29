@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Roof Connect - Customers</title>
+  <link rel="stylesheet" href="dashboard.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    body {background:#f8fafc; color:#1e293b; display:flex; min-height:100vh;}
+    .sidebar {width:260px; background:#1e293b; display:flex; flex-direction:column;}
+    .sidebar-header {padding:20px; display:flex; align-items:center; border-bottom:1px solid #334155;}
+    .sidebar-header h2 {color:#fff; margin-left:10px; font-size:1.4rem;}
+    .logo {width:40px; height:40px; background:#38bdf8; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold;}
+    .sidebar a {padding:15px 20px; text-decoration:none; color:#cbd5e1; display:flex; align-items:center;}
+    .sidebar a i {margin-right:12px;}
+    .sidebar a:hover {background:#334155; color:#fff;}
+    .sidebar a.active {background:#38bdf8; color:#fff; border-left:4px solid #0ea5e9;}
+    .main {flex:1; display:flex; flex-direction:column;}
+    .topbar {height:70px; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 25px; box-shadow:0 4px 12px rgba(0,0,0,0.05);}
+    .topbar h1 {color:#1e293b; font-size:1.5rem; font-weight:600;}
+    .user-info {display:flex; align-items:center;}
+    .user-info img {width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover;}
+    .logout-btn {background:#f1f5f9; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; color:#64748b; font-weight:500; display:flex; align-items:center;}
+    .logout-btn i {margin-right:8px;}
+    .logout-btn:hover {background:#e2e8f0; color:#1e293b;}
+    .container {padding:25px; flex:1; overflow:auto; background:#f1f5f9;}
+    .section {background:#fff; border-radius:16px; padding:25px; margin-bottom:25px; box-shadow:0 4px 20px rgba(0,0,0,0.06);}
+    .section h2 {margin-bottom:20px; color:#1e293b; font-weight:600; display:flex; align-items:center;}
+    .section h2 i {margin-right:12px; color:#38bdf8;}
+    .form-row {display:flex; gap:15px;}
+    .form-group {margin-bottom:20px;}
+    .form-group label {display:block; margin-bottom:8px; color:#374151; font-weight:500;}
+    .form-control {width:100%; padding:12px 16px; border:1px solid#d1d5db; border-radius:10px; font-size:1rem;}
+    .btn {padding:12px 20px; border-radius:10px; cursor:pointer; font-weight:500; display:inline-flex; align-items:center; border:none;}
+    .btn i {margin-right:8px;}
+    .btn-success {background:#22c55e; color:white;}
+    .btn-success:hover {background:#16a34a;}
+    table {width:100%; border-collapse:separate; border-spacing:0; background:#fff; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05);}
+    th, td {padding:16px; text-align:left; border-bottom:1px solid#e2e8f0;}
+    th {background:#f8fafc; color:#64748b; font-weight:600; font-size:0.9rem;}
+    tr:last-child td {border-bottom:none;}
+    tr:hover {background:#f8fafc;}
+    @media (max-width: 900px) {.sidebar { width: 70px; } .sidebar .sidebar-header h2 { display: none; }}
+    @media (max-width: 600px) {.container {padding:5px;} .form-row {flex-direction:column;}}
+  </style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">RC</div>
+    <h2>Roof Connect</h2>
+  </div>
+  <a href="dashboard.html"><i class="fas fa-th-large"></i> Dashboard</a>
+  <a href="make-sale.html"><i class="fas fa-cash-register"></i> Make Sale</a>
+  <a href="orders.html"><i class="fas fa-clipboard-list"></i> My Orders</a>
+  <a href="inventory.html"><i class="fas fa-boxes"></i> Inventory</a>
+  <a href="customers.html" class="active"><i class="fas fa-users"></i> Customers</a>
+</div>
+<div class="main">
+  <div class="topbar">
+    <h1>Customers</h1>
+    <div class="user-info">
+      <img src="https://ui-avatars.com/api/?name=Sales+Person&background=38bdf8&color=fff" alt="User">
+      <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="section">
+      <h2><i class="fas fa-users"></i> Customer Accounts</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="new-customer-name">Customer Name</label>
+          <input type="text" id="new-customer-name" class="form-control" placeholder="Enter customer name">
+        </div>
+        <div class="form-group">
+          <label for="new-customer-tpin">Customer TPIN</label>
+          <input type="text" id="new-customer-tpin" class="form-control" placeholder="Enter customer TPIN">
+        </div>
+        <div class="form-group">
+          <label for="new-customer-address">Customer Address</label>
+          <input type="text" id="new-customer-address" class="form-control" placeholder="Enter customer address">
+        </div>
+        <div class="form-group" style="align-self: flex-end;">
+          <button class="btn btn-success" id="add-customer-btn"><i class="fas fa-plus"></i> Add Customer</button>
+        </div>
+      </div>
+      <h3 style="margin-top: 30px;">Saved Customers</h3>
+      <table id="customers-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>TPIN</th>
+            <th>Address</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBe80piQUIDk-ZQkG-g8qQt5GSyG8OMEpc",
+  authDomain: "ventex-8a99b.firebaseapp.com",
+  projectId: "ventex-8a99b",
+  storageBucket: "ventex-8a99b.appspot.com",
+  messagingSenderId: "221902916669",
+  appId: "1:221902916669:web:3218ca7a4256ef86cbae54",
+  measurementId: "G-JJHSK9Q9XT"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let customers = [];
+const customersBody = document.querySelector("#customers-table tbody");
+const addBtn = document.getElementById("add-customer-btn");
+
+document.addEventListener('DOMContentLoaded', initializeCustomers);
+
+async function initializeCustomers() {
+  await loadCustomers();
+  renderCustomersTable();
+  setupCustomerListener();
+  addBtn.onclick = addCustomer;
+}
+
+async function loadCustomers() {
+  const querySnapshot = await getDocs(collection(db, "customers"));
+  customers = [];
+  querySnapshot.forEach((doc) => {
+    customers.push({ id: doc.id, ...doc.data() });
+  });
+}
+
+function setupCustomerListener() {
+  onSnapshot(collection(db, "customers"), (snapshot) => {
+    customers = [];
+    snapshot.forEach((doc) => {
+      customers.push({ id: doc.id, ...doc.data() });
+    });
+    renderCustomersTable();
+  });
+}
+
+function renderCustomersTable() {
+  customersBody.innerHTML = "";
+  customers.forEach(c => {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>${c.name}</td><td>${c.tpin}</td><td>${c.address}</td>`;
+    customersBody.appendChild(row);
+  });
+}
+
+async function addCustomer() {
+  const name = document.getElementById("new-customer-name").value.trim();
+  const tpin = document.getElementById("new-customer-tpin").value.trim();
+  const address = document.getElementById("new-customer-address").value.trim();
+  if (!name || !tpin || !address) {
+    alert("Please fill all customer fields!");
+    return;
+  }
+  try {
+    await addDoc(collection(db, "customers"), {
+      name,
+      tpin,
+      address,
+      createdAt: new Date().toISOString()
+    });
+    document.getElementById("new-customer-name").value = "";
+    document.getElementById("new-customer-tpin").value = "";
+    document.getElementById("new-customer-address").value = "";
+    alert("Customer added successfully!");
+  } catch (error) {
+    console.error("Error adding customer:", error);
+    alert("Failed to add customer. Please try again.");
+  }
+}
+
+window.logout = function(){
+  alert("Logging out...");
+};
+</script>
+</body>
+</html>

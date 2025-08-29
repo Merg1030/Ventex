@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roof Connec - Login</title>
+<style>
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0d47a1, #1976d2);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+  }
+  .login-card {
+    background: #1b1b2f;
+    padding: 40px 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    width: 350px;
+    text-align: center;
+    animation: fadeIn 1s ease;
+  }
+  .login-card h1 {
+    margin-bottom: 30px;
+    color: #ffca28;
+    font-size: 28px;
+    letter-spacing: 1px;
+  }
+  .login-card input[type="text"],
+  .login-card input[type="password"] {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+  }
+  .login-card button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    background: #ffca28;
+    color: #1b1b2f;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+  }
+  .login-card button:hover {
+    background: #f9a825;
+  }
+  .error-msg {
+    color: #ff5252;
+    margin-bottom: 15px;
+    display: none;
+    font-size: 14px;
+  }
+  @keyframes fadeIn {
+    0% {opacity: 0; transform: translateY(-30px);}
+    100% {opacity: 1; transform: translateY(0);}
+  }
+  @media (max-width: 400px) {
+    .login-card {
+      width: 90%;
+      padding: 30px 20px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <h1>Roof Connec</h1>
+  <div class="error-msg" id="errorMsg">Invalid username or password!</div>
+  <input type="text" id="username" placeholder="Username">
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+</div>
+
+<script>
+  // User list and permissions
+  const users = [
+    {
+      username: "George",
+      password: "12345@Ventex",
+      redirect: "dashboard.html",
+      role: "admin"
+      // Can access all files (logic implemented in dashboard.html etc.)
+    },
+    {
+      username: "sales1",
+      password: "Ventex@roofconnect",
+      redirect: "saledashboard.html",
+      role: "sales"
+      // Can access sales dashboard, view orders but can't approve
+    },
+    {
+      username: "sales2",
+      password: "Roofconnect@ventex*1",
+      redirect: "saledashboard.html",
+      role: "sales"
+      // Same as sales1
+    },
+    {
+      username: "warehouse",
+      password: "Ven*zla987",
+      redirect: "warehouse.html",
+      role: "warehouse"
+      // Can access warehouse dashboard, can approve orders
+    }
+  ];
+
+  function login() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const errorMsg = document.getElementById('errorMsg');
+
+    // Find user
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+
+    if (user) {
+      errorMsg.style.display = 'none';
+      // Store user role in localStorage for later permission checks
+      localStorage.setItem("roofconnect_user_role", user.role);
+      localStorage.setItem("roofconnect_user", user.username);
+      // Redirect to the right dashboard
+      window.location.href = user.redirect;
+    } else {
+      errorMsg.style.display = 'block';
+    }
+  }
+</script>
+
+</body>
+</html>

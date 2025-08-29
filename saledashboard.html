@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Roof Connect - Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <link rel="stylesheet" href="dashboard.css"/>
+  <script type="module" src="firebase-init.js"></script>
+ <style>
+ * {margin:0; padding:0; box-sizing:border-box; font-family:"Poppins", "Segoe UI", Tahoma, sans-serif;}
+  body {background:#f8fafc; color:#1e293b; display:flex; min-height:100vh;}
+  
+  /* Sidebar */
+  .sidebar {width:260px; background:#1e293b; display:flex; flex-direction:column; transition:all 0.3s ease; box-shadow: 0 0 20px rgba(0,0,0,0.1);}
+  .sidebar-header {padding:20px; display:flex; align-items:center; border-bottom:1px solid #334155;}
+  .sidebar-header h2 {color:#fff; margin-left:10px; font-size:1.4rem;}
+  .logo {width:40px; height:40px; background:#38bdf8; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:bold;}
+  .sidebar a {padding:15px 20px; text-decoration:none; color:#cbd5e1; display:flex; align-items:center; transition:0.2s; position:relative;}
+  .sidebar a i {margin-right:12px; width:20px; text-align:center;}
+  .sidebar a:hover {background:#334155; color:#fff;}
+  .sidebar a.active {background:#38bdf8; color:#fff; border-left:4px solid #0ea5e9;}
+  
+  /* Main Content */
+  .main {flex:1; display:flex; flex-direction:column; overflow:hidden;}
+  .topbar {height:70px; background:#fff; display:flex; align-items:center; justify-content:space-between; padding:0 25px; box-shadow:0 4px 12px rgba(0,0,0,0.05);}
+  .topbar h1 {color:#1e293b; font-size:1.5rem; font-weight:600;}
+  .user-info {display:flex; align-items:center;}
+  .user-info img {width:40px; height:40px; border-radius:50%; margin-right:10px; object-fit:cover;}
+  .logout-btn {background:#f1f5f9; border:none; padding:10px 18px; border-radius:8px; cursor:pointer; color:#64748b; font-weight:500; display:flex; align-items:center; transition:0.2s;}
+  .logout-btn i {margin-right:8px;}
+  .logout-btn:hover {background:#e2e8f0; color:#1e293b;}
+  
+  .container {padding:25px; flex:1; overflow:auto; background:#f1f5f9;}
+  .section {background:#fff; border-radius:16px; padding:25px; margin-bottom:25px; box-shadow:0 4px 20px rgba(0,0,0,0.06);}
+  .section h2 {margin-bottom:20px; color:#1e293b; font-weight:600; display:flex; align-items:center;}
+  .section h2 i {margin-right:12px; color:#38bdf8;}
+  
+  /* Buttons */
+  .btn {padding:12px 20px; border-radius:10px; cursor:pointer; font-weight:500; display:inline-flex; align-items:center; transition:all 0.2s; border:none;}
+  .btn i {margin-right:8px;}
+  .btn-primary {background:#38bdf8; color:white;}
+  .btn-primary:hover {background:#0ea5e9;}
+  .btn-success {background:#22c55e; color:white;}
+  .btn-success:hover {background:#16a34a;}
+  .btn-danger {background:#ef4444; color:white;}
+  .btn-danger:hover {background:#dc2626;}
+  
+  /* Tables */
+  table {width:100%; border-collapse:separate; border-spacing:0; margin-bottom:20px; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.05);}
+  th, td {padding:16px; text-align:left; border-bottom:1px solid#e2e8f0;}
+  th {background:#f8fafc; color:#64748b; font-weight:600; font-size:0.9rem;}
+  tr:last-child td {border-bottom:none;}
+  tr:hover {background:#f8fafc;}
+  .status-badge {padding:6px 12px; border-radius:20px; font-size:0.8rem; font-weight:500;}
+  .status-pending {background:#ffedd5; color:#f97316;}
+  .status-approved {background:#dcfce7; color:#22c55e;}
+  .status-rejected {background:#fef2f2; color:#dc2626;}
+  
+  /* Form */
+  .form-group {margin-bottom:20px;}
+  .form-group label {display:block; margin-bottom:8px; color:#374151; font-weight:500;}
+  .form-control {width:100%; padding:12px 16px; border:1px solid#d1d5db; border-radius:10px; font-size:1rem; transition:border-color 0.2s;}
+  .form-control:focus {outline:none; border-color:#38bdf8; box-shadow:0 0 0 3px rgba(56, 189, 248, 0.2);}
+  .form-row {display:flex; gap:15px;}
+  .form-row .form-group {flex:1;}
+  
+  /* Cart */
+  .cart {background:#f8fafc; border-radius:12px; padding:20px; margin-top:20px;}
+  .cart-item {display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid#e2e8f0;}
+  .cart-item:last-child {border-bottom:none;}
+  .cart-total {margin-top:15px; padding-top:15px; border-top:2px solid#e2e8f0; font-weight:600; font-size:1.1rem;}
+  
+  /* Modal */
+  .modal {display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center; overflow:auto;}
+  .modal-content {background:#fff; width:90%; max-width:800px; border-radius:16px; padding:25px; box-shadow:0 10px 40px rgba(0,0,0,0.1); max-height:90vh; overflow-y:auto;}
+  .modal-header {display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;}
+  .modal-header h2 {margin:0;}
+  .close-modal {background:none; border:none; font-size:1.5rem; cursor:pointer; color:#64748b;}
+  
+  /* Invoice */
+  .invoice {padding:30px; background:#fff; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.06);}
+  .invoice-header {display:flex; justify-content:space-between; margin-bottom:30px;}
+  .invoice-details {display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:30px;}
+  .invoice-table {width:100%; border-collapse:collapse; margin:20px 0;}
+  .invoice-table th {background:#f1f5f9; padding:12px; text-align:left;}
+  .invoice-table td {padding:12px; border-bottom:1px solid#e2e8f0;}
+  .invoice-totals {margin-top:20px; text-align:right;}
+  .invoice-totals div {margin-bottom:10px;}
+  .invoice-total {font-size:1.2rem; font-weight:700; border-top:2px solid#1e293b; padding-top:10px;}
+  
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in {animation: fadeIn 0.3s ease forwards;}
+  
+  /* Loading spinner */
+  .spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #38bdf8;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">RC</div>
+      <h2>Roof Connect</h2>
+    </div>
+    <a href="dashboard.html" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
+    <a href="make-sale.html"><i class="fas fa-cash-register"></i> Make Sale</a>
+    <a href="orders.html"><i class="fas fa-clipboard-list"></i> My Orders</a>
+    <a href="customers.html"><i class="fas fa-users"></i> Customers</a>
+    <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <h1>Sales Dashboard</h1>
+      <div class="user-info">
+        <img src="https://ui-avatars.com/api/?name=Sales+Person&background=38bdf8&color=fff" alt="User">
+        <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      </div>
+    </div>
+    <div class="container">
+      <div class="section">
+        <h2><i class="fas fa-th-large"></i> Welcome Salesperson</h2>
+        <p>Create quotations, process sales, and manage customer invoices from this dashboard.</p>
+        <div class="stats" style="margin-top:24px;">
+          <h3 style="color:#38bdf8;">Today's Stats</h3>
+          <div id="stats-content">
+            <div class="spinner" id="dashboard-spinner"></div>
+            <div id="dashboard-cards" style="display:flex; gap:20px; flex-wrap:wrap; margin-top:24px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="section" style="margin-top:0;">
+        <h2><i class="fas fa-chart-bar"></i> Quick Overview</h2>
+        <div style="display:flex; gap:32px; flex-wrap:wrap; margin-top:16px;" id="overview-cards"></div>
+      </div>
+      <div class="section" style="margin-top:0;">
+        <h2><i class="fas fa-clock"></i> Recent Orders</h2>
+        <div id="recent-orders-list">
+          <div class="spinner" id="recent-orders-spinner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { db, collection, getDocs, query, orderBy, where } from './firebase-init.js';
+
+    // Helper for formatting ZMW
+    function zmw(val) { return "ZMW " + Number(val).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+    async function loadDashboard() {
+      document.getElementById("dashboard-spinner").style.display = "block";
+      document.getElementById("recent-orders-spinner").style.display = "block";
+
+      // Load stats from DB
+      let [inventorySnap, ordersSnap, customersSnap] = await Promise.all([
+        getDocs(collection(db, "inventory")),
+        getDocs(query(collection(db, "orders"), orderBy("date", "desc"))),
+        getDocs(collection(db, "customers"))
+      ]);
+
+      // --- Stats Cards ---
+      const inventory = [];
+      let stockTotal = 0;
+      let stockValue = 0;
+      inventorySnap.forEach(doc => {
+        const item = doc.data();
+        inventory.push(item);
+        stockTotal += item.stock || 0;
+        stockValue += (item.price || 0) * (item.stock || 0);
+      });
+
+      const orders = [];
+      let todaySalesValue = 0;
+      let todayOrdersCount = 0;
+      let totalSalesValue = 0;
+      let totalOrdersCount = 0;
+      let pendingOrders = 0;
+      let today = new Date();
+      ordersSnap.forEach(doc => {
+        const order = doc.data();
+        orders.push(order);
+        const orderDate = new Date(order.date);
+        totalOrdersCount++;
+        totalSalesValue += order.total || order.items.reduce((sum, i) => sum + (i.price*i.quantity), 0) * 1.16;
+        if (order.status === "pending") pendingOrders++;
+        if (orderDate.toDateString() === today.toDateString()) {
+          todayOrdersCount++;
+          todaySalesValue += order.total || order.items.reduce((sum,i)=>sum+(i.price*i.quantity),0)*1.16;
+        }
+      });
+
+      const customers = [];
+      customersSnap.forEach(doc => customers.push(doc.data()));
+
+      // Cards
+      const cardData = [
+        {icon:'fa-boxes', label:'Total Stock', value: stockTotal},
+        {icon:'fa-money-bill-wave', label:'Stock Value', value: zmw(stockValue)},
+        {icon:'fa-file-invoice-dollar', label:'Total Sales', value: zmw(totalSalesValue)},
+        {icon:'fa-users', label:'Customers', value: customers.length},
+        {icon:'fa-shopping-cart', label:'Orders', value: totalOrdersCount},
+        {icon:'fa-clock', label:'Pending Orders', value: pendingOrders},
+        {icon:'fa-calendar-day', label:"Today's Sales", value: zmw(todaySalesValue)},
+        {icon:'fa-receipt', label:"Today's Orders", value: todayOrdersCount}
+      ];
+      let cards = cardData.map(card => `
+        <div style="background:#f8fafc;border-radius:10px;box-shadow:0 4px 12px #0001;padding:22px 18px;min-width:160px;flex:1;display:flex;align-items:center;gap:13px;">
+          <i class="fas ${card.icon}" style="font-size:2rem;color:#38bdf8"></i>
+          <div>
+            <div style="font-size:1.15rem;font-weight:600;">${card.value}</div>
+            <div style="font-size:0.99rem;color:#64748b;margin-top:2px;">${card.label}</div>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById("dashboard-cards").innerHTML = cards;
+      document.getElementById("dashboard-spinner").style.display = "none";
+
+      // --- Overview Cards ---
+      let overviewCards = `
+        <div style="background:#e8f5e9;border-radius:12px;padding:20px;flex:1;min-width:180px;">
+          <div style="font-size:2rem;font-weight:600;color:#22c55e;">${zmw(todaySalesValue)}</div>
+          <div style="color:#1e293b;margin-top:6px;">Today's Sales</div>
+        </div>
+        <div style="background:#fffbe7;border-radius:12px;padding:20px;flex:1;min-width:180px;">
+          <div style="font-size:2rem;font-weight:600;color:#f59e42;">${todayOrdersCount}</div>
+          <div style="color:#1e293b;margin-top:6px;">Today's Orders</div>
+        </div>
+        <div style="background:#e3f2fd;border-radius:12px;padding:20px;flex:1;min-width:180px;">
+          <div style="font-size:2rem;font-weight:600;color:#38bdf8;">${pendingOrders}</div>
+          <div style="color:#1e293b;margin-top:6px;">Pending Orders</div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:20px;flex:1;min-width:180px;">
+          <div style="font-size:2rem;font-weight:600;color:#334155;">${customers.length}</div>
+          <div style="color:#1e293b;margin-top:6px;">Customers</div>
+        </div>
+      `;
+      document.getElementById("overview-cards").innerHTML = overviewCards;
+
+      // --- Recent Orders Table ---
+      let recentRows = orders.slice(0,6).map(order => {
+        const orderDate = order.date ? new Date(order.date).toLocaleString() : "";
+        const total = order.total || order.items.reduce((sum, i) => sum + (i.price*i.quantity), 0) * 1.16;
+        return `<tr>
+          <td>${order.orderNumber || order.invoiceNumber || "-"}</td>
+          <td>${order.customerName || "-"}</td>
+          <td>${orderDate}</td>
+          <td>${zmw(total)}</td>
+          <td>
+            <span class="status-badge status-${order.status}">${order.status}</span>
+          </td>
+        </tr>`;
+      }).join('');
+      let recentTable = `
+        <table>
+          <thead>
+            <tr>
+              <th>Order #</th>
+              <th>Customer</th>
+              <th>Date</th>
+              <th>Total</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${recentRows || `<tr><td colspan="5" style="text-align:center;color:#aaa;">No orders found.</td></tr>`}
+          </tbody>
+        </table>
+      `;
+      document.getElementById("recent-orders-list").innerHTML = recentTable;
+      document.getElementById("recent-orders-spinner").style.display = "none";
+    }
+
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+
+    window.logout = function(){
+      alert("Logging out...");
+      // window.location.href = 'login.html';
+    };
+  </script>
+</body>
+</html>

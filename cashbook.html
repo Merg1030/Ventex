@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Book</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color, #121212);
+            color: var(--text-color, #ffffff);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            margin: 20px auto;
+            background-color: var(--sidebar-bg, #1e1e2d);
+            color: var(--text-color, #ffffff);
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--highlight-color, #ffffff);
+            margin-bottom: 20px;
+            background-color: var(--sidebar-bg, #1e1e2d);
+            padding: 10px 0;
+            z-index: 1000;
+            font-size: 40px;
+            font-weight: bolder;
+        }
+
+        .form-container {
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        input, select {
+            width: 80%;
+            padding: 10px;
+            box-sizing: border-box;
+            background-color: var(--sidebar-bg, #1e1e2d);
+            color: var(--text-color, #ffffff);
+            border: 1px solid var(--highlight-color, #fffdf8);
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: var(--highlight-color, #acaaa5);
+            color: var(--text-color, #121212);
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #84adff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--highlight-color, #acaaa5);
+            color: var(--text-color, #121212);
+            position: sticky;
+            top: 0;
+            z-index: 500;
+        }
+
+        tbody tr {
+            background-color: var(--sidebar-bg, #1e1e2d);
+            transition: background-color 0.3s;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #2c2c2c; /* Alternate row color */
+        }
+
+        tbody tr:hover {
+            background-color: #555555; /* Hover effect */
+        }
+
+        .scroll-container {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .toggle-button {
+            margin-bottom: 20px;
+            align-self: center;
+        }
+
+        .total-sales {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            th, td {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            th, td {
+                font-size: 12px;
+            }
+        }
+    </style>
+    <!-- Removed Firebase SDK -->
+    <script type="module">
+        // Initialize Firebase with new configuration
+        const firebaseConfig = {
+            // Your new Firebase configuration
+        };
+
+        // Initialize Firebase
+        // const app = initializeApp(firebaseConfig);
+        // const analytics = getAnalytics(app);
+        // const db = getFirestore(app);
+
+        async function fetchSales() {
+            // Fetch sales data from Firestore
+        }
+
+        async function addCashbookEntry(event) {
+            event.preventDefault();
+            const date = document.getElementById('entryDate').value;
+            const reference = document.getElementById('reference').value;
+            const type = document.getElementById('type').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+
+            if (date && reference && type && !isNaN(amount)) {
+                const entry = { date, reference, type, amount };
+                try {
+                    // Add entry to Firestore
+                    alert("Cashbook entry added successfully.");
+                    fetchSales();
+                    document.getElementById('cashbookForm').reset();
+                } catch (e) {
+                    console.error("Error adding document: ", e);
+                    alert("Error adding cashbook entry. Please try again.");
+                }
+            } else {
+                alert("Invalid input. Please try again.");
+            }
+        }
+
+        function displaySales(salesData) {
+            const salesTableBody = document.querySelector('#salesTable tbody');
+            salesTableBody.innerHTML = '';
+
+            const entries = salesData.map(sale => ({
+                date: sale.date,
+                reference: `Sale - ${new Date(sale.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`,
+                type: 'Debit',
+                amount: sale.price * sale.quantity
+            }));
+
+            appendEntries(entries);
+        }
+
+        async function fetchCashbookEntries() {
+            // Fetch cashbook entries from Firestore
+        }
+
+        async function appendEntries(entries) {
+            const salesTableBody = document.querySelector('#salesTable tbody');
+            const cashbookEntries = await fetchCashbookEntries();
+
+            const combinedEntries = [...entries, ...cashbookEntries];
+            combinedEntries.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            let balance = 0;
+            combinedEntries.forEach(entry => {
+                balance += (entry.type === 'Debit' ? entry.amount : -entry.amount);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${entry.reference}</td>
+                    <td>${entry.type}</td>
+                    <td>${entry.amount.toFixed(2)}</td>
+                    <td>${balance.toFixed(2)}</td>
+                `;
+                salesTableBody.appendChild(row);
+            });
+        }
+
+        function toggleForm() {
+            const formContainer = document.querySelector('.form-container');
+            if (formContainer.style.display === 'none' || formContainer.style.display === '') {
+                formContainer.style.display = 'flex';
+                document.querySelector('.toggle-button').textContent = 'Hide Form';
+            } else {
+                formContainer.style.display = 'none';
+                document.querySelector('.toggle-button').textContent = 'Show Form';
+            }
+        }
+
+        window.onload = fetchSales;
+        window.addCashbookEntry = addCashbookEntry;
+        window.toggleForm = toggleForm;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Cash Book</h2>
+        <button class="toggle-button" onclick="toggleForm()">Show Form</button>
+        <div class="form-container">
+            <form id="cashbookForm" onsubmit="addCashbookEntry(event);">
+                <input type="date" id="entryDate" required>
+                <input type="text" id="reference" placeholder="Reference" required>
+                <select id="type" required>
+                    <option value="Debit">Debit</option>
+                    <option value="Credit">Credit</option>
+                </select>
+                <input type="number" id="amount" step="0.01" placeholder="Amount" required>
+                <button type="submit">Add Entry</button>
+            </form>
+        </div>
+        <div class="scroll-container">
+            <table id="salesTable">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Sales data will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
