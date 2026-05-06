@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Audit Ledger</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #ffffff;
+            --sidebar-bg: #1e1e2d;
+            --highlight-color: #686868;
+            --header-color: #84adff;
+            --restock: #43ff43;
+            --sale: #ff7043;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            display: flex; justify-content: center; align-items: flex-start;
+        }
+        .container {
+            margin-top: 30px;
+            background-color: var(--sidebar-bg);
+            border-radius: 10px;
+            padding: 22px 12px 30px 12px;
+            width: 99vw;
+        
+            box-shadow: 0 3px 12px #0003;
+            display: flex;
+            flex-direction: column;
+        }
+        h2 {
+            text-align: center;
+            color: var(--header-color);
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+        .summary-cards {
+            display: flex;
+            gap: 18px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .card {
+            background: #232332;
+            padding: 14px 24px;
+            border-radius: 10px;
+            min-width: 170px;
+            text-align: center;
+        }
+        .card strong {
+            display: block;
+            color: var(--header-color);
+            font-size: 1.2em;
+            margin-bottom: 2px;
+        }
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            justify-content: center;
+        }
+        .filters input, .filters select {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--highlight-color);
+            background-color: var(--sidebar-bg);
+            color: var(--text-color);
+            min-width: 120px;
+        }
+        .filters button {
+            background-color: var(--highlight-color);
+            color: var(--text-color);
+            border: none;
+            padding: 8px 14px;
+            cursor: pointer;
+            border-radius: 5px;
+            min-width: 90px;
+            transition: background-color 0.3s;
+        }
+        .filters button:hover {
+            background-color: #84adff;
+        }
+        .scroll-container {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--sidebar-bg);
+            color: var(--text-color);
+            margin-top: 8px;
+        }
+        th, td {
+            padding: 10px 8px;
+            text-align: left;
+            font-size: 1rem;
+        }
+        th {
+            background-color: var(--highlight-color);
+            color: var(--text-color);
+            position: sticky;
+            top: 0;
+            z-index: 500;
+        }
+        .restock-row td {
+            color: var(--restock);
+        }
+        .sale-row td {
+            color: var(--sale);
+        }
+        tbody tr:nth-child(even) {
+            background-color: #232332;
+        }
+        tbody tr:hover {
+            background-color: #555555;
+        }
+        @media (max-width: 900px) {
+            table { font-size: 0.92rem; }
+            th, td { padding: 7px 3px; }
+            .container { padding: 10px 2px 15px 2px; }
+            h2 { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Inventory Audit Ledger</h2>
+        <div class="summary-cards">
+            <div class="card">
+                <strong id="cardRestocked">0</strong>
+                Total Restocked
+            </div>
+            <div class="card">
+                <strong id="cardSold">0</strong>
+                Total Sold
+            </div>
+            <div class="card">
+                <strong id="cardBalance">0</strong>
+                Balance (Restocked - Sold)
+            </div>
+        </div>
+        <div class="filters">
+            <input type="text" id="searchInput" placeholder="Search code or name...">
+            <select id="productFilter"><option value="">All Products</option></select>
+            <input type="date" id="dateFilter">
+            <button onclick="applyAuditFilters()">Search/Filter</button>
+            <button onclick="resetAuditFilters()">Reset</button>
+        </div>
+        <div class="scroll-container">
+            <table id="auditTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Product Code</th>
+                        <th>Product Name</th>
+                        <th>Quantity</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will populate here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            query, 
+            where, 
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+            authDomain: "trismartstores.firebaseapp.com",
+            projectId: "trismartstores",
+            storageBucket: "trismartstores.appspot.com",
+            messagingSenderId: "416692703333",
+            appId: "1:416692703333:web:d4b60292621435c748f68c",
+            measurementId: "G-NJPQ7L3QWJ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const branchId = localStorage.getItem('branchId');
+        if (!branchId) {
+            alert('Branch ID not found. Please select a branch from the dashboard.');
+            window.location.href = 'dashboard.html';
+        }
+
+        let inventory = [];
+        let restockHistory = [];
+        let salesHistory = [];
+
+        async function fetchAuditData() {
+            const invSnap = await getDocs(query(collection(db, 'inventory'), where('branchId', '==', branchId)));
+            inventory = invSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            const restockSnap = await getDocs(query(collection(db, 'restockHistory'), where('branchId', '==', branchId)));
+            restockHistory = restockSnap.docs.map(doc => doc.data());
+
+            const salesSnap = await getDocs(query(collection(db, 'sales'), where('branchId', '==', branchId)));
+            salesHistory = salesSnap.docs.map(doc => doc.data());
+
+            populateProductFilter();
+            displayAuditTable();
+        }
+
+        function populateProductFilter() {
+            const productFilter = document.getElementById('productFilter');
+            productFilter.innerHTML = '<option value="">All Products</option>';
+            const unique = new Set();
+            inventory.forEach(item => {
+                if (!unique.has(item.code)) {
+                    unique.add(item.code);
+                    const option = document.createElement('option');
+                    option.value = item.code;
+                    option.textContent = `${item.name} (${item.code})`;
+                    productFilter.appendChild(option);
+                }
+            });
+        }
+
+        function displayAuditTable() {
+            const tbody = document.querySelector('#auditTable tbody');
+            tbody.innerHTML = '';
+
+            const searchValue = document.getElementById('searchInput').value.toLowerCase();
+            const productCode = document.getElementById('productFilter').value;
+            const date = document.getElementById('dateFilter').value;
+
+            // Build all events
+            let ledgerEvents = [];
+
+            restockHistory.forEach(entry => {
+                if (productCode && entry.code !== productCode) return;
+                if (date && entry.date !== date) return;
+                if (searchValue && !(entry.code.toLowerCase().includes(searchValue) || (entry.name && entry.name.toLowerCase().includes(searchValue)))) return;
+                ledgerEvents.push({
+                    date: entry.date,
+                    type: "RESTOCK",
+                    code: entry.code,
+                    name: entry.name,
+                    quantity: Number(entry.quantity),
+                });
+            });
+
+            salesHistory.forEach(entry => {
+                if (productCode && entry.code !== productCode) return;
+                if (date && entry.date !== date) return;
+                if (searchValue && !(entry.code.toLowerCase().includes(searchValue) || (entry.name && entry.name.toLowerCase().includes(searchValue)))) return;
+                ledgerEvents.push({
+                    date: entry.date,
+                    type: "SALE",
+                    code: entry.code,
+                    name: entry.name,
+                    quantity: -Number(entry.quantity),
+                });
+            });
+
+            // Group events by product code, sort by date ascending
+            const grouped = {};
+            ledgerEvents.forEach(e => {
+                if (!grouped[e.code]) grouped[e.code] = [];
+                grouped[e.code].push(e);
+            });
+            Object.values(grouped).forEach(arr => arr.sort((a, b) => (a.date || '').localeCompare(b.date || '')));
+
+            // For each group, calculate running balance in ascending order
+            let allRows = [];
+            let grandTotalRestocked = 0, grandTotalSold = 0, grandBalance = 0;
+
+            for (const code in grouped) {
+                const events = grouped[code];
+                let balance = 0;
+                events.forEach((ev, idx) => {
+                    if (ev.type === "RESTOCK") {
+                        balance += ev.quantity;
+                        grandTotalRestocked += ev.quantity;
+                    } else if (ev.type === "SALE") {
+                        balance += ev.quantity; // quantity is negative
+                        grandTotalSold += Math.abs(ev.quantity);
+                    }
+                    allRows.push({
+                        date: ev.date,
+                        type: ev.type,
+                        code: ev.code,
+                        name: ev.name,
+                        quantity: Math.abs(ev.quantity),
+                        balance: balance,
+                        rowClass: ev.type === "RESTOCK" ? "restock-row" : "sale-row"
+                    });
+                });
+                grandBalance += balance;
+            }
+
+            // Sort allRows by date ascending, then type (restock before sale if same date)
+            allRows.sort((a, b) => {
+                if (!a.date && !b.date) return 0;
+                if (!a.date) return 1;
+                if (!b.date) return -1;
+                if (a.date !== b.date) return a.date.localeCompare(b.date);
+                if (a.type === "SALE" && b.type === "RESTOCK") return 1;
+                if (a.type === "RESTOCK" && b.type === "SALE") return -1;
+                return 0;
+            });
+
+            // Fill cards
+            document.getElementById('cardRestocked').textContent = grandTotalRestocked;
+            document.getElementById('cardSold').textContent = grandTotalSold;
+            document.getElementById('cardBalance').textContent = grandBalance;
+
+            if (allRows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No records found.</td></tr>`;
+                return;
+            }
+
+            function formatDate(dt) {
+                if (!dt) return '';
+                let [y, m, d] = dt.split('-');
+                if (!y || !m || !d) return dt;
+                return `${d}/${m}/${y}`;
+            }
+
+            allRows.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = row.rowClass;
+                tr.innerHTML = `
+                    <td>${formatDate(row.date)}</td>
+                    <td>${row.type}</td>
+                    <td>${row.code}</td>
+                    <td>${row.name}</td>
+                    <td>${row.quantity}</td>
+                    <td>${row.balance}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.applyAuditFilters = function() {
+            displayAuditTable();
+        }
+        window.resetAuditFilters = function() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('productFilter').value = '';
+            document.getElementById('dateFilter').value = '';
+            displayAuditTable();
+        }
+
+        window.onload = fetchAuditData;
+    </script>
+</body>
+</html>

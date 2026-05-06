@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Trismart · Table View | Persistent Filters</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #f4f6fa;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-light: #5b6e8c;
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --purple: #8b5cf6;
+      --emerald: #10b981;
+      --radius-sm: 8px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      font-size: 0.75rem;
+    }
+
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Navbar compact */
+    .navbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.2rem;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .logo-icon {
+      background: linear-gradient(135deg, var(--primary), var(--purple));
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.75rem;
+    }
+    .logo-text {
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+    .add-account-btn {
+      background: var(--primary);
+      border: none;
+      padding: 4px 12px;
+      border-radius: 24px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .add-account-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    /* Filter bar with category chips that can be hidden/unhidden */
+    .filter-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1.2rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .filter-group {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .filter-chip {
+      background: #f0f2f5;
+      padding: 4px 10px;
+      border-radius: 24px;
+      font-size: 0.68rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid transparent;
+      color: var(--text-light);
+      white-space: nowrap;
+    }
+    .filter-chip i {
+      margin-right: 4px;
+      font-size: 0.65rem;
+    }
+    .filter-chip.active {
+      background: var(--primary);
+      color: white;
+    }
+    /* Category hide/unhide specific styling */
+    .category-chip-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .category-hide-icon {
+      font-size: 0.55rem;
+      margin-left: 4px;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: 0.1s;
+      padding: 2px;
+      border-radius: 12px;
+    }
+    .category-hide-icon:hover {
+      opacity: 1;
+      background: rgba(0,0,0,0.05);
+    }
+    .action-icon {
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 24px;
+      font-size: 0.68rem;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text-light);
+    }
+    .action-icon:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .add-cat-btn {
+      background: var(--emerald);
+      border: none;
+      padding: 4px 10px;
+      border-radius: 24px;
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: white;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .divider-vert {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+
+    /* main scroll */
+    .main-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.8rem 1.2rem;
+    }
+
+    /* COMPACT TABLE */
+    .table-wrapper {
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      overflow-x: auto;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .accounts-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72rem;
+      min-width: 700px;
+    }
+    .accounts-table th {
+      text-align: left;
+      padding: 0.6rem 0.8rem;
+      background: #fafcff;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      color: #334155;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+    }
+    .accounts-table td {
+      padding: 0.55rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .accounts-table tr:last-child td {
+      border-bottom: none;
+    }
+    .accounts-table tr:hover td {
+      background: #f9fafb;
+    }
+    .account-name-cell {
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .type-badge {
+      font-size: 0.6rem;
+      background: #eef2ff;
+      padding: 2px 6px;
+      border-radius: 20px;
+      font-weight: 500;
+      color: #1e40af;
+    }
+    .cat-badge {
+      font-size: 0.6rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 500;
+      background: #f1f5f9;
+      color: #475569;
+      display: inline-block;
+    }
+    .cat-badge.custom-cat {
+      background: #e9d5ff;
+      color: #6b21a5;
+    }
+    .hidden-badge {
+      background: #eef2f5;
+      font-size: 0.55rem;
+      padding: 2px 6px;
+      border-radius: 16px;
+      color: #5b6e8c;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .balance-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      font-size: 0.73rem;
+    }
+    .action-menu {
+      position: relative;
+      display: inline-block;
+    }
+    .menu-btn-table {
+      background: transparent;
+      border: none;
+      font-size: 0.85rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      color: var(--text-light);
+    }
+    .menu-btn-table:hover {
+      background: #f0f2f5;
+    }
+    .table-dropdown {
+      position: absolute;
+      top: 26px;
+      right: 0;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+      border: 1px solid var(--border);
+      z-index: 200;
+      min-width: 170px;
+      display: none;
+    }
+    .table-dropdown.show {
+      display: block;
+    }
+    .dropdown-opt {
+      padding: 6px 12px;
+      font-size: 0.68rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .dropdown-opt:hover {
+      background: #f8fafc;
+    }
+    .empty-placeholder {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-light);
+      background: var(--surface);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(2px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.show {
+      display: flex;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      max-width: 400px;
+      width: 90%;
+      padding: 1.2rem;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+    .close-modal {
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+    .form-group {
+      margin-bottom: 0.8rem;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.75rem;
+    }
+    .form-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 1rem;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 5px 14px;
+      border-radius: 28px;
+      font-size: 0.7rem;
+    }
+    .toast-stack {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 1200;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .toast-item {
+      background: #1e293b;
+      color: white;
+      padding: 5px 14px;
+      border-radius: 40px;
+      font-size: 0.65rem;
+    }
+  </style>
+</head>
+<body>
+<div class="app-container">
+  <div class="navbar">
+    <div class="logo-area">
+      <div class="logo-icon"><i class="fas fa-table"></i></div>
+      <div class="logo-text">Trismart · Table View</div>
+    </div>
+    <button class="add-account-btn" id="openAddAccountBtn"><i class="fas fa-plus"></i> Add Account</button>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-group" id="filterGroupLeft">
+      <span class="filter-chip active" data-filter="all"><i class="fas fa-th"></i> All</span>
+      <span class="filter-chip" data-filter="journal"><i class="fas fa-book"></i> Journal</span>
+      <span class="filter-chip" data-filter="ledger"><i class="fas fa-receipt"></i> Ledger</span>
+      <span class="filter-chip" data-filter="uncategorized"><i class="fas fa-tag"></i> Uncategorized</span>
+      <div id="customChipContainer" style="display: flex; gap: 6px; flex-wrap: wrap;"></div>
+      <div class="divider-vert"></div>
+      <span class="filter-chip" id="toggleHiddenBtn"><i class="fas fa-eye-slash"></i> Show hidden</span>
+      <button class="add-cat-btn" id="openAddCatBtn"><i class="fas fa-plus"></i> Category</button>
+      <button class="action-icon" id="manageHiddenCatsBtn" style="margin-left: 2px;"><i class="fas fa-eye-slash"></i> Hidden Cats</button>
+    </div>
+    <div class="filter-group">
+      <span class="action-icon" id="unhideAllBtn"><i class="fas fa-eye"></i> Unhide all accounts</span>
+    </div>
+  </div>
+
+  <div class="main-scroll">
+    <div id="tableContainer">
+      <div style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-pulse"></i> loading ledger...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Category Modal -->
+<div id="categoryModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="font-size:0.9rem;">New Category</h3>
+      <span class="close-modal" onclick="closeModal('categoryModal')">&times;</span>
+    </div>
+    <form id="categoryForm">
+      <div class="form-group">
+        <label>Category name</label>
+        <input type="text" id="newCategoryName" placeholder="e.g., Investments, Payroll" required>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Add</button>
+        <button type="button" class="btn-outline" onclick="closeModal('categoryModal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Manage hidden categories modal -->
+<div id="hiddenCatsModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="font-size:0.9rem;">Hidden Categories</h3>
+      <span class="close-modal" onclick="closeModal('hiddenCatsModal')">&times;</span>
+    </div>
+    <div id="hiddenCatsList" style="margin-bottom: 1rem; max-height: 200px; overflow-y: auto;"></div>
+    <div class="form-actions">
+      <button id="unhideSelectedCatBtn" class="btn-primary" style="background:#10b981;">Unhide selected</button>
+      <button class="btn-outline" onclick="closeModal('hiddenCatsModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js",
+      "firebase/firestore": "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js"
+    }
+  }
+</script>
+
+<script type="module">
+  import { initializeApp } from "firebase/app";
+  import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, addDoc, getDocs, writeBatch } from "firebase/firestore";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+    authDomain: "trismartstores.firebaseapp.com",
+    projectId: "trismartstores",
+    storageBucket: "trismartstores.appspot.com",
+    messagingSenderId: "416692703333",
+    appId: "1:416692703333:web:d4b60292621435c748f68c"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const loggedUser = localStorage.getItem('loggedInUser') || '';
+  const userName = (loggedUser || localStorage.getItem('userName') || '').toLowerCase().trim();
+  if (userName !== 'chris') {
+    document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;"><div style="background:white;padding:20px;border-radius:20px;">🔐 Access restricted</div></div>`;
+    throw new Error('unauth');
+  }
+
+  // ---------- persistent state: filters, hidden categories, showHidden toggle ----------
+  let accounts = [];
+  let allCustomCategories = JSON.parse(localStorage.getItem('trismart_custom_categories') || '[]');
+  let hiddenCategories = JSON.parse(localStorage.getItem('trismart_hidden_categories') || '[]');
+  let currentFilter = localStorage.getItem('trismart_filter') || "all";
+  let showHiddenItems = localStorage.getItem('trismart_showHidden') !== "false";
+  let unsubscribe = null;
+
+  function saveCustomCategories() {
+    localStorage.setItem('trismart_custom_categories', JSON.stringify(allCustomCategories));
+  }
+  function saveHiddenCategories() {
+    localStorage.setItem('trismart_hidden_categories', JSON.stringify(hiddenCategories));
+  }
+
+  function showToast(msg, isErr = false) {
+    const stack = document.getElementById('toastStack');
+    const t = document.createElement('div');
+    t.className = 'toast-item';
+    t.style.background = isErr ? '#b91c1c' : '#0f172a';
+    t.innerHTML = `<i class="fas ${isErr ? 'fa-exclamation-triangle' : 'fa-check'}"></i> ${msg}`;
+    stack.appendChild(t);
+    setTimeout(() => t.remove(), 2500);
+  }
+
+  // visible categories = allCustomCategories - hiddenCategories
+  function getVisibleCustomCategories() {
+    return allCustomCategories.filter(cat => !hiddenCategories.includes(cat));
+  }
+
+  async function updateAccountField(accountId, field, value) {
+    try {
+      await updateDoc(doc(db, 'accounts', accountId), { [field]: value });
+      return true;
+    } catch (err) { showToast(err.message, true); return false; }
+  }
+  async function changeCategory(accountId, newCat) {
+    const acc = accounts.find(a => a.id === accountId);
+    if (!acc) return;
+    await updateAccountField(accountId, 'category', newCat);
+    showToast(`${acc.name} → ${newCat}`);
+  }
+  async function toggleHideAccount(accountId) {
+    const acc = accounts.find(a => a.id === accountId);
+    if (!acc) return;
+    await updateAccountField(accountId, 'hidden', !acc.hidden);
+    showToast(!acc.hidden ? `${acc.name} hidden` : `${acc.name} visible`);
+  }
+  async function unhideAllAccounts() {
+    const snap = await getDocs(collection(db, 'accounts'));
+    const batch = writeBatch(db);
+    snap.docs.forEach(d => batch.update(d.ref, { hidden: false }));
+    await batch.commit();
+    showToast("All accounts visible");
+    if (!showHiddenItems) {
+      showHiddenItems = true;
+      localStorage.setItem('trismart_showHidden', 'true');
+      document.getElementById('toggleHiddenBtn').innerHTML = '<i class="fas fa-eye-slash"></i> Show hidden';
+    }
+    renderTable();
+  }
+
+  async function addNewAccount(data) {
+    await addDoc(collection(db, 'accounts'), { ...data, createdAt: new Date().toISOString() });
+    showToast("Account created");
+  }
+  async function ensureMetaFields() {
+    const snap = await getDocs(collection(db, 'accounts'));
+    const batch = writeBatch(db);
+    let need = false;
+    snap.docs.forEach(d => {
+      const data = d.data();
+      if (data.category === undefined) { batch.update(d.ref, { category: 'uncategorized' }); need = true; }
+      if (data.hidden === undefined) { batch.update(d.ref, { hidden: false }); need = true; }
+    });
+    if (need) await batch.commit();
+  }
+
+  function getFilteredAccounts() {
+    let filtered = [...accounts];
+    if (!showHiddenItems) filtered = filtered.filter(acc => !acc.hidden);
+    if (currentFilter !== 'all') filtered = filtered.filter(acc => acc.category === currentFilter);
+    return filtered;
+  }
+
+  function goToDetail(accountId) {
+    localStorage.setItem('selectedAccountId', accountId);
+    window.location.href = 'account-detail.html';
+  }
+
+  // table rendering
+  function renderTable() {
+    const container = document.getElementById('tableContainer');
+    const filtered = getFilteredAccounts();
+    if (!filtered.length) {
+      container.innerHTML = `<div class="empty-placeholder"><i class="fas fa-inbox"></i> No accounts match filter.</div>`;
+      return;
+    }
+    const html = `<div class="table-wrapper"><table class="accounts-table"><thead><tr><th>Account</th><th>Type</th><th>Category</th><th>Description</th><th>Balance</th><th></th></tr></thead><tbody>${filtered.map(acc => {
+      const isHidden = acc.hidden;
+      const isCustomCat = allCustomCategories.includes(acc.category);
+      const catClass = isCustomCat ? 'custom-cat' : '';
+      const typeIcon = acc.type === 'asset' ? 'fa-coins' : (acc.type === 'expense' ? 'fa-cart-shopping' : (acc.type === 'revenue' ? 'fa-chart-line' : 'fa-receipt'));
+      const hiddenMark = isHidden ? `<span class="hidden-badge"><i class="fas fa-low-vision"></i> hidden</span>` : '';
+      const dropdownId = `dd_${acc.id}`;
+      return `<tr data-account-id="${acc.id}" class="account-row" style="cursor:pointer;"><td><div class="account-name-cell"><i class="fas ${typeIcon}" style="color:#3b82f6;"></i><span style="font-weight:500;">${escapeHtml(acc.name)}</span>${hiddenMark}</div></td><td><span class="type-badge">${escapeHtml(acc.type)}</span></td><td><span class="cat-badge ${catClass}"><i class="fas fa-tag"></i> ${escapeHtml(acc.category.charAt(0).toUpperCase() + acc.category.slice(1))}</span></td><td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(acc.description || '—')}</td><td class="balance-number">K ${acc.balance.toLocaleString(undefined, {minimumFractionDigits:2})}</td><td><div class="action-menu"><button class="menu-btn-table" data-menu-id="${acc.id}" onclick="event.stopPropagation()"><i class="fas fa-ellipsis-v"></i></button><div class="table-dropdown" id="${dropdownId}"><div class="dropdown-opt" data-account="${acc.id}" data-cat="journal"><i class="fas fa-book-open"></i> Journal</div><div class="dropdown-opt" data-account="${acc.id}" data-cat="ledger"><i class="fas fa-list-ul"></i> Ledger</div><div class="dropdown-opt" data-account="${acc.id}" data-cat="uncategorized"><i class="fas fa-question"></i> Uncategorized</div>${allCustomCategories.map(cat => `<div class="dropdown-opt" data-account="${acc.id}" data-cat="${cat}"><i class="fas fa-tag"></i> ${escapeHtml(cat)}</div>`).join('')}<div class="dropdown-divider"></div><div class="dropdown-opt" data-action="toggle-hide" data-account="${acc.id}"><i class="fas ${isHidden ? 'fa-eye' : 'fa-eye-slash'}"></i> ${isHidden ? 'Unhide' : 'Hide'}</div></div></div></td></tr>`;
+    }).join('')}</tbody></table></div>`;
+    container.innerHTML = html;
+    attachTableEvents();
+  }
+
+  function attachTableEvents() {
+    document.querySelectorAll('.account-row').forEach(row => {
+      row.removeEventListener('click', rowHandler);
+      row.addEventListener('click', rowHandler);
+    });
+    function rowHandler(e) {
+      if (e.target.closest('.menu-btn-table') || e.target.closest('.dropdown-opt') || e.target.closest('.table-dropdown')) return;
+      const id = this.getAttribute('data-account-id');
+      if (id) goToDetail(id);
+    }
+    document.querySelectorAll('.menu-btn-table').forEach(btn => {
+      btn.removeEventListener('click', menuClick);
+      btn.addEventListener('click', menuClick);
+    });
+    function menuClick(e) {
+      e.stopPropagation();
+      const menuId = this.getAttribute('data-menu-id');
+      const drop = document.getElementById(`dd_${menuId}`);
+      if (!drop) return;
+      document.querySelectorAll('.table-dropdown.show').forEach(d => { if (d !== drop) d.classList.remove('show'); });
+      drop.classList.toggle('show');
+    }
+    document.querySelectorAll('.dropdown-opt').forEach(opt => {
+      opt.removeEventListener('click', optClick);
+      opt.addEventListener('click', optClick);
+    });
+    function optClick(e) {
+      e.stopPropagation();
+      const accountId = this.getAttribute('data-account');
+      const catVal = this.getAttribute('data-cat');
+      const action = this.getAttribute('data-action');
+      if (accountId && catVal && !action) changeCategory(accountId, catVal);
+      else if (action === 'toggle-hide' && accountId) toggleHideAccount(accountId);
+      document.querySelectorAll('.table-dropdown.show').forEach(d => d.classList.remove('show'));
+    }
+  }
+
+  // render category chips with hide/unhide icon on each custom category
+  function renderCategoryChips() {
+    const container = document.getElementById('customChipContainer');
+    if (!container) return;
+    const visibleCats = getVisibleCustomCategories();
+    container.innerHTML = visibleCats.map(cat => `
+      <div class="category-chip-wrapper">
+        <span class="filter-chip" data-filter="${cat}"><i class="fas fa-tag"></i> ${escapeHtml(cat.charAt(0).toUpperCase() + cat.slice(1))}</span>
+        <i class="fas fa-eye-slash category-hide-icon" data-category="${cat}" title="Hide this category"></i>
+      </div>
+    `).join('');
+    // filter chip click
+    document.querySelectorAll('.filter-chip[data-filter]').forEach(chip => {
+      chip.removeEventListener('click', chipFilterHandler);
+      chip.addEventListener('click', chipFilterHandler);
+    });
+    function chipFilterHandler() {
+      const filterVal = this.getAttribute('data-filter');
+      if (!filterVal) return;
+      currentFilter = filterVal;
+      localStorage.setItem('trismart_filter', currentFilter);
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+      renderTable();
+      showToast(`Filter: ${filterVal === 'all' ? 'All' : filterVal}`);
+    }
+    // attach hide icons
+    document.querySelectorAll('.category-hide-icon').forEach(icon => {
+      icon.removeEventListener('click', hideIconHandler);
+      icon.addEventListener('click', hideIconHandler);
+    });
+    function hideIconHandler(e) {
+      e.stopPropagation();
+      const catToHide = this.getAttribute('data-category');
+      if (catToHide && !hiddenCategories.includes(catToHide)) {
+        hiddenCategories.push(catToHide);
+        saveHiddenCategories();
+        renderCategoryChips();
+        // if the hidden category was active filter, reset filter to 'all'
+        if (currentFilter === catToHide) {
+          currentFilter = 'all';
+          localStorage.setItem('trismart_filter', 'all');
+          document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+          const allChip = document.querySelector('.filter-chip[data-filter="all"]');
+          if (allChip) allChip.classList.add('active');
+          renderTable();
+        }
+        showToast(`Category "${catToHide}" hidden from toolbar`);
+      }
+    }
+    // restore active filter highlight
+    const activeChip = document.querySelector(`.filter-chip[data-filter="${currentFilter}"]`);
+    if (activeChip) activeChip.classList.add('active');
+    else document.querySelector('.filter-chip[data-filter="all"]')?.classList.add('active');
+  }
+
+  function openHiddenCatsManager() {
+    const visibleHidden = hiddenCategories.filter(c => allCustomCategories.includes(c));
+    const listDiv = document.getElementById('hiddenCatsList');
+    if (!listDiv) return;
+    if (visibleHidden.length === 0) {
+      listDiv.innerHTML = '<div style="padding:8px; text-align:center; color:gray;">No hidden categories</div>';
+    } else {
+      listDiv.innerHTML = visibleHidden.map(cat => `
+        <label style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:0.75rem;">
+          <input type="checkbox" value="${cat}" class="unhide-checkbox"> ${escapeHtml(cat)}
+        </label>
+      `).join('');
+    }
+    document.getElementById('hiddenCatsModal').classList.add('show');
+    const unhideBtn = document.getElementById('unhideSelectedCatBtn');
+    unhideBtn.onclick = () => {
+      const checkboxes = document.querySelectorAll('#hiddenCatsList .unhide-checkbox:checked');
+      const toUnhide = Array.from(checkboxes).map(cb => cb.value);
+      if (toUnhide.length) {
+        hiddenCategories = hiddenCategories.filter(c => !toUnhide.includes(c));
+        saveHiddenCategories();
+        renderCategoryChips();
+        showToast(`Unhidden ${toUnhide.length} category(s)`);
+      }
+      closeModal('hiddenCatsModal');
+    };
+  }
+
+  function initUI() {
+    const toggleBtn = document.getElementById('toggleHiddenBtn');
+    toggleBtn.innerHTML = showHiddenItems ? '<i class="fas fa-eye-slash"></i> Show hidden' : '<i class="fas fa-eye"></i> Hide hidden';
+    toggleBtn.addEventListener('click', () => {
+      showHiddenItems = !showHiddenItems;
+      localStorage.setItem('trismart_showHidden', showHiddenItems);
+      toggleBtn.innerHTML = showHiddenItems ? '<i class="fas fa-eye-slash"></i> Show hidden' : '<i class="fas fa-eye"></i> Hide hidden';
+      renderTable();
+      showToast(showHiddenItems ? 'Showing hidden accounts' : 'Hiding hidden accounts');
+    });
+    document.getElementById('unhideAllBtn').addEventListener('click', async () => {
+      await unhideAllAccounts();
+      if (!showHiddenItems) {
+        showHiddenItems = true;
+        localStorage.setItem('trismart_showHidden', 'true');
+        toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i> Show hidden';
+      }
+      renderTable();
+    });
+    document.getElementById('openAddAccountBtn').addEventListener('click', () => {
+      const name = prompt("Account name:"); if (!name) return;
+      const type = prompt("Type (asset/liability/equity/revenue/expense):", "asset");
+      const balance = parseFloat(prompt("Balance (K):", "0")) || 0;
+      const desc = prompt("Description:", "");
+      addNewAccount({ name, type, balance, description: desc, category: 'uncategorized', hidden: false });
+    });
+    document.getElementById('openAddCatBtn').addEventListener('click', () => document.getElementById('categoryModal').classList.add('show'));
+    document.getElementById('manageHiddenCatsBtn').addEventListener('click', openHiddenCatsManager);
+    document.querySelectorAll('.filter-chip[data-filter]').forEach(ch => {
+      if (ch.getAttribute('data-filter') === currentFilter) ch.classList.add('active');
+    });
+  }
+
+  document.getElementById('categoryForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const newCat = document.getElementById('newCategoryName').value.trim().toLowerCase();
+    if (!newCat) return;
+    if (allCustomCategories.includes(newCat)) { showToast("Category exists", true); return; }
+    allCustomCategories.push(newCat);
+    saveCustomCategories();
+    renderCategoryChips();
+    closeModal('categoryModal');
+    document.getElementById('newCategoryName').value = '';
+    showToast(`Added: ${newCat}`);
+    renderTable();
+  });
+  window.closeModal = (id) => document.getElementById(id).classList.remove('show');
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.table-dropdown') && !e.target.closest('.menu-btn-table'))
+      document.querySelectorAll('.table-dropdown.show').forEach(d => d.classList.remove('show'));
+  });
+
+  function listenAccounts() {
+    if (unsubscribe) unsubscribe();
+    const q = query(collection(db, 'accounts'), orderBy('name'));
+    unsubscribe = onSnapshot(q, (snap) => {
+      accounts = snap.docs.map(d => ({ id: d.id, ...d.data(), category: d.data().category || 'uncategorized', hidden: d.data().hidden === true }));
+      renderTable();
+      renderCategoryChips();
+    }, (err) => { console.error(err); document.getElementById('tableContainer').innerHTML = `<div class="empty-placeholder">⚠️ Firestore error</div>`; });
+  }
+  async function bootstrap() {
+    await ensureMetaFields();
+    listenAccounts();
+    initUI();
+  }
+  bootstrap();
+  function escapeHtml(str) { return String(str ?? '').replace(/[&<>]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;' }[m])); }
+</script>
+</body>
+</html>

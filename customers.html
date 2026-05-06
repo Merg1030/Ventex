@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Trismart Loans - Customers</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Firebase (v8) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <style>
+    /* Base */
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background: #f5f7fb; color: #222; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0;
+      width: 260px;
+      padding: 22px;
+      display: flex; flex-direction: column; gap: 20px;
+      background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
+      color: #fff; z-index: 1000;
+      box-shadow: 6px 0 30px rgba(16,24,40,0.12);
+      transition: transform 0.3s ease;
+    }
+    
+    .sidebar.hidden {
+      transform: translateX(-100%);
+    }
+    
+    .sidebar .brand { display:flex; gap:12px; align-items:center; }
+    .sidebar .brand i { font-size:1.6rem; background: rgba(255,255,255,0.07); padding:10px; border-radius:8px; }
+    .sidebar .brand .title { font-weight:700; font-size:1.05rem; letter-spacing:.2px; }
+
+    .sidebar nav { display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+    .menu-item {
+      display:flex; gap:12px; align-items:center; padding:11px; border-radius:8px;
+      color: rgba(255,255,255,0.95); text-decoration:none; transition: background .12s, transform .12s;
+    }
+    .menu-item i { width:20px; text-align:center; }
+    .menu-item:hover { background: rgba(255,255,255,0.06); transform: translateX(4px); }
+    .menu-item.active { background: rgba(255,255,255,0.10); border-right: 4px solid rgba(255,255,255,0.12); }
+
+    /* Main */
+    .main {
+      margin-left: 260px;
+      transition: margin-left 0.3s ease;
+      padding-bottom: 60px;
+      min-height: 100vh;
+    }
+    
+    .main.full-width {
+      margin-left: 0;
+    }
+
+    /* Top header */
+    .header {
+      background: white; padding: 16px 22px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      display:flex; justify-content:space-between; align-items:center;
+      position: sticky; top: 0; z-index: 30;
+    }
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .sidebar-toggle {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: #fff;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    
+    .logo-text { font-weight:700; color:#1e3c72; }
+
+    .user-info { display:flex; gap:12px; align-items:center; }
+    .avatar { width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;
+      background:linear-gradient(135deg,#1e3c72,#2a5298); font-weight:700; }
+
+    /* Page container */
+    .container { padding: 26px; max-width: 1200px; margin: 18px auto; }
+
+    /* Stats: only Active, Inactive, Total People (compact) */
+    .stats-row { display:flex; gap:14px; margin-bottom:18px; flex-wrap:wrap; }
+    .stat {
+      background: white; padding:14px 18px; border-radius:10px; box-shadow:0 6px 18px rgba(16,24,40,0.06);
+      display:flex; align-items:center; gap:12px; min-width: 200px;
+    }
+    .stat .icon {
+      width:52px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:1.25rem;
+      box-shadow:0 6px 18px rgba(0,0,0,0.06);
+    }
+    .icon.active { background: linear-gradient(135deg,#43e97b,#38f9d7); }
+    .icon.inactive { background: linear-gradient(135deg,#f093fb,#f5576c); }
+    .icon.people { background: linear-gradient(135deg,#4facfe,#00f2fe); }
+    .stat .meta { display:flex; flex-direction:column; }
+    .stat .meta .label { font-size:0.85rem; color:#666; }
+    .stat .meta .value { font-weight:800; font-size:1.25rem; color:#1e3c72; }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #2a5298, #1e3c72);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(30, 60, 114, 0.2);
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+    
+    .btn-success:hover {
+      background: #218838;
+    }
+
+    /* Table */
+    .card { background:white; border-radius:10px; box-shadow:0 6px 18px rgba(16,24,40,0.05); overflow:hidden; }
+    .card .card-header { padding:14px 18px; border-bottom:1px solid #eef2f7; display:flex; justify-content:space-between; align-items:center; }
+    .card .card-body { padding: 12px 12px 18px 12px; overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; min-width: 600px; }
+    th { text-align:left; padding:12px; background:#fafbfc; color:#1e3c72; font-weight:700; font-size:.95rem; border-bottom:1px solid #eef2f7; }
+    td { padding:12px; border-bottom:1px solid #f1f5f9; vertical-align: middle; }
+    tr:hover { background:#fbfdff; }
+
+    .status-pill { padding:6px 12px; border-radius:20px; font-weight:700; font-size:.85rem; display:inline-block; text-transform:capitalize; }
+    .status-active { background:#d1f7e6; color:#0a6c43; }
+    .status-inactive { background:#fde8ef; color:#7a1a2b; }
+    .btn-view { background:#6c757d;color:#fff;border:none;padding:8px 10px;border-radius:6px;cursor:pointer; }
+
+    /* Modals */
+    .modal { 
+      display:none; 
+      position:fixed; 
+      inset:0; 
+      background:rgba(0,0,0,0.45); 
+      z-index:1100; 
+      align-items:center; 
+      justify-content:center; 
+      padding:18px; 
+    }
+    .modal.active { display:flex; }
+    .modal-card { 
+      width:760px; 
+      max-width:100%; 
+      background:white; 
+      border-radius:10px; 
+      overflow:hidden; 
+      box-shadow:0 18px 50px rgba(15,23,42,0.28); 
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-head { 
+      background:#1e3c72; 
+      color:#fff; 
+      padding:16px 18px; 
+      display:flex; 
+      justify-content:space-between; 
+      align-items:center; 
+    }
+    .modal-body { 
+      padding:18px; 
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+    .modal-footer { 
+      padding:14px 18px; 
+      background:#f8fafc; 
+      display:flex; 
+      justify-content:flex-end; 
+      gap:10px; 
+      border-top: 1px solid #eef2f7;
+    }
+    
+    /* Form styles */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #e6edf3;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    
+    .form-control:focus {
+      outline: none;
+      border-color: #1e3c72;
+      box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
+    }
+    
+    .form-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .form-col {
+      flex: 1;
+    }
+    
+    .info-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:12px; }
+    .info-item { background:#f8fafc; padding:12px; border-radius:8px; }
+    .info-item .label { font-size:.82rem; color:#666; margin-bottom:6px; }
+    .info-item .value { font-weight:700; color:#111; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .sidebar { 
+        width: 260px;
+        transform: translateX(-100%);
+      }
+      
+      .sidebar.show {
+        transform: translateX(0);
+      }
+      
+      .main { 
+        margin-left: 0 !important;
+        width: 100%;
+      }
+      
+      .sidebar-toggle {
+        display: inline-flex;
+      }
+      
+      .form-row {
+        flex-direction: column;
+        gap: 0;
+      }
+      
+      .modal-card {
+        width: 95%;
+      }
+    }
+    
+    @media (min-width: 901px) {
+      .sidebar-toggle {
+        display: inline-flex;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <i class="fas fa-hand-holding-usd"></i>
+      <div class="title">TRI<span style="color: rgba(255,255,255,0.95)">SMART</span></div>
+    </div>
+
+    <nav>
+      <a class="menu-item" href="loan-dashboard.html"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+      <a class="menu-item active" href="customers.html"><i class="fas fa-users"></i><span>Customers</span></a>
+      <a class="menu-item" href="accounts.html"><i class="fas fa-wallet"></i><span>Accounts</span></a>
+      <a class="menu-item" href="loans.html"><i class="fas fa-file-invoice-dollar"></i><span>Loans</span></a>
+      <a class="menu-item" href="#"><i class="fas fa-chart-line"></i><span>Reports</span></a>
+      <a class="menu-item" id="sidebarLogout" href="#"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+    </nav>
+
+    <div style="margin-top:auto; font-size:.9rem; opacity:.95;">
+      <div style="font-weight:700;">Welcome, <span id="sidebarName">Chris</span></div>
+      <div style="font-size:.82rem; opacity:.9;">Customer management</div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main" id="main">
+    <header class="header">
+      <div class="header-left">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="logo-text">TRI SMART LOANS</div>
+      </div>
+
+      <div class="user-info">
+        <div class="avatar" id="userAvatar">C</div>
+        <div style="text-align:right;">
+          <div id="userName">Chris</div>
+          <div style="font-size:.8rem;color:#666;">Administrator</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="container">
+      <!-- Stats (only Active, Inactive, Total people) -->
+      <div class="stats-row">
+        <div class="stat">
+          <div class="icon active"><i class="fas fa-check-circle"></i></div>
+          <div class="meta">
+            <div class="label">Active Customers</div>
+            <div class="value" id="activeCount">0</div>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div class="icon inactive"><i class="fas fa-user-slash"></i></div>
+          <div class="meta">
+            <div class="label">Inactive Customers</div>
+            <div class="value" id="inactiveCount">0</div>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div class="icon people"><i class="fas fa-users"></i></div>
+          <div class="meta">
+            <div class="label">Total Customers</div>
+            <div class="value" id="totalPeople">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customers table -->
+      <div class="card">
+        <div class="card-header">
+          <strong>Customers</strong>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input id="search" placeholder="Search by name or ID..." class="form-control" style="width: 200px;">
+            <button id="addCustomerBtn" class="btn btn-primary">
+              <i class="fas fa-plus"></i> Add Customer
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="tableWrap">
+            <div style="text-align:center; padding:18px; color:#666;" id="loadingState">
+              <i class="fas fa-spinner fa-spin" style="font-size:18px;"></i>
+              <div style="margin-top:8px;">Loading customers...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Customer Modal -->
+  <div class="modal" id="addCustomerModal" role="dialog" aria-hidden="true">
+    <div class="modal-card" role="document">
+      <div class="modal-head">
+        <div>Add New Customer</div>
+        <button class="btn-close" id="closeAddModal"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="addCustomerForm">
+          <div class="form-row">
+            <div class="form-col">
+              <div class="form-group">
+                <label class="form-label" for="firstName">First Name *</label>
+                <input type="text" id="firstName" class="form-control" required>
+              </div>
+            </div>
+            <div class="form-col">
+              <div class="form-group">
+                <label class="form-label" for="lastName">Last Name *</label>
+                <input type="text" id="lastName" class="form-control" required>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-col">
+              <div class="form-group">
+                <label class="form-label" for="idNumber">ID Number *</label>
+                <input type="text" id="idNumber" class="form-control" required>
+              </div>
+            </div>
+            <div class="form-col">
+              <div class="form-group">
+                <label class="form-label" for="phone">Phone Number *</label>
+                <input type="tel" id="phone" class="form-control" required>
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="email">Email Address</label>
+            <input type="email" id="email" class="form-control">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="address">Address</label>
+            <textarea id="address" class="form-control" rows="3"></textarea>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-col">
+              <div class="form-group">
+                <label class="form-label" for="employerName">Employer Name</label>
+                <input type="text" id="employerName" class="form-control">
+              </div>
+            </div>
+            <div class="form-col">
+              <div class="form-group">
+                <label class="form-label" for="employerPosition">Position</label>
+                <input type="text" id="employerPosition" class="form-control">
+              </div>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="monthlyIncome">Monthly Income (ZMW)</label>
+            <input type="number" id="monthlyIncome" class="form-control" step="0.01" min="0">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="notes">Additional Notes</label>
+            <textarea id="notes" class="form-control" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelAddCustomer">Cancel</button>
+        <button class="btn btn-success" id="saveCustomer">
+          <i class="fas fa-save"></i> Save Customer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View customer modal -->
+  <div class="modal" id="viewModal" role="dialog" aria-hidden="true">
+    <div class="modal-card" role="document">
+      <div class="modal-head">
+        <div id="modalTitle">Customer Details</div>
+        <button class="btn-close" id="closeModal"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- details filled by JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modalCloseBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+      authDomain: "trismartstores.firebaseapp.com",
+      projectId: "trismartstores",
+      storageBucket: "trismartstores.appspot.com",
+      messagingSenderId: "416692703333",
+      appId: "1:416692703333:web:d4b60292621435c748f68c",
+      measurementId: "G-NJPQ7L3QWJ"
+    };
+
+    // Init Firebase
+    let app, db;
+    try {
+      app = firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      console.log('Firebase initialized successfully');
+    } catch (err) {
+      console.warn('Firebase init warning', err);
+      if (firebase.apps && firebase.apps.length) {
+        app = firebase.app();
+        db = firebase.firestore();
+      }
+    }
+
+    // Globals
+    let customers = [];
+    let customerLoans = {};
+    const currentUser = localStorage.getItem('username') || 'Chris';
+
+    // DOM elements
+    const sidebar = document.getElementById('sidebar');
+    const main = document.getElementById('main');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarName = document.getElementById('sidebarName');
+    const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
+    const tableWrap = document.getElementById('tableWrap');
+    const loadingState = document.getElementById('loadingState');
+    const activeCountEl = document.getElementById('activeCount');
+    const inactiveCountEl = document.getElementById('inactiveCount');
+    const totalPeopleEl = document.getElementById('totalPeople');
+    const searchInput = document.getElementById('search');
+    const addCustomerBtn = document.getElementById('addCustomerBtn');
+    const addCustomerModal = document.getElementById('addCustomerModal');
+    const closeAddModal = document.getElementById('closeAddModal');
+    const cancelAddCustomer = document.getElementById('cancelAddCustomer');
+    const saveCustomerBtn = document.getElementById('saveCustomer');
+    const addCustomerForm = document.getElementById('addCustomerForm');
+    
+    const viewModal = document.getElementById('viewModal');
+    const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalTitle');
+    const closeModal = document.getElementById('closeModal');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const sidebarLogout = document.getElementById('sidebarLogout');
+
+    // Form fields
+    const firstName = document.getElementById('firstName');
+    const lastName = document.getElementById('lastName');
+    const idNumber = document.getElementById('idNumber');
+    const phone = document.getElementById('phone');
+    const email = document.getElementById('email');
+    const address = document.getElementById('address');
+    const employerName = document.getElementById('employerName');
+    const employerPosition = document.getElementById('employerPosition');
+    const monthlyIncome = document.getElementById('monthlyIncome');
+    const notes = document.getElementById('notes');
+
+    // Initialize UI
+    document.addEventListener('DOMContentLoaded', () => {
+      userName.textContent = currentUser;
+      userAvatar.textContent = currentUser.charAt(0).toUpperCase();
+      sidebarName.textContent = currentUser;
+
+      // Load data
+      loadAllData();
+
+      // Sidebar toggle - FIXED
+      sidebarToggle.addEventListener('click', toggleSidebar);
+      
+      // Close sidebar when clicking on links (mobile)
+      document.querySelectorAll('.nav a').forEach(link => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth < 900) {
+            sidebar.classList.remove('show');
+          }
+        });
+      });
+
+      // Search
+      searchInput.addEventListener('input', applySearch);
+      
+      // Add customer modal
+      addCustomerBtn.addEventListener('click', () => {
+        addCustomerForm.reset();
+        addCustomerModal.classList.add('active');
+      });
+      
+      closeAddModal.addEventListener('click', () => addCustomerModal.classList.remove('active'));
+      cancelAddCustomer.addEventListener('click', () => addCustomerModal.classList.remove('active'));
+      
+      // Save customer
+      saveCustomerBtn.addEventListener('click', saveCustomer);
+      
+      // View modal
+      closeModal.addEventListener('click', () => viewModal.classList.remove('active'));
+      modalCloseBtn.addEventListener('click', () => viewModal.classList.remove('active'));
+
+      // Logout
+      sidebarLogout.addEventListener('click', () => {
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('username');
+        window.location.href = 'index.html';
+      });
+      
+      // Close modals when clicking outside
+      document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+          e.target.classList.remove('active');
+        }
+      });
+      
+      // Close sidebar when clicking outside on mobile
+      document.addEventListener('click', (e) => {
+        if (window.innerWidth < 900 && 
+            !sidebar.contains(e.target) && 
+            !sidebarToggle.contains(e.target) &&
+            sidebar.classList.contains('show')) {
+          sidebar.classList.remove('show');
+        }
+      });
+    });
+
+    // Sidebar toggle function - FIXED
+    function toggleSidebar() {
+      if (window.innerWidth < 900) {
+        // Mobile: toggle show class
+        sidebar.classList.toggle('show');
+      } else {
+        // Desktop: toggle hidden class and adjust main content
+        sidebar.classList.toggle('hidden');
+        main.classList.toggle('full-width');
+      }
+    }
+
+    // Load customers and loans
+    async function loadAllData() {
+      try {
+        loadingState.style.display = 'block';
+        tableWrap.innerHTML = '';
+        
+        // Load customers
+        const customersSnap = await db.collection('customers').where('createdBy', '==', currentUser).get();
+        customers = [];
+        customersSnap.forEach(doc => {
+          customers.push({ id: doc.id, ...doc.data() });
+        });
+
+        // Load loans
+        const loansSnap = await db.collection('loans').where('createdBy', '==', currentUser).get();
+        customerLoans = {};
+        
+        loansSnap.forEach(doc => {
+          const loan = doc.data();
+          const customerId = loan.customerId;
+          
+          if (customerId) {
+            if (!customerLoans[customerId]) {
+              customerLoans[customerId] = [];
+            }
+            customerLoans[customerId].push({
+              id: doc.id,
+              ...loan,
+              status: loan.status || 'active'
+            });
+          }
+        });
+
+        // Update customer status based on loans
+        updateCustomerStatus();
+        renderCustomerTable(customers);
+        updateCounts();
+      } catch (err) {
+        console.error('Error loading data', err);
+        tableWrap.innerHTML = '<div style="padding:18px; color:#b00020;"><i class="fas fa-exclamation-triangle"></i> Error loading data</div>';
+      } finally {
+        loadingState.style.display = 'none';
+      }
+    }
+
+    // Update customer status based on loans
+    function updateCustomerStatus() {
+      customers.forEach(customer => {
+        const loans = customerLoans[customer.id] || [];
+        
+        // Check if customer has any active loans
+        const hasActiveLoan = loans.some(loan => loan.status === 'active');
+        
+        // Update customer status
+        if (hasActiveLoan) {
+          customer.status = 'active';
+        } else {
+          customer.status = 'inactive';
+        }
+        
+        // Update in Firebase
+        updateCustomerStatusInFirebase(customer.id, customer.status);
+      });
+    }
+
+    // Update customer status in Firebase
+    async function updateCustomerStatusInFirebase(customerId, status) {
+      try {
+        await db.collection('customers').doc(customerId).update({
+          status: status,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (err) {
+        console.error('Error updating customer status:', err);
+      }
+    }
+
+    // Update counts: active/inactive/total
+    function updateCounts() {
+      const total = customers.length;
+      const active = customers.filter(c => c.status === 'active').length;
+      const inactive = total - active;
+      
+      totalPeopleEl.textContent = total;
+      activeCountEl.textContent = active;
+      inactiveCountEl.textContent = inactive;
+    }
+
+    // Render customers table
+    function renderCustomerTable(list) {
+      if (!list || list.length === 0) {
+        tableWrap.innerHTML = '<div style="padding:18px; color:#666;">No customers found. Click "Add Customer" to add your first customer.</div>';
+        return;
+      }
+
+      let html = '<table><thead><tr><th>Name</th><th>Phone</th><th>ID Number</th><th>Status</th><th>Loans</th><th>View</th></tr></thead><tbody>';
+      
+      list.forEach(c => {
+        const fullname = `${c.firstName || ''} ${c.lastName || ''}`.trim() || 'Unnamed';
+        const phone = c.phone || 'N/A';
+        const idNum = c.idNumber || 'N/A';
+        const status = c.status || 'inactive';
+        const statusClass = status === 'active' ? 'status-active' : 'status-inactive';
+        
+        // Count loans for this customer
+        const loanCount = customerLoans[c.id] ? customerLoans[c.id].length : 0;
+        const activeLoanCount = customerLoans[c.id] ? 
+          customerLoans[c.id].filter(loan => loan.status === 'active').length : 0;
+        
+        html += `<tr>
+          <td><strong>${escapeHtml(fullname)}</strong></td>
+          <td>${escapeHtml(phone)}</td>
+          <td>${escapeHtml(idNum)}</td>
+          <td><span class="status-pill ${statusClass}">${escapeHtml(status)}</span></td>
+          <td>${activeLoanCount} active / ${loanCount} total</td>
+          <td><button class="btn-view" onclick="viewCustomer('${c.id}')"><i class="fas fa-eye"></i></button></td>
+        </tr>`;
+      });
+      
+      html += '</tbody></table>';
+      tableWrap.innerHTML = html;
+    }
+
+    // Simple search filter
+    function applySearch() {
+      const term = (searchInput.value || '').toLowerCase().trim();
+      if (!term) {
+        renderCustomerTable(customers);
+        return;
+      }
+      
+      const filtered = customers.filter(c => {
+        const fullname = `${c.firstName||''} ${c.lastName||''}`.toLowerCase();
+        const idnum = (c.idNumber || '').toLowerCase();
+        const phone = (c.phone || '').toLowerCase();
+        const email = (c.email || '').toLowerCase();
+        
+        return fullname.includes(term) || 
+               idnum.includes(term) || 
+               phone.includes(term) ||
+               email.includes(term);
+      });
+      
+      renderCustomerTable(filtered);
+    }
+
+    // Save new customer
+    async function saveCustomer() {
+      // Validate form
+      if (!firstName.value.trim() || !lastName.value.trim() || !idNumber.value.trim() || !phone.value.trim()) {
+        alert('Please fill in all required fields: First Name, Last Name, ID Number, and Phone Number.');
+        return;
+      }
+
+      saveCustomerBtn.disabled = true;
+      saveCustomerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+      try {
+        const customerData = {
+          firstName: firstName.value.trim(),
+          lastName: lastName.value.trim(),
+          idNumber: idNumber.value.trim(),
+          phone: phone.value.trim(),
+          email: email.value.trim() || null,
+          address: address.value.trim() || null,
+          employerName: employerName.value.trim() || null,
+          employerPosition: employerPosition.value.trim() || null,
+          monthlyIncome: monthlyIncome.value ? parseFloat(monthlyIncome.value) : 0,
+          notes: notes.value.trim() || null,
+          status: 'inactive', // Default status - will be updated based on loans
+          createdBy: currentUser,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        // Save to Firestore
+        await db.collection('customers').add(customerData);
+        
+        // Close modal and reload data
+        addCustomerModal.classList.remove('active');
+        addCustomerForm.reset();
+        
+        // Reload all data
+        await loadAllData();
+        
+        alert('Customer added successfully!');
+      } catch (err) {
+        console.error('Error saving customer:', err);
+        alert('Error saving customer: ' + (err.message || err));
+      } finally {
+        saveCustomerBtn.disabled = false;
+        saveCustomerBtn.innerHTML = '<i class="fas fa-save"></i> Save Customer';
+      }
+    }
+
+    // View customer details modal
+    window.viewCustomer = async function(customerId) {
+      const customer = customers.find(c => c.id === customerId);
+      if (!customer) return;
+      
+      const fullName = `${customer.firstName || ''} ${customer.lastName || ''}`.trim();
+      modalTitle.textContent = fullName || 'Customer Details';
+
+      // Get loans for this customer
+      const loans = customerLoans[customerId] || [];
+      const activeLoans = loans.filter(loan => loan.status === 'active');
+      const totalLoanAmount = loans.reduce((sum, loan) => sum + (parseFloat(loan.totalAmount) || 0), 0);
+      const activeLoanAmount = activeLoans.reduce((sum, loan) => sum + (parseFloat(loan.totalAmount) || 0), 0);
+
+      // Build details grid
+      const infoHtml = `
+        <div class="info-grid">
+          <div class="info-item"><div class="label">Full Name</div><div class="value">${escapeHtml(fullName)}</div></div>
+          <div class="info-item"><div class="label">ID Number</div><div class="value">${escapeHtml(customer.idNumber || 'N/A')}</div></div>
+          <div class="info-item"><div class="label">Phone</div><div class="value">${escapeHtml(customer.phone || 'N/A')}</div></div>
+          <div class="info-item"><div class="label">Email</div><div class="value">${escapeHtml(customer.email || 'N/A')}</div></div>
+          <div class="info-item"><div class="label">Employer</div><div class="value">${escapeHtml(customer.employerName || 'N/A')}</div></div>
+          <div class="info-item"><div class="label">Position</div><div class="value">${escapeHtml(customer.employerPosition || 'N/A')}</div></div>
+          <div class="info-item"><div class="label">Monthly Income</div><div class="value">ZMW ${formatCurrency(customer.monthlyIncome || 0)}</div></div>
+          <div class="info-item"><div class="label">Status</div><div class="value"><span class="status-pill ${customer.status === 'active' ? 'status-active' : 'status-inactive'}">${escapeHtml(customer.status || 'inactive')}</span></div></div>
+        </div>
+
+        <div style="margin-top: 10px;">
+          <div style="font-weight: 700; margin-bottom: 8px;">Address</div>
+          <div style="padding: 12px; background: #f6f9fb; border-radius: 8px;">${escapeHtml(customer.address || 'N/A')}</div>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <div style="font-weight: 700; margin-bottom: 8px;">Loan Summary</div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px;">
+            <div class="info-item"><div class="label">Active Loans</div><div class="value">${activeLoans.length}</div></div>
+            <div class="info-item"><div class="label">Total Loans</div><div class="value">${loans.length}</div></div>
+            <div class="info-item"><div class="label">Active Loan Amount</div><div class="value">ZMW ${formatCurrency(activeLoanAmount)}</div></div>
+            <div class="info-item"><div class="label">Total Loan Amount</div><div class="value">ZMW ${formatCurrency(totalLoanAmount)}</div></div>
+          </div>
+        </div>
+
+        ${customer.notes ? `<div style="margin-top: 12px;">
+          <div style="font-weight: 700; margin-bottom: 8px;">Notes</div>
+          <div style="padding: 12px; background: #f6f9fb; border-radius: 8px;">${escapeHtml(customer.notes)}</div>
+        </div>` : ''}
+        
+        ${loans.length > 0 ? `
+        <div style="margin-top: 20px;">
+          <div style="font-weight: 700; margin-bottom: 8px;">Loan Details</div>
+          <div style="padding: 12px; background: #f6f9fb; border-radius: 8px;">
+            ${loans.map(loan => `
+              <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eef2f7;">
+                <strong>${escapeHtml(loan.loanId || loan.id)}</strong> - 
+                ZMW ${formatCurrency(loan.totalAmount || 0)} - 
+                <span class="status-pill ${loan.status === 'active' ? 'status-active' : 'status-inactive'}" style="font-size: 0.8rem;">
+                  ${escapeHtml(loan.status || 'active')}
+                </span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        ` : ''}
+      `;
+
+      modalBody.innerHTML = infoHtml;
+      viewModal.classList.add('active');
+    };
+
+    // Utility functions
+    function escapeHtml(s) {
+      if (s === undefined || s === null) return '';
+      return String(s)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;');
+    }
+
+    function formatCurrency(amount) {
+      return Number(amount).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    // Make viewCustomer function available globally
+    window.viewCustomer = viewCustomer;
+  </script>
+</body>
+</html>

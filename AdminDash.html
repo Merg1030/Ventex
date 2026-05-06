@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trismart · Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        :root {
+            --bg:        #f4f6fb;
+            --bg2:       #ffffff;
+            --bg3:       #f1f3f5;
+            --border:    #e2e6ef;
+            --border2:   #cdd3e0;
+            --text:      #1a1e2e;
+            --text-fade: #6b7490;
+            --text-dim:  #a0a8c0;
+            --blue:      #4361ee;
+            --cyan:      #00b4d8;
+            --green:     #10b981;
+            --orange:    #f59e0b;
+            --pink:      #f72585;
+            --purple:    #7c3aed;
+            --teal:      #0d9488;
+            --danger:    #ef4444;
+            --shadow:    0 2px 12px rgba(67,97,238,0.08);
+            --shadow-lg: 0 6px 24px rgba(67,97,238,0.13);
+            --radius:    12px;
+            --radius-lg: 16px;
+            --header-h:  54px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg); color: var(--text);
+            background-image:
+                linear-gradient(rgba(67,97,238,0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(67,97,238,0.025) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        body::before {
+            content: ''; position: fixed; top: -100px; right: -80px;
+            width: 350px; height: 350px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(67,97,238,0.08), transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+        body::after {
+            content: ''; position: fixed; bottom: -80px; left: -60px;
+            width: 280px; height: 280px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,180,216,0.06), transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .shell {
+            position: relative; z-index: 1;
+            display: flex; flex-direction: column;
+            height: 100vh; width: 100%;
+        }
+
+        .topbar {
+            height: var(--header-h); flex-shrink: 0;
+            background: rgba(255,255,255,0.96);
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 28px; gap: 12px;
+        }
+        .topbar-left { display: flex; align-items: center; gap: 12px; }
+        .logo-mark {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--blue), var(--cyan));
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 0.88rem;
+            box-shadow: 0 0 14px rgba(67,97,238,0.28); flex-shrink: 0;
+        }
+        .logo-text { font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+        .logo-text span { color: var(--blue); }
+        .admin-badge {
+            background: linear-gradient(135deg, rgba(67,97,238,0.1), rgba(124,58,237,0.08));
+            border: 1px solid rgba(67,97,238,0.2);
+            border-radius: 100px; padding: 3px 11px;
+            font-size: 0.65rem; font-weight: 800; color: var(--blue);
+            text-transform: uppercase; letter-spacing: 0.1em;
+        }
+        .topbar-right { display: flex; align-items: center; gap: 8px; }
+        .live-chip {
+            display: flex; align-items: center; gap: 6px;
+            background: rgba(16,185,129,0.08);
+            border: 1px solid rgba(16,185,129,0.2);
+            border-radius: 100px; padding: 4px 12px;
+            font-size: 0.65rem; font-weight: 700; color: var(--green);
+        }
+        .live-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--green); box-shadow: 0 0 5px var(--green);
+            animation: pulse 2s infinite;
+        }
+        .welcome-badge {
+            background: var(--bg3); border: 1px solid var(--border2);
+            border-radius: 100px; padding: 4px 12px;
+            font-size: 0.68rem; font-weight: 700; color: var(--text-fade);
+            font-family: 'DM Mono', monospace;
+        }
+
+        .content {
+            flex: 1; min-height: 0;
+            display: flex; flex-direction: column;
+            padding: 22px 28px 18px;
+            gap: 14px;
+        }
+
+        .divider {
+            display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+        }
+        .divider span {
+            font-size: 0.58rem; font-weight: 800; color: var(--text-dim);
+            text-transform: uppercase; letter-spacing: 0.14em; white-space: nowrap;
+        }
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            flex: 1; min-height: 0;
+        }
+
+        .nav-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 0 20px;
+            background: var(--bg2); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); cursor: pointer;
+            text-decoration: none; color: var(--text);
+            box-shadow: var(--shadow);
+            transition: all 0.2s; position: relative; overflow: hidden;
+            animation: slideUp 0.45s ease backwards;
+        }
+        .nav-item:nth-child(1) { animation-delay: 0.05s; }
+        .nav-item:nth-child(2) { animation-delay: 0.09s; }
+        .nav-item:nth-child(3) { animation-delay: 0.13s; }
+        .nav-item:nth-child(4) { animation-delay: 0.17s; }
+        .nav-item:nth-child(5) { animation-delay: 0.21s; }
+        .nav-item:nth-child(6) { animation-delay: 0.25s; }
+
+        .nav-item::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+            width: 4px; border-radius: 0 3px 3px 0;
+            transform: scaleY(0); transform-origin: bottom;
+            transition: transform 0.22s ease;
+        }
+        .nav-item:hover { transform: translateY(-2px); border-color: var(--border2); box-shadow: var(--shadow-lg); }
+        .nav-item:hover::before { transform: scaleY(1); }
+
+        .nb   { --c: var(--blue);   } .nb::before   { background: var(--blue); }
+        .np   { --c: var(--purple); } .np::before   { background: var(--purple); }
+        .nt   { --c: var(--teal);   } .nt::before   { background: var(--teal); }
+        .npk  { --c: var(--pink);   } .npk::before  { background: var(--pink); }
+        .no   { --c: var(--orange); } .no::before   { background: var(--orange); }
+        .ng   { --c: var(--green);  } .ng::before   { background: var(--green); }
+
+        .nb:hover  { border-color: rgba(67,97,238,0.25);  box-shadow: 0 6px 24px rgba(67,97,238,0.12); }
+        .np:hover  { border-color: rgba(124,58,237,0.25); box-shadow: 0 6px 24px rgba(124,58,237,0.1); }
+        .nt:hover  { border-color: rgba(13,148,136,0.25); box-shadow: 0 6px 24px rgba(13,148,136,0.1); }
+        .npk:hover { border-color: rgba(247,37,133,0.25); box-shadow: 0 6px 24px rgba(247,37,133,0.1); }
+        .no:hover  { border-color: rgba(245,158,11,0.3);  box-shadow: 0 6px 24px rgba(245,158,11,0.12); }
+        .ng:hover  { border-color: rgba(16,185,129,0.3);  box-shadow: 0 6px 24px rgba(16,185,129,0.12); }
+
+        .nav-item.master {
+            background: linear-gradient(135deg, #fffbeb, #fef3c7 100%);
+            border-color: rgba(245,158,11,0.22);
+        }
+        .nav-item.master:hover { border-color: rgba(245,158,11,0.4); }
+        
+        .nav-item.sales-card {
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5 100%);
+            border-color: rgba(16,185,129,0.25);
+        }
+        .nav-item.sales-card:hover { border-color: rgba(16,185,129,0.45); }
+
+        .nav-item.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .nav-icon {
+            width: 48px; height: 48px; border-radius: 13px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+        }
+        .icon-b  { background: rgba(67,97,238,0.1);  color: var(--blue); }
+        .icon-p  { background: rgba(124,58,237,0.1); color: var(--purple); }
+        .icon-t  { background: rgba(13,148,136,0.1); color: var(--teal); }
+        .icon-pk { background: rgba(247,37,133,0.1); color: var(--pink); }
+        .icon-o  { background: rgba(245,158,11,0.12); color: var(--orange); box-shadow: 0 2px 8px rgba(245,158,11,0.15); }
+        .icon-g  { background: rgba(16,185,129,0.12); color: var(--green); box-shadow: 0 2px 8px rgba(16,185,129,0.12); }
+
+        .nav-text { flex: 1; min-width: 0; }
+        .nav-text strong {
+            display: block; font-size: 0.9rem; font-weight: 800;
+            color: var(--text); margin-bottom: 3px; white-space: nowrap;
+        }
+        .nav-text span { font-size: 0.7rem; color: var(--text-fade); line-height: 1.3; display: block; }
+
+        .master-pill {
+            display: inline-flex; align-items: center; gap: 3px;
+            background: rgba(245,158,11,0.12);
+            border: 1px solid rgba(245,158,11,0.3);
+            border-radius: 100px; padding: 2px 8px;
+            font-size: 0.55rem; font-weight: 800; color: var(--orange);
+            text-transform: uppercase; letter-spacing: 0.1em;
+            margin-left: 6px; vertical-align: middle;
+        }
+        
+        .sales-pill {
+            display: inline-flex; align-items: center; gap: 3px;
+            background: rgba(16,185,129,0.15);
+            border: 1px solid rgba(16,185,129,0.35);
+            border-radius: 100px; padding: 2px 8px;
+            font-size: 0.55rem; font-weight: 800; color: var(--green);
+            text-transform: uppercase; letter-spacing: 0.1em;
+            margin-left: 6px; vertical-align: middle;
+        }
+
+        .nav-arrow {
+            color: var(--text-dim); font-size: 0.72rem; flex-shrink: 0;
+            transition: color 0.2s, transform 0.2s;
+        }
+        .nav-item:hover .nav-arrow { color: var(--c, var(--blue)); transform: translateX(4px); }
+
+        .bottom-row {
+            display: flex; align-items: center; justify-content: space-between;
+            flex-shrink: 0; gap: 12px;
+        }
+        .back-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 22px;
+            background: var(--bg2); border: 1px solid var(--border);
+            color: var(--text-fade); font-family: 'DM Sans', sans-serif;
+            font-size: 0.82rem; font-weight: 700;
+            border-radius: 100px; cursor: pointer; text-decoration: none;
+            box-shadow: var(--shadow); transition: all 0.2s;
+            animation: slideUp 0.45s 0.35s ease backwards;
+        }
+        .back-btn:hover { border-color: var(--blue); color: var(--blue); background: white; }
+        .status-text {
+            font-size: 0.62rem; color: var(--text-dim);
+            font-family: 'DM Mono', monospace; font-weight: 500;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+        
+        @media (max-width: 600px) {
+            .topbar { padding: 0 16px; }
+            .content { padding: 16px; }
+            .nav-item { padding: 0 14px; gap: 10px; }
+            .nav-icon { width: 40px; height: 40px; font-size: 0.9rem; }
+            .nav-text strong { font-size: 0.78rem; white-space: normal; line-height: 1.2; }
+            .nav-text span { font-size: 0.62rem; }
+            .master-pill, .sales-pill { font-size: 0.48rem; padding: 1px 5px; }
+        }
+    </style>
+</head>
+<body>
+<div class="shell">
+
+    <header class="topbar">
+        <div class="topbar-left">
+            <div class="logo-mark"><i class="fas fa-store-alt"></i></div>
+            <div class="logo-text">Tri<span>smart</span></div>
+            <div class="admin-badge"><i class="fas fa-shield-halved" style="margin-right:4px;font-size:0.6rem;"></i>Admin</div>
+        </div>
+        <div class="topbar-right">
+            <div class="welcome-badge" id="welcomeBadge">—</div>
+            <div class="live-chip"><div class="live-dot"></div> Online</div>
+        </div>
+    </header>
+
+    <div class="content">
+
+        <div class="divider"><span>Admin Navigation</span></div>
+
+        <div class="nav-grid">
+
+            <!-- Accounts -->
+            <a class="nav-item nb" onclick="goToAdminCashbook(); return false;" href="#">
+                <div class="nav-icon icon-b"><i class="fas fa-chart-pie"></i></div>
+                <div class="nav-text">
+                    <strong>Accounts</strong>
+                    <span>View and manage admin accounts &amp; financials</span>
+                </div>
+                <i class="fas fa-chevron-right nav-arrow"></i>
+            </a>
+
+            <!-- Daily Income -->
+            <a class="nav-item np" onclick="navigateTo('daily_earnings.html'); return false;" href="#">
+                <div class="nav-icon icon-p"><i class="fas fa-calendar-day"></i></div>
+                <div class="nav-text">
+                    <strong>Daily Income</strong>
+                    <span>View daily earnings and revenue reports</span>
+                </div>
+                <i class="fas fa-chevron-right nav-arrow"></i>
+            </a>
+
+            <!-- Audit Trail -->
+            <a class="nav-item nt" onclick="navigateTo('audit.html'); return false;" href="#">
+                <div class="nav-icon icon-t"><i class="fas fa-file-shield"></i></div>
+                <div class="nav-text">
+                    <strong>Audit Trail</strong>
+                    <span>Review and track all audit logs</span>
+                </div>
+                <i class="fas fa-chevron-right nav-arrow"></i>
+            </a>
+
+            <!-- Loans Management -->
+            <a class="nav-item npk" onclick="navigateTo('loan-dashboard.html'); return false;" href="#">
+                <div class="nav-icon icon-pk"><i class="fas fa-hand-holding-dollar"></i></div>
+                <div class="nav-text">
+                    <strong>Loans Management</strong>
+                    <span>See all outstanding balances and loans</span>
+                </div>
+                <i class="fas fa-chevron-right nav-arrow"></i>
+            </a>
+
+            <!-- Master Sales Terminal - NEW CARD -->
+            <a class="nav-item ng sales-card" onclick="goToMasterSales(); return false;" href="#">
+                <div class="nav-icon icon-g"><i class="fas fa-cash-register"></i></div>
+                <div class="nav-text">
+                    <strong>
+                        Master Sales Terminal
+                        <span class="sales-pill"><i class="fas fa-crown" style="font-size:0.45rem;"></i> Central Sales</span>
+                    </strong>
+                    <span>Record sales from Master stock — choose branch</span>
+                </div>
+                <i class="fas fa-chevron-right nav-arrow"></i>
+            </a>
+
+            <!-- Master Warehouse Inventory -->
+            <a class="nav-item no master full-width" onclick="goToMasterWarehouse(); return false;" href="#">
+                <div class="nav-icon icon-o"><i class="fas fa-warehouse"></i></div>
+                <div class="nav-text">
+                    <strong>
+                        Master Warehouse
+                        <span class="master-pill"><i class="fas fa-lock" style="font-size:0.45rem;"></i> Admin Only</span>
+                    </strong>
+                    <span>Central stock — receive, manage &amp; distribute to branches</span>
+                </div>
+                <i class="fas fa-chevron-right nav-arrow"></i>
+            </a>
+
+        </div>
+
+        <div class="bottom-row">
+            <a href="dashboard.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Back to Main Menu
+            </a>
+            <div class="status-text" id="clockEl">--:--</div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    const userName = localStorage.getItem('userName');
+    if (!userName) { window.location.replace('index.html'); }
+
+    const PERMS = { chris: true, doro: false, fridah: false };
+    if (!PERMS[userName?.toLowerCase()]) {
+        alert('Admin access required!');
+        window.location.replace('dashboard.html');
+    }
+
+    const display = userName.charAt(0).toUpperCase() + userName.slice(1);
+    const h = new Date().getHours();
+    const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('welcomeBadge').textContent = `${greet}, ${display}`;
+
+    function tick() {
+        document.getElementById('clockEl').textContent =
+            new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    }
+    tick(); setInterval(tick, 30000);
+
+    function navigateTo(page) { window.location.href = page; }
+
+    function goToAdminCashbook() {
+        localStorage.setItem('branchId', 'admin');
+        window.location.href = 'cashbook.html';
+    }
+
+    function goToMasterWarehouse() {
+        localStorage.setItem('branchId', 'master');
+        window.location.href = 'Materwarehouse.html';
+    }
+    
+    // NEW: Master Sales Terminal
+    function goToMasterSales() {
+        window.location.href = 'mastersales.html';
+    }
+
+    let timer;
+    function resetTimer() {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            localStorage.removeItem('userName');
+            localStorage.removeItem('branchId');
+            window.location.replace('index.html');
+        }, 600000);
+    }
+    ['mousemove','keypress','touchstart','click'].forEach(ev => {
+        document.addEventListener(ev, resetTimer, { passive: true });
+    });
+    resetTimer();
+</script>
+</body>
+</html>

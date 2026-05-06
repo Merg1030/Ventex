@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Trismart — Cash Ledger</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    :root {
+      --bg:          #f4f6fb;
+      --bg2:         #ffffff;
+      --bg3:         #f1f3f5;
+      --border:      #e2e6ef;
+      --border2:     #cdd3e0;
+      --text:        #1a1e2e;
+      --text-fade:   #6b7490;
+      --text-dim:    #a0a8c0;
+      --blue:        #4361ee;
+      --cyan:        #00b4d8;
+      --green:       #10b981;
+      --orange:      #f59e0b;
+      --danger:      #ef4444;
+      --blue-glow:   rgba(67,97,238,0.15);
+      --radius:      10px;
+      --radius-lg:   16px;
+      --shadow:      0 2px 12px rgba(67,97,238,0.08);
+      --shadow-lg:   0 8px 32px rgba(67,97,238,0.13);
+      --header-h:    56px;
+      --sidebar-w:   230px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ════════════════════════════
+       TOPBAR
+    ════════════════════════════ */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: rgba(255,255,255,0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 14px; z-index: 1100;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+
+    .menu-btn {
+      width: 38px; height: 38px;
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text-fade);
+      font-size: 1rem; transition: all 0.2s; flex-shrink: 0;
+    }
+    .menu-btn:hover { background: var(--blue); color: white; border-color: var(--blue); box-shadow: 0 0 18px var(--blue-glow); }
+
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-mark {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 0.9rem;
+      box-shadow: 0 0 16px rgba(67,97,238,0.3);
+    }
+    .logo-text { font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+    .logo-text span { color: var(--blue); }
+
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    .branch-pill {
+      background: linear-gradient(135deg, rgba(67,97,238,0.1), rgba(0,180,216,0.07));
+      border: 1px solid rgba(67,97,238,0.2);
+      color: var(--blue); font-size: 0.68rem; font-weight: 700;
+      padding: 4px 12px; border-radius: 100px; white-space: nowrap;
+    }
+    .time-badge {
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 100px; padding: 5px 12px;
+      font-size: 0.68rem; font-family: 'DM Mono', monospace;
+      color: var(--text-fade); white-space: nowrap;
+    }
+
+    /* ════════════════════════════
+       SIDEBAR
+    ════════════════════════════ */
+    .sidebar {
+      position: fixed;
+      top: var(--header-h); left: 0;
+      width: var(--sidebar-w);
+      height: calc(100vh - var(--header-h));
+      background: rgba(255,255,255,0.98);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border);
+      z-index: 1000;
+      padding: 14px 10px 16px;
+      transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+      overflow-y: auto;
+      display: flex; flex-direction: column;
+    }
+    .sidebar.hidden { transform: translateX(-100%); }
+
+    .sidebar-label {
+      font-size: 0.58rem; font-weight: 700; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 0.14em;
+      padding: 0 10px; margin: 12px 0 6px;
+    }
+    .sidebar a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; color: var(--text-fade);
+      text-decoration: none; font-size: 0.82rem; font-weight: 500;
+      border-radius: var(--radius); margin-bottom: 2px;
+      transition: all 0.18s;
+    }
+    .sidebar a i { width: 16px; text-align: center; font-size: 0.85rem; }
+    .sidebar a:hover { background: rgba(67,97,238,0.08); color: var(--blue); }
+    .sidebar a.active {
+      background: rgba(67,97,238,0.12); color: var(--blue);
+      font-weight: 700; box-shadow: inset 0 0 0 1px rgba(67,97,238,0.2);
+    }
+
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 999;
+      backdrop-filter: blur(4px);
+    }
+    .sidebar-overlay.show { display: block; }
+
+    /* ════════════════════════════
+       MAIN LAYOUT
+    ════════════════════════════ */
+    .main {
+      margin-top: var(--header-h);
+      margin-left: var(--sidebar-w);
+      display: flex; flex-direction: column;
+      min-height: calc(100vh - var(--header-h));
+      transition: margin-left 0.32s cubic-bezier(0.4,0,0.2,1);
+    }
+    .main.expanded { margin-left: 0; }
+
+    /* ════════════════════════════
+       CONTENT CONTROLS BAR
+    ════════════════════════════ */
+    .controls-bar {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 8px;
+      flex-wrap: nowrap; box-shadow: var(--shadow);
+      flex-shrink: 0; position: sticky;
+      top: var(--header-h); z-index: 50;
+    }
+
+    .ctrl-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      color: white; border: none; border-radius: 100px;
+      font-size: 0.75rem; font-weight: 700;
+      padding: 6px 14px; cursor: pointer; white-space: nowrap;
+      font-family: 'DM Sans', sans-serif;
+      box-shadow: 0 3px 10px rgba(67,97,238,0.2);
+      transition: all 0.18s; flex-shrink: 0;
+    }
+    .ctrl-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(67,97,238,0.3); }
+
+    .search-wrap { position: relative; flex: 1; min-width: 0; }
+    .search-wrap input {
+      width: 100%; padding: 7px 10px 7px 32px;
+      border: 1.5px solid var(--border);
+      border-radius: 100px; font-size: 0.78rem;
+      background: var(--bg3); color: var(--text);
+      font-family: 'DM Sans', sans-serif; outline: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    .search-wrap input:focus {
+      border-color: var(--blue); background: white;
+      box-shadow: 0 0 0 3px rgba(67,97,238,0.1);
+    }
+    .search-icon {
+      position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+      color: var(--text-dim); font-size: 0.75rem; pointer-events: none;
+    }
+
+    /* options dropdown */
+    .dropdown { position: relative; display: inline-block; flex-shrink: 0; }
+    .dropdown-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--bg3); color: var(--text-fade);
+      border: 1.5px solid var(--border2);
+      font-size: 0.75rem; font-weight: 700;
+      padding: 6px 12px; border-radius: 100px;
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      transition: all 0.18s; white-space: nowrap;
+    }
+    .dropdown-btn:hover { border-color: var(--blue); color: var(--blue); background: white; }
+
+    .dropdown-content {
+      display: none; position: absolute;
+      right: 0; top: calc(100% + 6px);
+      background: var(--bg2);
+      width: 220px; max-width: calc(100vw - 12px);
+      box-shadow: var(--shadow-lg);
+      z-index: 300; border-radius: var(--radius-lg); padding: 4px 0;
+      border: 1px solid var(--border);
+    }
+    .dropdown-content.show { display: block; }
+
+    .dropdown-item {
+      display: flex; align-items: center; gap: 8px;
+      color: var(--text); padding: 8px 14px;
+      font-size: 0.78rem; font-weight: 600; cursor: pointer;
+      border: none; background: none; width: 100%; text-align: left;
+      font-family: 'DM Sans', sans-serif; transition: background 0.15s;
+    }
+    .dropdown-item:hover { background: var(--bg3); color: var(--blue); }
+    .dropdown-item i { color: var(--blue); width: 14px; text-align: center; }
+    .dropdown-divider { height: 1px; background: var(--border); margin: 3px 0; }
+
+    .dd-filter-row {
+      display: flex; align-items: center; gap: 6px; padding: 5px 14px;
+    }
+    .dd-filter-row label {
+      font-size: 0.65rem; color: var(--text-fade); font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;
+    }
+    .dd-filter-row select {
+      flex: 1; min-width: 0; padding: 4px 8px;
+      border-radius: 100px; border: 1px solid var(--border2);
+      background: var(--bg3); font-size: 0.75rem;
+      color: var(--text); font-family: 'DM Sans', sans-serif; cursor: pointer; outline: none;
+    }
+    .dd-filter-row select:focus { border-color: var(--blue); }
+
+    .filter-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 14px; font-size: 0.75rem; font-weight: 600; color: var(--text);
+    }
+    .toggle-switch { position: relative; display: inline-block; width: 30px; height: 16px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: var(--border2); transition: .25s; border-radius: 100px;
+    }
+    .toggle-slider:before {
+      position: absolute; content: ""; height: 12px; width: 12px;
+      left: 2px; bottom: 2px; background: white; transition: .25s; border-radius: 50%;
+    }
+    input:checked + .toggle-slider { background: var(--blue); }
+    input:checked + .toggle-slider:before { transform: translateX(14px); }
+
+    .dd-filter-section.collapsed { display: none; }
+    .hide { display: none !important; }
+
+    /* ════════════════════════════
+       ENTRY FORM
+    ════════════════════════════ */
+    .entry-form {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px 10px; margin: 12px 14px;
+      background: var(--bg2); border-radius: var(--radius-lg);
+      padding: 14px 14px 12px; font-size: 0.82rem;
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+      width: calc(100% - 28px);
+      animation: fadeUp 0.3s ease;
+    }
+    .entry-form .full { grid-column: 1 / -1; }
+    .entry-form > div { display: flex; flex-direction: column; gap: 4px; }
+    .entry-form label {
+      font-weight: 800; color: var(--text-fade); font-size: 0.62rem;
+      text-transform: uppercase; letter-spacing: 0.09em;
+    }
+    .entry-form input, .entry-form textarea {
+      padding: 7px 10px; font-size: 0.82rem; border-radius: 8px;
+      border: 1.5px solid var(--border); background: var(--bg3);
+      color: var(--text); font-family: 'DM Sans', sans-serif;
+      outline: none; width: 100%; min-width: 0;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    .entry-form input:focus, .entry-form textarea:focus {
+      border-color: var(--blue); background: white;
+      box-shadow: 0 0 0 3px rgba(67,97,238,0.1);
+    }
+    .entry-form textarea { resize: vertical; min-height: 34px; line-height: 1.4; }
+    .entry-form .btn-row { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; margin-top: 2px; }
+    .submit-btn {
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      color: white; border: none; cursor: pointer; font-weight: 700;
+      padding: 8px 18px; border-radius: 8px; font-size: 0.8rem;
+      font-family: 'DM Sans', sans-serif; transition: all 0.18s;
+      box-shadow: 0 3px 10px rgba(67,97,238,0.2);
+    }
+    .submit-btn:hover { transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .cancel-btn {
+      background: var(--bg3); color: var(--text-fade);
+      border: 1px solid var(--border2); cursor: pointer; font-weight: 700;
+      padding: 8px 14px; border-radius: 8px; font-size: 0.8rem;
+      font-family: 'DM Sans', sans-serif; transition: all 0.18s;
+    }
+    .cancel-btn:hover { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.05); }
+    .form-error { color: var(--danger); grid-column: 1/-1; font-size: 0.72rem; font-weight: 600; }
+
+    /* ════════════════════════════
+       TABLE
+    ════════════════════════════ */
+    .table-area {
+      flex: 1; padding: 12px 14px 24px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .table-card {
+      background: var(--bg2); border-radius: var(--radius-lg);
+      border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden;
+    }
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    table { width: 100%; border-collapse: collapse; min-width: 420px; }
+    thead th {
+      background: #f8f9ff; color: var(--text-fade);
+      font-size: 0.62rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.1em; padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 5; text-align: left; white-space: nowrap;
+    }
+    tbody td { padding: 9px 12px; font-size: 0.8rem; border-bottom: 1px solid #f0f2f8; transition: background 0.12s; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #f8f9ff; }
+
+    tr.week-row { border-top: 2px solid rgba(67,97,238,0.15); }
+    tr.week-row td {
+      background: rgba(67,97,238,0.04) !important;
+      font-size: 0.7rem; font-weight: 700; color: var(--blue);
+      font-style: italic; padding: 6px 12px;
+    }
+
+    .text-right { text-align: right; }
+    .dr { color: var(--danger); font-weight: 700; font-family: 'DM Mono', monospace; font-size: 0.75rem; }
+    .cr { color: var(--green);  font-weight: 700; font-family: 'DM Mono', monospace; font-size: 0.75rem; }
+    .bl { font-weight: 800; color: var(--blue); font-family: 'DM Mono', monospace; font-size: 0.75rem; }
+    .bl.neg { color: var(--danger); }
+
+    .ref-chip {
+      font-family: 'DM Mono', monospace; font-size: 0.65rem;
+      background: rgba(67,97,238,0.07); color: var(--text-fade);
+      border: 1px solid rgba(67,97,238,0.12);
+      border-radius: 4px; padding: 1px 6px;
+    }
+
+    /* row action menu */
+    .action-cell { position: relative; width: 28px; text-align: center; padding: 0 2px; }
+    .action-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 0.85rem; color: var(--text-dim);
+      width: 28px; height: 28px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 2.5px; transition: background 0.15s;
+    }
+    .action-btn:hover { background: var(--bg3); }
+    .action-btn .dot { width: 3px; height: 3px; background: var(--text-dim); border-radius: 50%; }
+
+    .row-dd {
+      display: none; position: absolute; right: 0; top: 100%;
+      background: var(--bg2); min-width: 110px;
+      box-shadow: var(--shadow-lg); border-radius: var(--radius);
+      z-index: 200; border: 1px solid var(--border); overflow: hidden;
+    }
+    .row-dd.show { display: block; }
+    .row-dd-item {
+      display: flex; align-items: center; gap: 7px;
+      color: var(--text); padding: 8px 12px;
+      font-size: 0.75rem; font-weight: 600; cursor: pointer;
+      border: none; background: none; width: 100%; text-align: left;
+      font-family: 'DM Sans', sans-serif; transition: background 0.12s;
+    }
+    .row-dd-item:hover { background: var(--bg3); }
+    .row-dd-item.edit-item { color: var(--blue); }
+    .row-dd-item.edit-item i { color: var(--blue); }
+    .row-dd-item.delete-item { color: var(--danger); }
+    .row-dd-item.delete-item i { color: var(--danger); }
+    .row-dd-item.delete-item:hover { background: rgba(239,68,68,0.06); }
+
+    .empty-cell {
+      text-align: center; padding: 44px 20px;
+      color: var(--text-dim); font-size: 0.8rem;
+    }
+    .empty-cell i { font-size: 1.6rem; display: block; margin-bottom: 10px; color: var(--border2); }
+
+    /* ════════════════════════════
+       ANIMATIONS
+    ════════════════════════════ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+    /* ════════════════════════════
+       RESPONSIVE
+    ════════════════════════════ */
+    @media (max-width: 600px) {
+      :root { --sidebar-w: 240px; --header-h: 50px; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.visible { transform: translateX(0) !important; }
+      .main { margin-left: 0 !important; }
+      .time-badge { display: none; }
+      .branch-pill { font-size: 0.6rem; padding: 3px 9px; }
+
+      /* form goes single column */
+      .entry-form { grid-template-columns: 1fr; margin: 8px 10px; padding: 10px 10px 8px; gap: 6px 0; }
+      .entry-form .full { grid-column: 1; }
+      .entry-form .btn-row { grid-column: 1; }
+      .entry-form input, .entry-form textarea { padding: 6px 8px; font-size: 0.78rem; }
+      .entry-form label { font-size: 0.58rem; }
+      .entry-form textarea { min-height: 28px; }
+
+      /* controls bar tighter */
+      .controls-bar { padding: 7px 10px; gap: 6px; }
+      .ctrl-btn { padding: 5px 11px; font-size: 0.7rem; }
+      .dropdown-btn { padding: 5px 10px; font-size: 0.7rem; }
+      .search-wrap input { font-size: 0.72rem; padding: 5px 8px 5px 28px; }
+
+      /* table very compact */
+      .table-area { padding: 8px 10px 20px; }
+      thead th { padding: 7px 8px; font-size: 0.55rem; letter-spacing: 0.06em; }
+      tbody td { padding: 7px 8px; font-size: 0.72rem; }
+      .ref-chip { font-size: 0.6rem; padding: 1px 5px; }
+      .dr, .cr, .bl { font-size: 0.68rem; }
+      table { min-width: 300px; }
+
+      /* topbar */
+      .logo-text { font-size: 0.88rem; }
+      .logo-mark { width: 28px; height: 28px; font-size: 0.78rem; }
+      .menu-btn { width: 32px; height: 32px; font-size: 0.88rem; }
+    }
+    @media (max-width: 380px) {
+      /* very small phones — hide ref column text, shrink further */
+      thead th:nth-child(3), tbody td:nth-child(3) { display: none; }
+      table { min-width: 260px; }
+    }
+    @media (min-width: 601px) {
+      .sidebar { transform: translateX(0); }
+      .sidebar.hidden { transform: translateX(-100%); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ TOPBAR ═══════════ -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="menu-btn" id="menuBtn"><i class="fas fa-bars"></i></div>
+    <div class="logo">
+      <div class="logo-mark"><i class="fas fa-store-alt"></i></div>
+      <div class="logo-text">Tri<span>smart</span></div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="branch-pill" id="branchPill">—</div>
+    <div class="time-badge" id="timeBadge">--:--</div>
+  </div>
+</header>
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-label">Main</div>
+ 
+  <a href="Airtel.html"><i class="fas fa-mobile-alt"></i> Airtel Money</a>
+  <a href="warehouse.html"><i class="fas fa-warehouse"></i> Warehouse</a>
+  <a href="sale.html"><i class="fas fa-chart-line"></i> Sales</a>
+  <div class="sidebar-label" style="margin-top:14px;">Tools</div>
+  <a href="Todo.html"><i class="fas fa-tasks"></i> To-Do</a>
+  <a href="lowstock.html"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
+  <a href="Report.html"><i class="fas fa-file-alt"></i> Daily Report</a>
+  <a href="index.html" id="logoutLink" style="color:var(--danger);border:1px solid rgba(239,68,68,0.15);background:rgba(239,68,68,0.04);"><i class="fas fa-sign-out-alt" style="color:var(--danger);"></i> Logout</a>
+</nav>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<div class="main expanded" id="mainContent">
+
+  <!-- Controls bar -->
+  <div class="controls-bar">
+    <button id="toggleFormBtn" class="ctrl-btn">
+      <i class="fas fa-plus"></i> Transaction
+    </button>
+
+    <div class="search-wrap">
+      <i class="fas fa-search search-icon"></i>
+      <input type="text" id="searchInput" placeholder="Search description, ref…">
+    </div>
+
+    <div class="dropdown">
+      <button class="dropdown-btn" id="optBtn"><i class="fas fa-sliders-h"></i> Filters</button>
+      <div class="dropdown-content" id="optMenu">
+
+        <button class="dropdown-item" id="pdfBtn"><i class="fas fa-download"></i> Download PDF</button>
+        <button class="dropdown-item" id="weekBfBtn"><i class="fas fa-calendar"></i> Hide week b/f</button>
+
+        <div class="dropdown-divider"></div>
+
+        <div class="filter-toggle">
+          <span>By week</span>
+          <label class="toggle-switch"><input type="checkbox" id="weekToggle"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="dd-filter-section collapsed" id="weekSection">
+          <div class="dd-filter-row">
+            <label>Week</label>
+            <select id="weekSel"><option value="ALL">All weeks</option></select>
+          </div>
+        </div>
+
+        <div class="dropdown-divider"></div>
+
+        <div class="filter-toggle">
+          <span>By month</span>
+          <label class="toggle-switch"><input type="checkbox" id="monthToggle"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="dd-filter-section collapsed" id="monthSection">
+          <div class="dd-filter-row">
+            <label>Month</label>
+            <select id="monthSel"></select>
+            <select id="yearSel" style="max-width:80px;"></select>
+          </div>
+        </div>
+
+        <div class="dropdown-divider"></div>
+
+        <div class="filter-toggle">
+          <span>By type</span>
+          <label class="toggle-switch"><input type="checkbox" id="typeToggle"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="dd-filter-section collapsed" id="typeSection">
+          <div class="dd-filter-row">
+            <label>Type</label>
+            <select id="typeSel">
+              <option value="all">All types</option>
+              <option value="debit">Debits</option>
+              <option value="credit">Credits</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Entry form -->
+  <form id="entryForm" class="entry-form hide" autocomplete="off">
+    <div>
+      <label>Date</label>
+      <input type="date" id="fDate" required>
+    </div>
+    <div>
+      <label>Ref</label>
+      <input type="text" id="fRef" placeholder="Invoice / ref">
+    </div>
+    <div class="full">
+      <label>Description</label>
+      <textarea id="fDesc" placeholder="Description…"></textarea>
+    </div>
+    <div>
+      <label>Debit (Out)</label>
+      <input type="number" min="0" id="fDebit" value="0" step="0.01">
+    </div>
+    <div>
+      <label>Credit (In)</label>
+      <input type="number" min="0" id="fCredit" value="0" step="0.01">
+    </div>
+    <div class="btn-row">
+      <button type="submit" id="saveBtn" class="submit-btn"><i class="fas fa-save"></i> Add</button>
+      <button type="button" id="cancelBtn" class="cancel-btn hide"><i class="fas fa-times"></i> Cancel</button>
+    </div>
+    <div id="formError" class="form-error"></div>
+  </form>
+
+  <!-- Table -->
+  <div class="table-area">
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Ref</th>
+              <th class="text-right">Debit</th>
+              <th class="text-right">Credit</th>
+              <th class="text-right">Balance</th>
+              <th class="action-cell"></th>
+            </tr>
+          </thead>
+          <tbody id="tBody">
+            <tr><td colspan="7" class="empty-cell"><i class="fas fa-spinner fa-spin"></i>Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end .main -->
+
+<script type="module">
+  import { initializeApp }  from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, updateDoc, deleteDoc,
+    doc, onSnapshot, Timestamp, query, orderBy, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+    authDomain: "trismartstores.firebaseapp.com",
+    projectId: "trismartstores",
+    storageBucket: "trismartstores.appspot.com",
+    messagingSenderId: "416692703333",
+    appId: "1:416692703333:web:d4b60292621435c748f68c"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+  const COL = "cash_ledger";
+
+  /* ── Branch ── */
+  const branchId = localStorage.getItem('branchId');
+  if (!branchId) { alert('Branch not set. Please log in again.'); window.location.href = 'dashboard.html'; }
+  const NAMES = { makeni: "Kabanana Branch", kabana: "Makeni Branch", master: "Master" };
+  const branchName = NAMES[branchId] || branchId;
+  document.getElementById('branchPill').textContent = branchName;
+
+  /* ── Sidebar toggle ── */
+  const sidebar  = document.getElementById('sidebar');
+  const overlay  = document.getElementById('sidebarOverlay');
+  const menuBtn  = document.getElementById('menuBtn');
+  const mainEl   = document.getElementById('mainContent');
+  const isMobile = () => window.innerWidth <= 600;
+
+  function initSidebar() {
+    if (isMobile()) {
+      sidebar.classList.remove('visible');
+      mainEl.classList.add('expanded');
+      mainEl.style.marginLeft = '0';
+    } else {
+      sidebar.classList.remove('hidden');
+      mainEl.classList.remove('expanded');
+      mainEl.style.marginLeft = '230px';
+    }
+  }
+  initSidebar();
+  window.addEventListener('resize', initSidebar);
+
+  menuBtn.addEventListener('click', () => {
+    if (isMobile()) {
+      const open = sidebar.classList.contains('visible');
+      open ? (sidebar.classList.remove('visible'), overlay.classList.remove('show'))
+           : (sidebar.classList.add('visible'),   overlay.classList.add('show'));
+    } else {
+      const hidden = sidebar.classList.contains('hidden');
+      if (hidden) { sidebar.classList.remove('hidden'); mainEl.style.marginLeft = '230px'; }
+      else        { sidebar.classList.add('hidden');    mainEl.style.marginLeft = '0'; }
+    }
+  });
+  overlay.addEventListener('click', () => { sidebar.classList.remove('visible'); overlay.classList.remove('show'); });
+
+  /* ── Clock ── */
+  function tick() {
+    document.getElementById('timeBadge').textContent =
+      new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  }
+  tick(); setInterval(tick, 30000);
+
+  /* ── Auth ── */
+  const ADMIN = 'chris';
+  function checkUser() {
+    const name = prompt('Enter your username to edit:');
+    if (!name) return false;
+    if (name.trim().toLowerCase() !== ADMIN) { alert('Access denied.'); return false; }
+    return true;
+  }
+
+  /* ── DOM refs ── */
+  const tBody        = document.getElementById('tBody');
+  const entryForm    = document.getElementById('entryForm');
+  const toggleFormBtn= document.getElementById('toggleFormBtn');
+  const fDate        = document.getElementById('fDate');
+  const fDesc        = document.getElementById('fDesc');
+  const fRef         = document.getElementById('fRef');
+  const fDebit       = document.getElementById('fDebit');
+  const fCredit      = document.getElementById('fCredit');
+  const saveBtn      = document.getElementById('saveBtn');
+  const cancelBtn    = document.getElementById('cancelBtn');
+  const formError    = document.getElementById('formError');
+  const searchInput  = document.getElementById('searchInput');
+  const weekSel      = document.getElementById('weekSel');
+  const monthSel     = document.getElementById('monthSel');
+  const yearSel      = document.getElementById('yearSel');
+  const typeSel      = document.getElementById('typeSel');
+  const optBtn       = document.getElementById('optBtn');
+  const optMenu      = document.getElementById('optMenu');
+  const pdfBtn       = document.getElementById('pdfBtn');
+  const weekBfBtn    = document.getElementById('weekBfBtn');
+  const weekToggle   = document.getElementById('weekToggle');
+  const monthToggle  = document.getElementById('monthToggle');
+  const typeToggle   = document.getElementById('typeToggle');
+  const weekSection  = document.getElementById('weekSection');
+  const monthSection = document.getElementById('monthSection');
+  const typeSection  = document.getElementById('typeSection');
+
+  let all = [], filtered = [];
+  let editId = null, formOpen = false, activeMenu = null, showWkBf = true;
+
+  /* ── Helpers ── */
+  function getWN(d) {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const y = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - y) / 86400000) + 1) / 7);
+  }
+  function getWY(date) {
+    let d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    return { week: getWN(date), year: d.getUTCFullYear() };
+  }
+  function monOfWeek(year, week) {
+    const j4 = new Date(year, 0, 4);
+    const dow = j4.getDay() || 7;
+    const w1 = new Date(j4); w1.setDate(j4.getDate() - (dow - 1));
+    const m = new Date(w1); m.setDate(w1.getDate() + (week - 1) * 7);
+    m.setHours(0,0,0,0); return m;
+  }
+  function esc(s) { return s?.replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[m]) ?? ''; }
+  function fmtDate(d) { return d.toISOString().split('T')[0].split('-').reverse().join('/'); }
+  function fmt(n) { return Number(n).toFixed(2); }
+
+  /* ── Build selects ── */
+  function buildWeekSel() {
+    const s = new Set();
+    all.forEach(tx => { const wy = getWY(tx.date); s.add(`${wy.year}-${wy.week}`); });
+    const arr = [...s].map(x => ({ y:+x.split('-')[0], w:+x.split('-')[1] })).sort((a,b) => b.y-a.y||b.w-a.w);
+    weekSel.innerHTML = '<option value="ALL">All weeks</option>' +
+      arr.map(x => `<option value="${x.y}-${x.w}">Week ${x.w}, ${x.y}</option>`).join('');
+  }
+  function buildMonthSel() {
+    const years = [...new Set(all.map(tx => tx.date.getFullYear()))].sort((a,b) => b-a);
+    const mn = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    monthSel.innerHTML = '<option value="all">All months</option>' +
+      mn.map((m,i) => `<option value="${i+1}">${m}</option>`).join('');
+    yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+  }
+
+  /* ── Filter ── */
+  function doFilter() {
+    let f = [...all];
+    const q = searchInput.value.trim().toLowerCase();
+    if (q) f = f.filter(tx => (tx.description + ' ' + (tx.ref||'')).toLowerCase().includes(q));
+
+    if (weekToggle.checked && weekSel.value !== 'ALL') {
+      const [y,w] = weekSel.value.split('-').map(Number);
+      const s = monOfWeek(y,w), e = new Date(s);
+      e.setDate(s.getDate()+6); e.setHours(23,59,59,999);
+      f = f.filter(tx => tx.date >= s && tx.date <= e);
+    }
+    if (monthToggle.checked && monthSel.value !== 'all' && yearSel.value) {
+      const y=+yearSel.value, m=+monthSel.value-1;
+      const s=new Date(y,m,1); s.setHours(0,0,0,0);
+      const e=new Date(y,m+1,0); e.setHours(23,59,59,999);
+      f = f.filter(tx => tx.date >= s && tx.date <= e);
+    }
+    if (typeToggle.checked) {
+      if (typeSel.value==='debit')  f = f.filter(tx => tx.debit>0);
+      if (typeSel.value==='credit') f = f.filter(tx => tx.credit>0);
+    }
+    f.sort((a,b) => a.date-b.date);
+    filtered = f;
+    render();
+  }
+
+  /* ── Render ── */
+  function render() {
+    if (!filtered.length) {
+      tBody.innerHTML = `<tr><td colspan="7" class="empty-cell"><i class="fas fa-inbox"></i>No transactions found.</td></tr>`;
+      return;
+    }
+    let rows = '', rb = 0;
+
+    if (!showWkBf) {
+      filtered.forEach(tx => { rb += (tx.credit - tx.debit); rows += buildRow(tx, rb); });
+      tBody.innerHTML = rows; attachMenus(); return;
+    }
+
+    const wm = new Map();
+    filtered.forEach(tx => {
+      const wy = getWY(tx.date);
+      const k = `${wy.year}-${String(wy.week).padStart(2,'0')}`;
+      if (!wm.has(k)) wm.set(k, { y:wy.year, w:wy.week, txns:[] });
+      wm.get(k).txns.push(tx);
+    });
+
+    [...wm.keys()].sort().forEach(k => {
+      const { y, w, txns } = wm.get(k);
+      rows += `<tr class="week-row">
+        <td colspan="3"><i class="fas fa-layer-group" style="margin-right:6px;opacity:0.6;"></i>Week ${w}, ${y} — opening balance</td>
+        <td class="text-right">—</td><td class="text-right">—</td>
+        <td class="text-right"><strong>${fmt(rb)}</strong></td><td></td>
+      </tr>`;
+      txns.sort((a,b) => a.date-b.date).forEach(tx => { rb += (tx.credit - tx.debit); rows += buildRow(tx, rb); });
+    });
+    tBody.innerHTML = rows;
+    attachMenus();
+  }
+
+  function buildRow(tx, bal) {
+    return `<tr>
+      <td style="white-space:nowrap;font-family:'DM Mono',monospace;font-size:0.72rem;">${fmtDate(tx.date)}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(tx.description)}</td>
+      <td>${tx.ref ? `<span class="ref-chip">${esc(tx.ref)}</span>` : '<span style="color:var(--text-dim);">—</span>'}</td>
+      <td class="text-right">${tx.debit  ? `<span class="dr">${fmt(tx.debit)}</span>`  : ''}</td>
+      <td class="text-right">${tx.credit ? `<span class="cr">${fmt(tx.credit)}</span>` : ''}</td>
+      <td class="text-right"><span class="bl${bal<0?' neg':''}">${fmt(bal)}</span></td>
+      <td class="action-cell">
+        <button class="action-btn" data-id="${tx.id}">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </button>
+        <div class="row-dd" id="rdd-${tx.id}">
+          <button class="row-dd-item edit-item editItem" data-id="${tx.id}"><i class="fas fa-pen"></i> Edit</button>
+          <button class="row-dd-item delete-item deleteItem" data-id="${tx.id}"><i class="fas fa-trash"></i> Delete</button>
+        </div>
+      </td>
+    </tr>`;
+  }
+
+  function attachMenus() {
+    document.querySelectorAll('#tBody .action-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const m = document.getElementById(`rdd-${btn.dataset.id}`);
+        if (activeMenu===m) { m.classList.remove('show'); activeMenu=null; }
+        else { if (activeMenu) activeMenu.classList.remove('show'); m.classList.add('show'); activeMenu=m; }
+      });
+    });
+    document.querySelectorAll('#tBody .editItem').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation(); closeMenu();
+        if (!checkUser()) return;
+        const tx = all.find(t=>t.id===btn.dataset.id);
+        if (tx) openEdit(tx);
+      });
+    });
+    document.querySelectorAll('#tBody .deleteItem').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        e.stopPropagation(); closeMenu();
+        if (!checkUser()) return;
+        if (confirm('Delete this transaction?'))
+          await deleteDoc(doc(db, COL, btn.dataset.id));
+      });
+    });
+  }
+
+  function closeMenu() {
+    if (activeMenu) { activeMenu.classList.remove('show'); activeMenu=null; }
+  }
+
+  /* ── Form ── */
+  toggleFormBtn.addEventListener('click', () => {
+    formOpen = !formOpen;
+    entryForm.classList.toggle('hide', !formOpen);
+    toggleFormBtn.innerHTML = formOpen
+      ? '<i class="fas fa-minus"></i> Hide'
+      : '<i class="fas fa-plus"></i> Transaction';
+    if (!formOpen) resetForm();
+  });
+  cancelBtn.addEventListener('click', () => {
+    resetForm(); formOpen=false;
+    entryForm.classList.add('hide');
+    toggleFormBtn.innerHTML = '<i class="fas fa-plus"></i> Transaction';
+  });
+
+  function resetForm() {
+    editId=null; entryForm.reset();
+    fDebit.value=0; fCredit.value=0;
+    fDate.value = new Date().toISOString().split('T')[0];
+    saveBtn.innerHTML='<i class="fas fa-save"></i> Add';
+    cancelBtn.classList.add('hide');
+    formError.textContent='';
+  }
+
+  function openEdit(tx) {
+    editId=tx.id;
+    fDate.value  =tx.date.toISOString().split('T')[0];
+    fDesc.value  =tx.description||'';
+    fRef.value   =tx.ref||'';
+    fDebit.value =tx.debit;
+    fCredit.value=tx.credit;
+    saveBtn.innerHTML='<i class="fas fa-save"></i> Update';
+    cancelBtn.classList.remove('hide');
+    if (!formOpen) {
+      formOpen=true;
+      entryForm.classList.remove('hide');
+      toggleFormBtn.innerHTML='<i class="fas fa-minus"></i> Hide';
+    }
+    entryForm.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  entryForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const debit=parseFloat(fDebit.value)||0, credit=parseFloat(fCredit.value)||0;
+    if (!fDate.value || !fDesc.value.trim() || (debit===0 && credit===0)) {
+      formError.textContent='Fill in Date, Description, and at least Debit or Credit.'; return;
+    }
+    saveBtn.disabled=true;
+    saveBtn.innerHTML=editId ? 'Saving…' : 'Adding…';
+    const data = {
+      date: Timestamp.fromDate(new Date(fDate.value)),
+      description: fDesc.value.trim(),
+      ref: fRef.value.trim()||'',
+      debit, credit, branchId,
+      updatedAt: serverTimestamp()
+    };
+    try {
+      if (editId) await updateDoc(doc(db,COL,editId), data);
+      else await addDoc(collection(db,COL), { ...data, createdAt:serverTimestamp() });
+      cancelBtn.click();
+    } catch (err) {
+      formError.textContent=err.message;
+      saveBtn.disabled=false;
+      saveBtn.innerHTML=editId ? '<i class="fas fa-save"></i> Update' : '<i class="fas fa-save"></i> Add';
+    }
+  });
+
+  /* ── Firestore listener ── */
+  onSnapshot(
+    query(collection(db,COL), orderBy('date','asc')),
+    snap => {
+      all = snap.docs
+        .map(d => {
+          const x=d.data();
+          return { id:d.id, date:x.date?.toDate()||new Date(), description:x.description||'', ref:x.ref||'', debit:x.debit||0, credit:x.credit||0, branchId:x.branchId||'' };
+        })
+        .filter(tx => tx.branchId===branchId);
+      buildWeekSel(); buildMonthSel(); doFilter();
+    },
+    err => {
+      console.error(err);
+      tBody.innerHTML=`<tr><td colspan="7" class="empty-cell" style="color:var(--danger);">Error loading. Please refresh.</td></tr>`;
+    }
+  );
+
+  /* ── Options dropdown ── */
+  optBtn.addEventListener('click', e => { e.stopPropagation(); optMenu.classList.toggle('show'); });
+  optMenu.addEventListener('click', e => e.stopPropagation());
+
+  /* ── Filter toggles ── */
+  weekToggle.addEventListener('change',  () => { weekSection.classList.toggle('collapsed',!weekToggle.checked);   doFilter(); });
+  monthToggle.addEventListener('change', () => { monthSection.classList.toggle('collapsed',!monthToggle.checked); doFilter(); });
+  typeToggle.addEventListener('change',  () => { typeSection.classList.toggle('collapsed',!typeToggle.checked);   doFilter(); });
+
+  searchInput.addEventListener('input', doFilter);
+  weekSel.addEventListener('change',  doFilter);
+  monthSel.addEventListener('change', doFilter);
+  yearSel.addEventListener('change',  doFilter);
+  typeSel.addEventListener('change',  doFilter);
+
+  /* ── Week b/f toggle ── */
+  weekBfBtn.addEventListener('click', () => {
+    showWkBf=!showWkBf;
+    weekBfBtn.innerHTML = showWkBf
+      ? '<i class="fas fa-calendar"></i> Hide week b/f'
+      : '<i class="fas fa-calendar"></i> Show week b/f';
+    render();
+  });
+
+  /* ── PDF ── */
+  pdfBtn.addEventListener('click', () => {
+    if (!filtered.length) { alert('No data to export.'); return; }
+    const { jsPDF } = window.jspdf;
+    const p = new jsPDF('landscape');
+    p.setFontSize(16); p.text(`Cash Ledger — ${branchName}`, 20, 20);
+    let b=0;
+    const body = filtered.map(t => {
+      b += (t.credit-t.debit);
+      return [fmtDate(t.date), t.description, t.ref||'—', t.debit?fmt(t.debit):'', t.credit?fmt(t.credit):'', fmt(b)];
+    });
+    p.autoTable({
+      head: [['Date','Description','Ref','Debit','Credit','Balance']],
+      body, startY:30, styles:{ fontSize:9 },
+      headStyles:{ fillColor:[67,97,238] }
+    });
+    p.save(`cash-ledger-${branchId}.pdf`);
+  });
+
+  /* ── Close all on outside click ── */
+  document.addEventListener('click', () => { closeMenu(); optMenu.classList.remove('show'); });
+
+  /* ── Logout ── */
+  document.getElementById('logoutLink').addEventListener('click', e => {
+    e.preventDefault();
+    localStorage.removeItem('userName');
+    localStorage.removeItem('branchId');
+    window.location.href = 'index.html';
+  });
+
+  /* ── Init ── */
+  fDate.value = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>

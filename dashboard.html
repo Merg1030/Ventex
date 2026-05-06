@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Trismart — Select Branch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    :root {
+      --blue:   #4361ee;
+      --cyan:   #00b4d8;
+      --green:  #10b981;
+      --orange: #f59e0b;
+      --danger: #ef4444;
+      --purple: #7c3aed;
+      --bg:     #f4f6fb;
+      --bg2:    #ffffff;
+      --bg3:    #f1f3f5;
+      --border: #e2e6ef;
+      --border2:#cdd3e0;
+      --text:   #1a1e2e;
+      --fade:   #6b7490;
+      --dim:    #a0a8c0;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      min-height: 100vh; width: 100%;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text); overflow-x: hidden;
+    }
+
+    body {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 20px;
+      background: var(--bg);
+      background-image:
+        linear-gradient(rgba(67,97,238,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(67,97,238,0.04) 1px, transparent 1px);
+      background-size: 36px 36px;
+    }
+
+    body::before {
+      content: ''; position: fixed; top: -120px; right: -120px;
+      width: 420px; height: 420px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(67,97,238,0.1), transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: ''; position: fixed; bottom: -80px; left: -80px;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,180,216,0.08), transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── CARD ── */
+    .card {
+      position: relative; z-index: 1;
+      background: var(--bg2);
+      border-radius: 24px;
+      box-shadow: 0 8px 40px rgba(67,97,238,0.12), 0 2px 8px rgba(0,0,0,0.05);
+      border: 1px solid var(--border);
+      width: 100%; max-width: 400px;
+      padding: 32px 28px 26px;
+      animation: popUp 0.5s cubic-bezier(0.22,1,0.36,1) backwards;
+    }
+
+    /* ── BRAND ── */
+    .brand {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 6px;
+    }
+    .logo-mark {
+      width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 1.1rem;
+      box-shadow: 0 4px 14px rgba(67,97,238,0.28);
+    }
+    .brand-text .name { font-size: 1.15rem; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+    .brand-text .name span { color: var(--blue); }
+    .brand-text .sub  { font-size: 0.65rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; }
+
+    /* ── GREETING ── */
+    .greeting {
+      margin: 18px 0 6px;
+      padding: 14px 16px;
+      background: linear-gradient(90deg, rgba(67,97,238,0.07), rgba(0,180,216,0.04));
+      border: 1px solid rgba(67,97,238,0.12);
+      border-radius: 14px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .greeting-icon {
+      width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 1rem;
+    }
+    .greeting-text .hey { font-size: 0.75rem; color: var(--fade); font-weight: 600; }
+    .greeting-text .uname {
+      font-size: 1rem; font-weight: 800; color: var(--text);
+      letter-spacing: -0.2px;
+    }
+
+    /* ── DIVIDER ── */
+    .section-divider {
+      display: flex; align-items: center; gap: 10px; margin: 20px 0 14px;
+    }
+    .section-divider span {
+      font-size: 0.6rem; font-weight: 800; color: var(--dim);
+      text-transform: uppercase; letter-spacing: 0.14em; white-space: nowrap;
+    }
+    .section-divider::before, .section-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* ── BRANCH BUTTONS ── */
+    .branch-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .branch-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 18px 12px;
+      background: var(--bg3); border: 1.5px solid var(--border);
+      border-radius: 16px; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; text-align: center;
+      transition: all 0.2s; position: relative; overflow: hidden;
+    }
+    .branch-btn::before {
+      content: ''; position: absolute; right: -16px; top: -16px;
+      width: 60px; height: 60px; border-radius: 50%;
+      filter: blur(16px); opacity: 0; transition: opacity 0.2s;
+    }
+    .branch-btn:hover { transform: translateY(-3px); border-color: var(--blue); background: white; box-shadow: 0 6px 20px rgba(67,97,238,0.14); }
+    .branch-btn:hover::before { opacity: 0.4; }
+
+    .branch-btn .bicon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; color: white; flex-shrink: 0;
+    }
+    .branch-btn .blabel {
+      font-size: 0.78rem; font-weight: 800; color: var(--text); line-height: 1.2;
+    }
+    .branch-btn .bsub {
+      font-size: 0.6rem; font-weight: 600; color: var(--dim);
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+
+    /* kabanana = blue, makeni = green */
+    .btn-kabanana .bicon { background: linear-gradient(135deg, var(--blue), var(--cyan)); box-shadow: 0 4px 12px rgba(67,97,238,0.25); }
+    .btn-kabanana::before { background: var(--blue); }
+    .btn-kabanana:hover { border-color: var(--blue); }
+
+    .btn-makeni .bicon { background: linear-gradient(135deg, var(--green), #059669); box-shadow: 0 4px 12px rgba(16,185,129,0.25); }
+    .btn-makeni::before { background: var(--green); }
+    .btn-makeni:hover { border-color: var(--green); box-shadow: 0 6px 20px rgba(16,185,129,0.14); }
+
+    /* ── ADMIN BTN ── */
+    .admin-btn {
+      width: 100%; padding: 13px;
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      background: linear-gradient(135deg, var(--purple), #6d28d9);
+      color: white; border: none; border-radius: 14px;
+      font-size: 0.88rem; font-weight: 800;
+      font-family: 'DM Sans', sans-serif; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(124,58,237,0.25);
+      transition: all 0.2s; margin-bottom: 10px;
+    }
+    .admin-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(124,58,237,0.35); }
+
+    /* ── LOGOUT ── */
+    .logout-btn {
+      width: 100%; padding: 10px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: none; border: 1.5px solid rgba(239,68,68,0.2);
+      color: var(--danger); border-radius: 12px;
+      font-size: 0.82rem; font-weight: 700;
+      font-family: 'DM Sans', sans-serif; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .logout-btn:hover { background: rgba(239,68,68,0.06); border-color: var(--danger); }
+
+    /* ── HIDDEN ── */
+    .hidden { display: none !important; }
+
+    /* ── INACTIVITY TOAST ── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--text); color: white;
+      padding: 10px 18px; border-radius: 100px;
+      font-size: 0.78rem; font-weight: 700;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      display: flex; align-items: center; gap: 8px;
+      z-index: 9999; white-space: nowrap;
+      animation: toastIn 0.3s ease;
+    }
+    .toast i { color: var(--orange); }
+
+    @keyframes popUp {
+      from { opacity: 0; transform: translateY(22px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    @media (max-width: 420px) {
+      .card { padding: 24px 16px 20px; border-radius: 20px; }
+      .branch-grid { gap: 8px; }
+      .branch-btn { padding: 14px 8px; }
+      .branch-btn .bicon { width: 38px; height: 38px; font-size: 0.95rem; }
+      .branch-btn .blabel { font-size: 0.72rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <!-- Brand -->
+  <div class="brand">
+    <div class="logo-mark"><i class="fas fa-store-alt"></i></div>
+    <div class="brand-text">
+      <div class="name">Tri<span>smart</span></div>
+      <div class="sub">Store Management</div>
+    </div>
+  </div>
+
+  <!-- Greeting -->
+  <div class="greeting">
+    <div class="greeting-icon"><i class="fas fa-user"></i></div>
+    <div class="greeting-text">
+      <div class="hey">Logged in as</div>
+      <div class="uname" id="uname">—</div>
+    </div>
+  </div>
+
+  <!-- Branch select -->
+  <div class="section-divider"><span>Select Branch</span></div>
+
+  <div class="branch-grid">
+    <button class="branch-btn btn-kabanana" id="kabananaBtn" onclick="selectBranch('kabanana')">
+      <div class="bicon"><i class="fas fa-store"></i></div>
+      <div class="blabel">Kabanana Branch</div>
+      <div class="bsub">Branch</div>
+    </button>
+    <button class="branch-btn btn-makeni" id="makeniBtn" onclick="selectBranch('makeni')">
+      <div class="bicon"><i class="fas fa-shop"></i></div>
+      <div class="blabel">Makeni Branch</div>
+      <div class="bsub">Branch</div>
+    </button>
+  </div>
+
+  <!-- Admin -->
+  <button class="admin-btn hidden" id="adminBtn" onclick="goToAdmin()">
+    <i class="fas fa-shield-halved"></i> Admin Panel
+  </button>
+
+  <!-- Logout -->
+  <button class="logout-btn" onclick="doLogout()">
+    <i class="fas fa-sign-out-alt"></i> Logout
+  </button>
+
+</div>
+
+<script>
+  /* ── Permissions ── */
+  const PERMS = {
+    chris:   { branches: ['kabanana', 'makeni'], admin: true  },
+    magret:  { branches: ['makeni'],             admin: false },
+    mirriam: { branches: ['kabanana'],           admin: false }
+  };
+
+  /* ── Auth check ── */
+  function checkAuth() {
+    const userName = localStorage.getItem('userName');
+    if (!userName) { window.location.replace('index.html'); return; }
+
+    // Block back to login
+    history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', () => {
+      history.pushState(null, '', window.location.href);
+    });
+
+    // Capitalise for display
+    const display = userName.charAt(0).toUpperCase() + userName.slice(1);
+    document.getElementById('uname').textContent = display;
+
+    const user = PERMS[userName.toLowerCase()];
+    if (!user) {
+      document.getElementById('kabananaBtn').classList.add('hidden');
+      document.getElementById('makeniBtn').classList.add('hidden');
+      return;
+    }
+
+    if (!user.branches.includes('kabanana')) document.getElementById('kabananaBtn').classList.add('hidden');
+    if (!user.branches.includes('makeni'))   document.getElementById('makeniBtn').classList.add('hidden');
+    if (user.admin) document.getElementById('adminBtn').classList.remove('hidden');
+  }
+
+  /* ── Select branch & go to main dashboard ── */
+  function selectBranch(branchId) {
+    // Original code swapped kabanana↔makeni — keeping that logic
+    const swapped = branchId === 'kabanana' ? 'makeni' : 'kabanana';
+    localStorage.setItem('branchId', swapped);
+    window.location.replace('maindash.html');
+  }
+
+  /* ── Admin ── */
+  function goToAdmin() {
+    const userName = localStorage.getItem('userName');
+    const user = PERMS[userName?.toLowerCase()];
+    if (user?.admin) window.location.replace('AdminDash.html');
+    else alert('You do not have admin privileges.');
+  }
+
+  /* ── Logout ── */
+  function doLogout() {
+    localStorage.removeItem('userName');
+    localStorage.removeItem('branchId');
+    window.location.replace('index.html');
+  }
+
+  /* ── Inactivity logout (10 min) ── */
+  let inactiveTimer;
+  let warnTimer;
+
+  function resetTimers() {
+    clearTimeout(inactiveTimer);
+    clearTimeout(warnTimer);
+
+    // Warn at 9 min
+    warnTimer = setTimeout(() => {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = '<i class="fas fa-clock"></i> Logging out in 1 minute due to inactivity';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 8000);
+    }, 540000);
+
+    // Logout at 10 min
+    inactiveTimer = setTimeout(() => {
+      localStorage.removeItem('userName');
+      localStorage.removeItem('branchId');
+      window.location.replace('index.html');
+    }, 600000);
+  }
+
+  ['mousemove','keypress','touchstart','click','scroll'].forEach(ev => {
+    document.addEventListener(ev, resetTimers, { passive: true });
+  });
+
+  /* ── Init ── */
+  checkAuth();
+  resetTimers();
+</script>
+</body>
+</html>

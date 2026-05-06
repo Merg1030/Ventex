@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Trismart · Account Ledger (Ascending Date Order)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --p: #4361ee;
+  --p2: #3a56d4;
+  --ok: #2ecc71;
+  --danger: #ef4444;
+  --bg: #f4f6fb;
+  --sur: #ffffff;
+  --lite: #f1f3f5;
+  --bdr: #dee2e6;
+  --txt: #212529;
+  --fade: #6c757d;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --sh: 0 1px 6px rgba(0,0,0,0.05);
+}
+
+html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg); }
+.app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.topbar { background: var(--sur); border-bottom: 1px solid var(--bdr); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-mark { width: 32px; height: 32px; background: linear-gradient(135deg, var(--p), var(--p2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; }
+.back-btn { padding: 7px 14px; background: var(--lite); border: 1px solid var(--bdr); border-radius: 40px; font-size: 0.7rem; font-weight: 700; cursor: pointer; text-decoration: none; color: var(--txt); }
+.main-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.account-header-card { background: var(--sur); border: 1px solid var(--bdr); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 24px; box-shadow: var(--sh); }
+.account-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+.account-info { display: flex; align-items: center; gap: 16px; }
+.account-icon-large { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; background: rgba(67,97,238,0.1); color: var(--p); }
+.account-name h1 { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+.section-header-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.section-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--fade); letter-spacing: 0.08em; }
+.month-filter { display: flex; align-items: center; gap: 8px; background: var(--sur); border: 1.5px solid var(--bdr); border-radius: 40px; padding: 5px 12px; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
+.month-filter input { border: none; outline: none; background: transparent; font-family: inherit; font-size: 0.7rem; font-weight: 700; width: 110px; cursor: pointer; }
+.clear-filter-btn { padding: 5px 10px; background: rgba(239,68,68,0.1); color: var(--danger); border-radius: 40px; font-size: 0.65rem; font-weight: 700; cursor: pointer; border: none; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 40px; font-size: 0.7rem; font-weight: 700; cursor: pointer; border: none; background: linear-gradient(135deg, var(--p), var(--p2)); color: white; }
+.btn-outline { background: transparent; border: 1.5px solid var(--bdr); color: var(--txt); }
+.btn-outline:hover { border-color: var(--p); color: var(--p); }
+.table-container { background: var(--sur); border: 1px solid var(--bdr); border-radius: var(--radius); overflow: auto; max-height: calc(100vh - 340px); box-shadow: var(--sh); }
+.transaction-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; min-width: 650px; }
+.transaction-table th { padding: 12px 12px; text-align: left; font-size: 0.55rem; font-weight: 800; text-transform: uppercase; color: var(--fade); border-bottom: 1px solid var(--bdr); background: white; position: sticky; top: 0; }
+.transaction-table td { padding: 10px 12px; border-bottom: 1px solid #eff3f8; vertical-align: middle; }
+.debit-amount { color: var(--danger); font-weight: 700; }
+.credit-amount { color: var(--ok); font-weight: 700; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal-content { background: white; border-radius: 24px; max-width: 500px; width: 90%; padding: 24px; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--bdr); }
+.form-group { margin-bottom: 16px; }
+.form-group label { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; color: var(--fade); display: block; margin-bottom: 5px; }
+.form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1.5px solid var(--bdr); border-radius: 12px; font-size: 0.8rem; }
+.form-actions { display: flex; gap: 10px; margin-top: 20px; }
+.toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 1100; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: #1e293b; color: white; padding: 10px 18px; border-radius: 40px; font-size: 0.7rem; }
+.dropdown-menu { position: absolute; background: white; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); z-index: 200; min-width: 110px; overflow: hidden; border: 1px solid var(--bdr); }
+.dropdown-item { padding: 10px 14px; font-size: 0.7rem; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.1s; }
+.dropdown-item:hover { background: var(--lite); }
+.dropdown-item.danger { color: var(--danger); }
+.action-cell { position: relative; }
+.action-btn { background: transparent; border: none; cursor: pointer; padding: 6px 8px; border-radius: 30px; color: var(--fade); font-size: 0.9rem; }
+.action-btn:hover { background: var(--lite); color: var(--txt); }
+.hide-header-btn { cursor: pointer; background: transparent; border: none; margin-left: 12px; color: var(--fade); font-size: 0.8rem; transition: 0.1s; padding: 5px 10px; border-radius: 40px; }
+.hide-header-btn:hover { background: var(--lite); color: var(--p); }
+.filter-badge { background: rgba(67,97,238,0.1); padding: 4px 10px; border-radius: 40px; font-size: 0.65rem; font-weight: 700; color: var(--p); display: inline-flex; align-items: center; gap: 5px; }
+.header-controls-hidden { display: none !important; }
+.unhide-trigger { cursor: pointer; background: var(--lite); padding: 6px 14px; border-radius: 40px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.7rem; font-weight: 700; border: 1px solid var(--bdr); margin-bottom: 16px; }
+.unhide-trigger:hover { background: var(--sur); border-color: var(--p); }
+.action-bar { display: flex; justify-content: space-between; margin-bottom: 16px; align-items: center; gap: 12px; flex-wrap: wrap; }
+.action-buttons-group { display: flex; gap: 10px; }
+.transfer-badge { background: rgba(67,97,238,0.1); color: var(--p); font-size: 0.6rem; padding: 2px 8px; border-radius: 20px; margin-left: 8px; }
+@media (max-width: 700px) { .main-content { padding: 12px; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="logo"><div class="logo-mark"><i class="fas fa-book"></i></div><div class="logo-text">Trismart · Account</div></div>
+    <div class="back-btn" id="backBtn"><i class="fas fa-arrow-left"></i> Back to Accounts</div>
+  </div>
+  <div class="main-content">
+    <div class="account-header-card" id="accountHeader">Loading account...</div>
+
+    <div class="action-bar">
+      <div class="action-buttons-group">
+        <button class="btn" id="addTransactionBtn"><i class="fas fa-plus"></i> Add Transaction</button>
+        <button class="btn btn-outline" id="transferBtn" style="background:white;"><i class="fas fa-exchange-alt"></i> Transfer Funds</button>
+      </div>
+    </div>
+
+    <div id="historyHeaderWrapper">
+      <div id="transactionHistoryHeader" class="section-header">
+        <div class="section-header-left">
+          <div class="section-title"><i class="fas fa-list"></i> Transaction History</div>
+          <div class="month-filter">
+            <i class="fas fa-calendar-alt"></i>
+            <input type="month" id="monthFilter">
+          </div>
+          <button class="clear-filter-btn" id="clearFilterBtn" style="display:none;"><i class="fas fa-times"></i> All Months</button>
+          <span class="filter-badge" id="filterBadge" style="display:none;"><i class="fas fa-filter"></i> <span id="filterBadgeText"></span></span>
+        </div>
+        <button class="hide-header-btn" id="hideHeaderBtn" title="Hide Transaction History header"><i class="fas fa-eye-slash"></i> Hide</button>
+      </div>
+      <div id="unhideHeaderTrigger" style="display: none; margin-bottom: 16px;">
+        <div class="unhide-trigger" id="unhideHeaderBtn"><i class="fas fa-eye"></i> Show Transaction History</div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="transaction-table">
+        <thead>
+          <tr><th>Date</th><th>Description</th><th>Debit</th><th>Credit</th><th>Balance</th><th style="width:60px;">Action</th></tr>
+        </thead>
+        <tbody id="transactionsTbody"><tr><td colspan="6">Loading transactions...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Transfer Modal -->
+<div id="transferModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header"><h3><i class="fas fa-exchange-alt"></i> Transfer Funds</h3><span class="close-modal" id="closeTransferModalBtn">&times;</span></div>
+    <div id="transferFormWrap">
+      <div class="form-group">
+        <label>From Account</label>
+        <input type="text" id="fromAccountName" readonly style="background:#f1f3f5; font-weight:600;">
+      </div>
+      <div class="form-group">
+        <label>To Account</label>
+        <select id="toAccountSelect" required>
+          <option value="">-- Select account --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Amount (K)</label>
+        <input type="number" id="transferAmount" step="0.01" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label>Transfer Date</label>
+        <input type="date" id="transferDate">
+      </div>
+      <div class="form-group">
+        <label>Description (optional)</label>
+        <input type="text" id="transferDesc" placeholder="e.g., Transfer to savings">
+      </div>
+      <div class="form-actions">
+        <button id="submitTransferBtn" class="btn">Execute Transfer</button>
+        <button type="button" id="cancelTransferBtn" class="btn" style="background:#e9ecef; color:#212529;">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Transaction Modal -->
+<div id="transactionModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header"><h3 id="modalTitle">Add Transaction</h3><span class="close-modal" id="closeModalBtn">&times;</span></div>
+    <div id="transactionFormWrap">
+      <div class="form-group"><label>Date</label><input type="date" id="transDate"></div>
+      <div class="form-group"><label>Type</label><select id="transType"><option value="credit">Credit (Income)</option><option value="debit">Debit (Expense)</option></select></div>
+      <div class="form-group"><label>Amount (K)</label><input type="number" id="transAmount" step="0.01" placeholder="0.00"></div>
+      <div class="form-group"><label>Description</label><input type="text" id="transDesc" placeholder="e.g., Rent, Sales"></div>
+      <div class="form-actions"><button id="submitTransBtn" class="btn">Save Transaction</button><button type="button" id="cancelModalBtn" class="btn" style="background:#e9ecef; color:#212529;">Cancel</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+import { getFirestore, collection, query, where, addDoc, updateDoc, deleteDoc, doc, onSnapshot, runTransaction, getDocs } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+
+const firebaseConfig = { 
+  apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k", 
+  authDomain: "trismartstores.firebaseapp.com", 
+  projectId: "trismartstores", 
+  storageBucket: "trismartstores.appspot.com", 
+  messagingSenderId: "416692703333", 
+  appId: "1:416692703333:web:d4b60292621435c748f68c" 
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const loggedInUser = localStorage.getItem('loggedInUser') || '';
+const userName = (loggedInUser || localStorage.getItem('userName') || '').toLowerCase().trim();
+if (userName !== 'chris') { document.body.innerHTML = `<div style="padding:30px;">Access Denied</div>`; throw new Error('unauth'); }
+
+const accountId = localStorage.getItem('selectedAccountId');
+if (!accountId) { toast('No account selected', 'error'); setTimeout(() => window.location.href = 'accounts-dashboard.html', 1500); }
+
+let currentAccount = null;
+let accountTransactions = [];
+let allAccounts = [];
+let unsubscribeAccount = null;
+let unsubscribeTransactions = null;
+let unsubscribeAccounts = null;
+let activeDropdown = null;
+
+const HIDE_HEADER_KEY = `trismart_hide_history_header_${accountId}`;
+function isHeaderHidden() { return localStorage.getItem(HIDE_HEADER_KEY) === 'true'; }
+function setHeaderHidden(hidden) { 
+  if (hidden) localStorage.setItem(HIDE_HEADER_KEY, 'true');
+  else localStorage.removeItem(HIDE_HEADER_KEY);
+  updateHeaderVisibility();
+}
+function updateHeaderVisibility() {
+  const hidden = isHeaderHidden();
+  const headerDiv = document.getElementById('transactionHistoryHeader');
+  const unhideTrigger = document.getElementById('unhideHeaderTrigger');
+  if (hidden) {
+    if (headerDiv) headerDiv.classList.add('header-controls-hidden');
+    if (unhideTrigger) unhideTrigger.style.display = 'block';
+  } else {
+    if (headerDiv) headerDiv.classList.remove('header-controls-hidden');
+    if (unhideTrigger) unhideTrigger.style.display = 'none';
+  }
+}
+document.getElementById('unhideHeaderBtn')?.addEventListener('click', () => { setHeaderHidden(false); toast('Transaction history bar is now visible'); });
+document.getElementById('hideHeaderBtn')?.addEventListener('click', () => { setHeaderHidden(true); toast('Transaction history header hidden'); });
+
+const FILTER_KEY = `trismart_month_filter_${accountId}`;
+function getSavedFilter() { return localStorage.getItem(FILTER_KEY) || ''; }
+function saveFilter(value) { if (value) localStorage.setItem(FILTER_KEY, value); else localStorage.removeItem(FILTER_KEY); }
+function initMonthFilter() {
+  const saved = getSavedFilter();
+  const input = document.getElementById('monthFilter');
+  if (saved) { input.value = saved; showFilterBadge(saved); }
+  input.addEventListener('change', () => {
+    saveFilter(input.value);
+    if (input.value) showFilterBadge(input.value);
+    else hideFilterBadge();
+    renderTransactions();
+  });
+}
+function showFilterBadge(yearMonth) {
+  const [year, month] = yearMonth.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const label = `${months[parseInt(month,10)-1]} ${year}`;
+  document.getElementById('filterBadgeText').textContent = label;
+  document.getElementById('filterBadge').style.display = 'inline-flex';
+  document.getElementById('clearFilterBtn').style.display = 'inline-flex';
+}
+function hideFilterBadge() {
+  document.getElementById('filterBadge').style.display = 'none';
+  document.getElementById('clearFilterBtn').style.display = 'none';
+}
+window.clearMonthFilter = function() {
+  document.getElementById('monthFilter').value = '';
+  saveFilter('');
+  hideFilterBadge();
+  renderTransactions();
+};
+document.getElementById('clearFilterBtn').onclick = () => window.clearMonthFilter();
+function getFilteredTransactions() {
+  const filter = getSavedFilter();
+  if (!filter) return accountTransactions;
+  return accountTransactions.filter(t => t.date && t.date.startsWith(filter));
+}
+
+function toast(msg, type = 'success') {
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.style.background = type === 'error' ? '#b91c1c' : '#1e293b';
+  t.innerHTML = `<i class="fas ${type === 'error' ? 'fa-times-circle' : 'fa-check-circle'}"></i> ${msg}`;
+  wrap.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+function closeModal(modalId) { document.getElementById(modalId).classList.remove('show'); }
+document.getElementById('closeModalBtn').onclick = () => closeModal('transactionModal');
+document.getElementById('cancelModalBtn').onclick = () => closeModal('transactionModal');
+document.getElementById('closeTransferModalBtn').onclick = () => closeModal('transferModal');
+document.getElementById('cancelTransferBtn').onclick = () => closeModal('transferModal');
+document.getElementById('addTransactionBtn').onclick = () => { openTransactionModalForAdd(); };
+document.getElementById('transferBtn').onclick = () => { openTransferModal(); };
+
+function openTransactionModalForAdd(transactionToEdit = null) {
+  document.getElementById('modalTitle').innerText = transactionToEdit ? 'Edit Transaction' : 'Add Transaction';
+  document.getElementById('transDate').value = transactionToEdit ? transactionToEdit.date : new Date().toISOString().slice(0,10);
+  document.getElementById('transType').value = transactionToEdit ? transactionToEdit.type : 'credit';
+  document.getElementById('transAmount').value = transactionToEdit ? transactionToEdit.amount : '';
+  document.getElementById('transDesc').value = transactionToEdit ? transactionToEdit.description : '';
+  window._editingId = transactionToEdit ? transactionToEdit.id : null;
+  document.getElementById('transactionModal').classList.add('show');
+}
+
+async function openTransferModal() {
+  if (!currentAccount) { toast('Account not loaded', 'error'); return; }
+  document.getElementById('fromAccountName').value = currentAccount.name;
+  document.getElementById('transferAmount').value = '';
+  document.getElementById('transferDesc').value = '';
+  document.getElementById('transferDate').valueAsDate = new Date();
+  
+  const toSelect = document.getElementById('toAccountSelect');
+  toSelect.innerHTML = '<option value="">-- Select account --</option>';
+  for (const acc of allAccounts) {
+    if (acc.id !== accountId) {
+      toSelect.innerHTML += `<option value="${acc.id}">${escapeHtml(acc.name)} (${acc.type?.toUpperCase() || 'ASSET'})</option>`;
+    }
+  }
+  document.getElementById('transferModal').classList.add('show');
+}
+
+document.getElementById('submitTransferBtn').onclick = async () => {
+  const toAccountId = document.getElementById('toAccountSelect').value;
+  const amount = parseFloat(document.getElementById('transferAmount').value);
+  const date = document.getElementById('transferDate').value;
+  const desc = document.getElementById('transferDesc').value.trim() || 'Funds transfer';
+  
+  if (!toAccountId) { toast('Select destination account', 'error'); return; }
+  if (isNaN(amount) || amount <= 0) { toast('Enter valid amount', 'error'); return; }
+  if (!date) { toast('Select date', 'error'); return; }
+  if (currentAccount.balance < amount) { toast('Insufficient funds in source account', 'error'); return; }
+  
+  const toAccount = allAccounts.find(a => a.id === toAccountId);
+  if (!toAccount) { toast('Destination account not found', 'error'); return; }
+  
+  try {
+    await runTransaction(db, async (tx) => {
+      const fromRef = doc(db, 'accounts', accountId);
+      const toRef = doc(db, 'accounts', toAccountId);
+      const fromSnap = await tx.get(fromRef);
+      const toSnap = await tx.get(toRef);
+      if (!fromSnap.exists() || !toSnap.exists()) throw new Error('Account missing');
+      
+      let fromBalance = Number(fromSnap.data().balance) || 0;
+      let toBalance = Number(toSnap.data().balance) || 0;
+      if (fromBalance < amount) throw new Error('Insufficient funds');
+      
+      tx.update(fromRef, { balance: fromBalance - amount });
+      tx.update(toRef, { balance: toBalance + amount });
+      
+      const outgoingTrans = {
+        accountId: accountId,
+        accountName: currentAccount.name,
+        date: date,
+        type: 'debit',
+        amount: amount,
+        description: `Transfer to ${toAccount.name}: ${desc}`,
+        createdAt: new Date().toISOString(),
+        isTransfer: true,
+        linkedAccountId: toAccountId
+      };
+      const incomingTrans = {
+        accountId: toAccountId,
+        accountName: toAccount.name,
+        date: date,
+        type: 'credit',
+        amount: amount,
+        description: `Transfer from ${currentAccount.name}: ${desc}`,
+        createdAt: new Date().toISOString(),
+        isTransfer: true,
+        linkedAccountId: accountId
+      };
+      tx.set(doc(collection(db, 'account_transactions')), outgoingTrans);
+      tx.set(doc(collection(db, 'account_transactions')), incomingTrans);
+    });
+    toast(`Transferred K${amount.toFixed(2)} from ${currentAccount.name} to ${toAccount.name}`);
+    closeModal('transferModal');
+  } catch (err) {
+    console.error(err);
+    toast(err.message, 'error');
+  }
+};
+
+document.getElementById('submitTransBtn').onclick = async () => {
+  const amount = parseFloat(document.getElementById('transAmount').value);
+  const type = document.getElementById('transType').value;
+  const date = document.getElementById('transDate').value;
+  const desc = document.getElementById('transDesc').value.trim();
+  if (!date) { toast('Pick a date', 'error'); return; }
+  if (isNaN(amount) || amount <= 0) { toast('Valid amount >0', 'error'); return; }
+  if (!desc) { toast('Description required', 'error'); return; }
+  const editingId = window._editingId;
+  try {
+    if (editingId) {
+      const oldTransaction = accountTransactions.find(t => t.id === editingId);
+      if (!oldTransaction) throw new Error('Transaction not found');
+      const oldEffect = oldTransaction.type === 'credit' ? oldTransaction.amount : -oldTransaction.amount;
+      const newEffect = type === 'credit' ? amount : -amount;
+      const delta = newEffect - oldEffect;
+      await runTransaction(db, async (tx) => {
+        const accRef = doc(db, 'accounts', accountId);
+        const accSnap = await tx.get(accRef);
+        if (!accSnap.exists()) throw new Error('Account missing');
+        let newBalance = (accSnap.data().balance || 0) + delta;
+        tx.update(accRef, { balance: newBalance });
+        const transRef = doc(db, 'account_transactions', editingId);
+        tx.update(transRef, { date, type, amount, description: desc });
+      });
+      toast('Transaction updated');
+      closeModal('transactionModal');
+    } else {
+      await runTransaction(db, async (tx) => {
+        const accRef = doc(db, 'accounts', accountId);
+        const accSnap = await tx.get(accRef);
+        if (!accSnap.exists()) throw new Error('Account not found');
+        let currentBalance = Number(accSnap.data().balance) || 0;
+        let newBalance = type === 'credit' ? currentBalance + amount : currentBalance - amount;
+        tx.update(accRef, { balance: newBalance });
+        const newTrans = {
+          accountId, accountName: currentAccount?.name || '', date, type, amount, description: desc,
+          createdAt: new Date().toISOString()
+        };
+        tx.set(doc(collection(db, 'account_transactions')), newTrans);
+      });
+      toast('Transaction added ✓');
+      closeModal('transactionModal');
+    }
+    window._editingId = null;
+  } catch (err) { console.error(err); toast(err.message, 'error'); }
+};
+
+window.deleteTransactionHandler = async (transactionId) => {
+  if (!confirm('Delete this transaction? It will update the account balance.')) return;
+  const transaction = accountTransactions.find(t => t.id === transactionId);
+  if (!transaction) return;
+  try {
+    await runTransaction(db, async (tx) => {
+      const accRef = doc(db, 'accounts', accountId);
+      const accDoc = await tx.get(accRef);
+      if (!accDoc.exists()) throw new Error('Account missing');
+      let bal = Number(accDoc.data().balance) || 0;
+      let newBal = transaction.type === 'credit' ? bal - transaction.amount : bal + transaction.amount;
+      tx.update(accRef, { balance: newBal });
+      tx.delete(doc(db, 'account_transactions', transactionId));
+    });
+    toast('Transaction deleted');
+  } catch (err) { toast(err.message, 'error'); }
+};
+
+window.editTransactionHandler = (transactionId) => {
+  const txn = accountTransactions.find(t => t.id === transactionId);
+  if (txn) openTransactionModalForAdd(txn);
+};
+
+function closeDropdown() { if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; } }
+function showDropdown(event, transactionId) {
+  event.stopPropagation();
+  closeDropdown();
+  const rect = event.currentTarget.getBoundingClientRect();
+  const div = document.createElement('div');
+  div.className = 'dropdown-menu';
+  div.style.position = 'fixed';
+  div.style.top = `${rect.bottom + 4}px`;
+  div.style.left = `${rect.left - 40}px`;
+  div.innerHTML = `
+    <div class="dropdown-item" data-action="edit"><i class="fas fa-pen"></i> Edit</div>
+    <div class="dropdown-item danger" data-action="delete"><i class="fas fa-trash-alt"></i> Delete</div>
+  `;
+  document.body.appendChild(div);
+  activeDropdown = div;
+  div.querySelector('[data-action="edit"]').addEventListener('click', (e) => {
+    e.stopPropagation();
+    editTransactionHandler(transactionId);
+    closeDropdown();
+  });
+  div.querySelector('[data-action="delete"]').addEventListener('click', (e) => {
+    e.stopPropagation();
+    deleteTransactionHandler(transactionId);
+    closeDropdown();
+  });
+  const removeHandler = () => { closeDropdown(); document.removeEventListener('click', removeHandler); };
+  setTimeout(() => document.addEventListener('click', removeHandler), 10);
+}
+
+function loadAccount() {
+  if (unsubscribeAccount) unsubscribeAccount();
+  unsubscribeAccount = onSnapshot(doc(db, 'accounts', accountId), (docSnap) => {
+    if (docSnap.exists()) { 
+      currentAccount = { id: docSnap.id, ...docSnap.data(), balance: Number(docSnap.data().balance) || 0 }; 
+      renderAccountHeader(); 
+    } else toast('Account not found', 'error');
+  });
+}
+
+function loadAllAccounts() {
+  if (unsubscribeAccounts) unsubscribeAccounts();
+  unsubscribeAccounts = onSnapshot(collection(db, 'accounts'), (snap) => {
+    allAccounts = snap.docs.map(doc => ({ id: doc.id, ...doc.data(), balance: Number(doc.data().balance) || 0 }));
+  });
+}
+
+function loadTransactions() {
+  if (unsubscribeTransactions) unsubscribeTransactions();
+  const q = query(collection(db, 'account_transactions'), where('accountId', '==', accountId));
+  unsubscribeTransactions = onSnapshot(q, (snap) => {
+    accountTransactions = snap.docs.map(d => ({ id: d.id, ...d.data(), amount: Number(d.data().amount) || 0 }));
+    renderTransactions();
+  }, (err) => { console.error(err); toast('Transactions error', 'error'); });
+}
+
+function renderAccountHeader() {
+  if (!currentAccount) return;
+  document.getElementById('accountHeader').innerHTML = `
+    <div class="account-row">
+      <div class="account-info">
+        <div class="account-icon-large"><i class="fas fa-wallet"></i></div>
+        <div class="account-name">
+          <h1>${escapeHtml(currentAccount.name)}</h1>
+          <span class="account-type-badge" style="background:rgba(67,97,238,0.15);">${currentAccount.type?.toUpperCase() || 'ASSET'}</span>
+          ${currentAccount.description ? `<div style="font-size:0.65rem;color:var(--fade); margin-top:4px;">${escapeHtml(currentAccount.description)}</div>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderTransactions() {
+  const tbody = document.getElementById('transactionsTbody');
+  const filtered = getFilteredTransactions();
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No transactions for this period. Click "Add Transaction" to get started.</td></tr>`;
+    return;
+  }
+  
+  // ✅ CRITICAL: Sort in ASCENDING order by date (oldest first, latest at bottom)
+  const sortedAsc = [...filtered].sort((a, b) => (a.date < b.date ? -1 : 1));
+  
+  // Calculate running balance in ascending order (oldest to newest)
+  let running = 0;
+  const balanceMap = new Map();
+  for (const t of sortedAsc) { 
+    running += t.type === 'credit' ? t.amount : -t.amount; 
+    balanceMap.set(t.id, running); 
+  }
+  
+  // Render using ascending order directly — this ensures oldest transaction appears at top,
+  // and the most recent transaction / latest date stays at the bottom.
+  tbody.innerHTML = sortedAsc.map(trans => {
+    const isDebit = trans.type === 'debit';
+    const debitDisplay = isDebit ? `K${trans.amount.toFixed(2)}` : '';
+    const creditDisplay = !isDebit ? `K${trans.amount.toFixed(2)}` : '';
+    const balance = balanceMap.get(trans.id) || 0;
+    const transferTag = trans.isTransfer ? '<span class="transfer-badge"><i class="fas fa-exchange-alt"></i> transfer</span>' : '';
+    return `
+      <tr>
+        <td>${trans.date || '-'}</td>
+        <td><strong>${escapeHtml(trans.description || '-')}</strong> ${transferTag}</td>
+        <td class="debit-amount">${debitDisplay}</td>
+        <td class="credit-amount">${creditDisplay}</td>
+        <td class="balance-amount-table">K${balance.toFixed(2)}</td>
+        <td class="action-cell">
+          <button class="action-btn" data-txn-id="${trans.id}" data-action-menu><i class="fas fa-ellipsis-v"></i></button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+  
+  document.querySelectorAll('[data-action-menu]').forEach(btn => {
+    btn.removeEventListener('click', dropdownHandler);
+    btn.addEventListener('click', dropdownHandler);
+  });
+}
+
+function dropdownHandler(e) {
+  e.stopPropagation();
+  const txnId = this.getAttribute('data-txn-id');
+  if (txnId) showDropdown(e, txnId);
+}
+
+function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+
+window.deleteTransactionHandler = window.deleteTransactionHandler;
+window.editTransactionHandler = window.editTransactionHandler;
+
+document.getElementById('backBtn').addEventListener('click', () => { window.location.href = 'accounts-dashboard.html'; });
+initMonthFilter();
+loadAccount();
+loadAllAccounts();
+loadTransactions();
+updateHeaderVisibility();
+window.addEventListener('click', (e) => { if (!e.target.closest('.dropdown-menu')) closeDropdown(); });
+</script>
+</body>
+</html>

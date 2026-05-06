@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Account Details</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, onSnapshot, query, where, serverTimestamp, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+        window.initializeApp = initializeApp;
+        window.getFirestore = getFirestore;
+        window.doc = doc;
+        window.getDoc = getDoc;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.onSnapshot = onSnapshot;
+        window.query = query;
+        window.where = where;
+        window.serverTimestamp = serverTimestamp;
+        window.deleteDoc = deleteDoc;
+        window.updateDoc = updateDoc;
+    </script>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        body {
+            background: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+        }
+        
+        .account-detail-card {
+            background: #fff;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* Top Control Bar */
+        .top-control-bar {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+        
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .control-btn {
+            padding: 8px 16px;
+            background: #e9ecef;
+            color: #333;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        
+        .control-btn:hover {
+            background: #dee2e6;
+            transform: translateY(-1px);
+        }
+        
+        .action-menu-btn {
+            padding: 8px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: #666;
+            border-radius: 4px;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .action-menu-btn:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+        
+        /* Filter Bar */
+        .filter-bar {
+            display: none;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 20px 0 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+        
+        .filter-bar.active {
+            display: flex;
+        }
+        
+        .filter-bar span {
+            color: #666;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        
+        .filter-bar input[type="date"] {
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            background: white;
+            color: #333;
+            min-width: 120px;
+        }
+        
+        .filter-bar button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            background: #e9ecef;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .filter-bar button:hover {
+            background: #dee2e6;
+        }
+        
+        .filter-bar button.primary {
+            background: #1976d2;
+            color: white;
+        }
+        
+        .filter-bar button.primary:hover {
+            background: #1565c0;
+        }
+        
+        /* Form Container */
+        .form-container {
+            margin: 10px 20px 15px 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            display: none;
+            flex-shrink: 0;
+        }
+        
+        .form-container.active {
+            display: block;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        
+        .form-row input {
+            padding: 10px 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            flex: 1;
+            min-width: 120px;
+            background: white;
+            color: #333;
+        }
+        
+        .form-row input:focus {
+            outline: none;
+            border-color: #1976d2;
+            box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+        }
+        
+        .form-row button {
+            padding: 10px 20px;
+            border: none;
+            background: #1976d2;
+            color: white;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        
+        .form-row button:hover {
+            background: #1565c0;
+        }
+        
+        /* Main Content Area - Scrollable */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            padding-top: 5px;
+        }
+        
+        /* Account Name Display */
+        .account-name-display {
+            padding: 10px 20px 5px 20px;
+            font-size: 18px;
+            color: #1976d2;
+            font-weight: 600;
+            border-bottom: 1px solid #e0e0e0;
+            background: #fff;
+            flex-shrink: 0;
+        }
+        
+        /* Table Container */
+        .table-container {
+            margin: 0 20px 20px 20px;
+            background: #fff;
+            border-radius: 8px;
+            overflow-x: auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            min-width: 700px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            border: none;
+            text-align: left;
+            word-break: break-word;
+        }
+        
+        th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+            position: sticky;
+            top: 0;
+            white-space: nowrap;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        tr {
+            background: white;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        /* Red for Debit (decreases balance) */
+        .debit {
+            color: #c62828;
+            font-weight: 600;
+        }
+        
+        /* Green for Credit (increases balance) */
+        .credit {
+            color: #2e7d32;
+            font-weight: 600;
+        }
+        
+        .balance {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .positive-balance {
+            color: #2e7d32;
+        }
+        
+        .negative-balance {
+            color: #c62828;
+        }
+        
+        .actions-cell {
+            text-align: center;
+            width: 60px;
+            position: relative;
+        }
+        
+        .action-dots {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .action-dots:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+        
+        /* Transaction Action Menu */
+        .transaction-menu {
+            position: absolute;
+            top: 100%;
+            right: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: none;
+            flex-direction: column;
+            min-width: 150px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+        
+        .transaction-menu.show {
+            display: flex;
+        }
+        
+        .transaction-menu-item {
+            padding: 10px 16px;
+            background: none;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .transaction-menu-item:last-child {
+            border-bottom: none;
+        }
+        
+        .transaction-menu-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .transaction-menu-item.delete {
+            color: #dc3545;
+        }
+        
+        .table-footer {
+            border-top: 2px solid #e0e0e0;
+            background: #f8f9fa;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
+        .running-balance {
+            color: #1976d2;
+            font-size: 16px;
+        }
+        
+        .positive-balance-footer {
+            color: #2e7d32;
+        }
+        
+        .negative-balance-footer {
+            color: #c62828;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            min-width: 400px;
+            max-width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .modal-header {
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h3 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+        
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        
+        .modal-btn.cancel {
+            background: #e9ecef;
+            color: #333;
+        }
+        
+        .modal-btn.cancel:hover {
+            background: #dee2e6;
+        }
+        
+        .modal-btn.delete {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .modal-btn.delete:hover {
+            background: #c82333;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .form-row input {
+                width: 100%;
+                min-width: 100%;
+            }
+            
+            .filter-bar {
+                flex-wrap: wrap;
+            }
+            
+            table {
+                font-size: 13px;
+                min-width: 600px;
+            }
+            
+            th, td {
+                padding: 10px 12px;
+            }
+            
+            .modal-content {
+                min-width: 300px;
+                padding: 20px;
+            }
+            
+            .top-control-bar {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .top-control-bar {
+                padding: 10px 15px;
+            }
+            
+            .table-container {
+                margin: 0 10px 10px 10px;
+            }
+            
+            .form-container {
+                margin: 10px 10px 10px 10px;
+                padding: 15px;
+            }
+            
+            .filter-bar {
+                margin: 10px 10px 0 10px;
+                padding: 10px;
+            }
+            
+            .account-name-display {
+                padding: 10px 15px 5px 15px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="account-detail-card" id="accountDetail">
+    <!-- Top Control Bar -->
+    <div class="top-control-bar">
+        <div class="control-buttons">
+            <a href="maindash.html" class="control-btn">← Back</a>
+            <button class="control-btn" id="toggleFormBtn">Add Transaction</button>
+            <div style="position: relative;">
+                <button class="action-menu-btn" id="globalActionMenuBtn">⋮</button>
+                <div class="transaction-menu" id="globalActionMenu">
+                    <button class="transaction-menu-item" id="toggleFilterBtn">Show/Hide Filters</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scrollable Content Area -->
+    <div class="content-area">
+        <!-- Account Name Display -->
+        <div class="account-name-display" id="accountName"></div>
+        
+        <!-- Filter Bar -->
+        <div class="filter-bar" id="filterBar">
+            <span>From</span>
+            <input type="date" id="filterStart">
+            <span>To</span>
+            <input type="date" id="filterEnd">
+            <button class="primary" id="filterBtn">Apply Filter</button>
+            <button id="clearFilterBtn">Clear</button>
+        </div>
+        
+        <!-- Form Container -->
+        <div class="form-container" id="formContainer">
+            <form id="transactionForm">
+                <div class="form-row">
+                    <input type="date" id="date" required>
+                    <input type="text" id="reference" placeholder="Reference" required>
+                    <input type="text" id="description" placeholder="Description" required>
+                    <input type="number" id="debit" placeholder="Debit (Reduces Balance)" min="0" step="0.01">
+                    <input type="number" id="credit" placeholder="Credit (Increases Balance)" min="0" step="0.01">
+                    <button type="submit">Add Transaction</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Table Container -->
+        <div class="table-container">
+            <table id="transactionsTable">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Reference</th>
+                    <th>Description</th>
+                    <th>Debit</th>
+                    <th>Credit</th>
+                    <th>Balance</th>
+                    <th class="actions-cell">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+            <div class="table-footer">
+                <span class="running-balance-label">Running Balance</span>
+                <span class="running-balance" id="currentBalance">0.00</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Delete Transaction</h3>
+                <p>Are you sure you want to delete this transaction? This action cannot be undone.</p>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" id="cancelDeleteBtn">Cancel</button>
+                <button class="modal-btn delete" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    const firebaseConfig = {
+        apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+        authDomain: "trismartstores.firebaseapp.com",
+        projectId: "trismartstores",
+        storageBucket: "trismartstores.appspot.com",
+        messagingSenderId: "416692703333",
+        appId: "1:416692703333:web:d4b60292621435c748f68c",
+        measurementId: "G-NJPQ7L3QWJ"
+    };
+    const app = window.initializeApp(firebaseConfig);
+    const db = window.getFirestore(app);
+
+    const branchId = localStorage.getItem('branchId');
+    if (!branchId) {
+        alert('Please select a branch from the dashboard first.');
+        window.location.href = 'dashboard.html';
+    }
+
+    function getAccountIdFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('id');
+    }
+    const accountId = getAccountIdFromUrl();
+
+    // Global variables
+    let { filterStart, filterEnd } = getFilterState();
+    let selectedTransactionId = null;
+    let transactions = [];
+
+    function getFilterState() {
+        const state = localStorage.getItem("trismart-filter-state-" + accountId);
+        if (!state) return { filterStart: "", filterEnd: "" };
+        try {
+            return JSON.parse(state);
+        } catch {
+            return { filterStart: "", filterEnd: "" };
+        }
+    }
+    
+    function setFilterState(filterStart, filterEnd) {
+        localStorage.setItem(
+            "trismart-filter-state-" + accountId,
+            JSON.stringify({ filterStart, filterEnd })
+        );
+    }
+
+    async function showAccountDetails() {
+        const accountNameDiv = document.getElementById("accountName");
+        if (!accountId) {
+            accountNameDiv.textContent = "No account selected";
+            return;
+        }
+        const ref = window.doc(db, "accounts", accountId);
+        const docSnap = await window.getDoc(ref);
+        if (docSnap.exists()) {
+            const account = docSnap.data();
+            accountNameDiv.textContent = account.name;
+            renderTransactionsRealtime();
+        } else {
+            accountNameDiv.textContent = "Account not found!";
+        }
+    }
+
+    function renderTransactionsRealtime() {
+        const tableBody = document.getElementById("tableBody");
+        const currentBalanceSpan = document.getElementById("currentBalance");
+        let balance = 0;
+        
+        const q = window.query(
+            window.collection(db, "accounts", accountId, "transactions"),
+            window.where("branchId", "==", branchId)
+        );
+        
+        window.onSnapshot(q, (snapshot) => {
+            tableBody.innerHTML = "";
+            transactions = [];
+            snapshot.forEach(doc => {
+                transactions.push({ id: doc.id, ...doc.data() });
+            });
+            
+            console.log("Transactions loaded:", transactions.length);
+            
+            // Sort by date
+            transactions.sort((a, b) => (a.date > b.date ? 1 : -1));
+
+            // Filter by date
+            let filteredTransactions = [...transactions];
+            let fs = filterStart, fe = filterEnd;
+            
+            if (fs && fe) {
+                filteredTransactions = filteredTransactions.filter(t =>
+                    t.date >= fs && t.date <= fe
+                );
+            } else if (fs) {
+                filteredTransactions = filteredTransactions.filter(t => t.date >= fs);
+            } else if (fe) {
+                filteredTransactions = filteredTransactions.filter(t => t.date <= fe);
+            }
+
+            balance = 0;
+            filteredTransactions.forEach(tx => {
+                // Get values from database
+                // In database: cashOut = Debit (negative), cashIn = Credit (positive)
+                const debit = parseFloat(tx.cashOut || 0);
+                const credit = parseFloat(tx.cashIn || 0);
+                
+                // CORRECT ACCOUNTING LOGIC:
+                // Credit (+) increases balance, Debit (-) decreases balance
+                balance = balance + credit - debit;
+                
+                let row = document.createElement("tr");
+                row.dataset.transactionId = tx.id;
+                
+                // Determine balance color
+                const balanceClass = balance >= 0 ? 'positive-balance' : 'negative-balance';
+                
+                row.innerHTML = `
+                    <td>${tx.date}</td>
+                    <td>${tx.reference}</td>
+                    <td>${tx.description}</td>
+                    <td class="${debit > 0 ? 'debit' : ''}">${debit > 0 ? Number(debit).toFixed(2) : ''}</td>
+                    <td class="${credit > 0 ? 'credit' : ''}">${credit > 0 ? Number(credit).toFixed(2) : ''}</td>
+                    <td class="balance ${balanceClass}">${balance.toFixed(2)}</td>
+                    <td class="actions-cell">
+                        <button class="action-dots" data-transaction-id="${tx.id}" onclick="showTransactionMenu(event, '${tx.id}')">⋮</button>
+                        <div class="transaction-menu" id="menu-${tx.id}">
+                            <button class="transaction-menu-item" onclick="editTransaction('${tx.id}')">Edit</button>
+                            <button class="transaction-menu-item delete" onclick="deleteTransaction('${tx.id}')">Delete</button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // Update running balance with color
+            currentBalanceSpan.textContent = balance.toFixed(2);
+            currentBalanceSpan.className = 'running-balance ' + (balance >= 0 ? 'positive-balance-footer' : 'negative-balance-footer');
+            
+            // Show message if no transactions
+            if (filteredTransactions.length === 0) {
+                const emptyRow = document.createElement("tr");
+                emptyRow.innerHTML = `
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #666;">
+                        No transactions found. Click "Add Transaction" to create your first entry.
+                    </td>
+                `;
+                tableBody.appendChild(emptyRow);
+            }
+        }, (error) => {
+            console.error("Error loading transactions:", error);
+            alert("Error loading transactions: " + error.message);
+        });
+    }
+
+    // Global functions for transaction actions
+    window.showTransactionMenu = function(event, transactionId) {
+        event.stopPropagation();
+        
+        // Hide all other menus
+        document.querySelectorAll('.transaction-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+        
+        // Show this menu
+        const menu = document.getElementById(`menu-${transactionId}`);
+        if (menu) {
+            const rect = event.target.getBoundingClientRect();
+            menu.style.top = (rect.bottom - rect.top) + 'px';
+            menu.style.right = '0px';
+            menu.classList.add('show');
+            
+            // Store selected transaction
+            selectedTransactionId = transactionId;
+        }
+    };
+
+    window.editTransaction = function(transactionId) {
+        selectedTransactionId = transactionId;
+        const transaction = transactions.find(t => t.id === transactionId);
+        
+        if (transaction) {
+            // Populate form with transaction data
+            document.getElementById('date').value = transaction.date;
+            document.getElementById('reference').value = transaction.reference;
+            document.getElementById('description').value = transaction.description;
+            
+            // Map database fields to form fields
+            document.getElementById('debit').value = transaction.cashOut || '';
+            document.getElementById('credit').value = transaction.cashIn || '';
+            
+            // Show form
+            const formContainer = document.getElementById("formContainer");
+            formContainer.classList.add('active');
+            document.getElementById("toggleFormBtn").textContent = 'Hide Form';
+            
+            // Change form to update mode
+            const form = document.getElementById('transactionForm');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.textContent = 'Update Transaction';
+            submitBtn.dataset.mode = 'update';
+            submitBtn.dataset.transactionId = transactionId;
+            
+            // Scroll to form
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Hide the menu
+        const menu = document.getElementById(`menu-${transactionId}`);
+        if (menu) menu.classList.remove('show');
+    };
+
+    window.deleteTransaction = function(transactionId) {
+        selectedTransactionId = transactionId;
+        document.getElementById('deleteModal').classList.add('active');
+        
+        // Hide the menu
+        const menu = document.getElementById(`menu-${transactionId}`);
+        if (menu) menu.classList.remove('show');
+    };
+
+    // Close menus when clicking outside
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.transaction-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+        const globalMenu = document.getElementById('globalActionMenu');
+        if (globalMenu) globalMenu.classList.remove('show');
+    });
+
+    // Toggle form visibility
+    document.getElementById("toggleFormBtn").addEventListener("click", function() {
+        const formContainer = document.getElementById("formContainer");
+        formContainer.classList.toggle('active');
+        this.textContent = formContainer.classList.contains('active') ? 'Hide Form' : 'Add Transaction';
+        
+        // Reset form if hiding
+        if (!formContainer.classList.contains('active')) {
+            const form = document.getElementById('transactionForm');
+            form.reset();
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.textContent = 'Add Transaction';
+            delete submitBtn.dataset.mode;
+            delete submitBtn.dataset.transactionId;
+        }
+    });
+
+    // Toggle global action menu
+    const globalActionMenuBtn = document.getElementById("globalActionMenuBtn");
+    if (globalActionMenuBtn) {
+        globalActionMenuBtn.addEventListener("click", function(e) {
+            e.stopPropagation();
+            const globalMenu = document.getElementById('globalActionMenu');
+            globalMenu.classList.toggle('show');
+        });
+    }
+
+    // Toggle filter visibility
+    const toggleFilterBtn = document.getElementById("toggleFilterBtn");
+    if (toggleFilterBtn) {
+        toggleFilterBtn.addEventListener("click", function() {
+            const filterBar = document.getElementById("filterBar");
+            filterBar.classList.toggle('active');
+            const globalMenu = document.getElementById('globalActionMenu');
+            if (globalMenu) globalMenu.classList.remove('show');
+        });
+    }
+
+    // Handle form submission
+    document.getElementById("transactionForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const date = document.getElementById("date").value;
+        const reference = document.getElementById("reference").value.trim();
+        const description = document.getElementById("description").value.trim();
+        const debit = document.getElementById("debit").value ? parseFloat(document.getElementById("debit").value) : 0;
+        const credit = document.getElementById("credit").value ? parseFloat(document.getElementById("credit").value) : 0;
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const isUpdate = submitBtn.dataset.mode === 'update';
+        const transactionId = submitBtn.dataset.transactionId;
+
+        if (!date || !reference || !description) {
+            alert('Please fill in all required fields: Date, Reference, and Description');
+            return;
+        }
+
+        // Validate that both debit and credit are not entered at the same time
+        if (debit > 0 && credit > 0) {
+            alert('Please enter either Debit OR Credit, not both at the same time.');
+            return;
+        }
+
+        try {
+            // Map to database fields with correct accounting logic
+            const transaction = {
+                date,
+                reference,
+                description,
+                cashOut: debit,    // Debit reduces balance (stored as cashOut)
+                cashIn: credit,    // Credit increases balance (stored as cashIn)
+                branchId,
+                updated: window.serverTimestamp()
+            };
+
+            if (isUpdate && transactionId) {
+                // Update existing transaction
+                await window.updateDoc(window.doc(db, "accounts", accountId, "transactions", transactionId), transaction);
+                console.log("Transaction updated:", transactionId);
+            } else {
+                // Add new transaction
+                transaction.created = window.serverTimestamp();
+                const docRef = await window.addDoc(window.collection(db, "accounts", accountId, "transactions"), transaction);
+                console.log("Transaction added with ID:", docRef.id);
+            }
+
+            // Reset form
+            this.reset();
+            const formContainer = document.getElementById("formContainer");
+            formContainer.classList.remove('active');
+            document.getElementById("toggleFormBtn").textContent = 'Add Transaction';
+            
+            // Reset submit button
+            submitBtn.textContent = 'Add Transaction';
+            delete submitBtn.dataset.mode;
+            delete submitBtn.dataset.transactionId;
+
+        } catch (err) {
+            console.error("Error saving transaction:", err);
+            alert("Error: " + err.message);
+        }
+    });
+
+    // Handle delete confirmation
+    document.getElementById("confirmDeleteBtn").addEventListener("click", async function() {
+        if (selectedTransactionId) {
+            try {
+                await window.deleteDoc(window.doc(db, "accounts", accountId, "transactions", selectedTransactionId));
+                console.log("Transaction deleted:", selectedTransactionId);
+                document.getElementById('deleteModal').classList.remove('active');
+                selectedTransactionId = null;
+            } catch (err) {
+                console.error("Error deleting transaction:", err);
+                alert("Error deleting transaction: " + err.message);
+            }
+        }
+    });
+
+    // Cancel delete
+    document.getElementById("cancelDeleteBtn").addEventListener("click", function() {
+        document.getElementById('deleteModal').classList.remove('active');
+    });
+
+    // Date filter logic
+    document.getElementById('filterBtn').addEventListener('click', function() {
+        filterStart = document.getElementById('filterStart').value;
+        filterEnd = document.getElementById('filterEnd').value;
+        setFilterState(filterStart, filterEnd);
+        renderTransactionsRealtime();
+    });
+
+    document.getElementById('clearFilterBtn').addEventListener('click', function() {
+        filterStart = "";
+        filterEnd = "";
+        document.getElementById('filterStart').value = "";
+        document.getElementById('filterEnd').value = "";
+        setFilterState(filterStart, filterEnd);
+        renderTransactionsRealtime();
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+        // Restore filter state from localstorage
+        if (document.getElementById('filterStart')) {
+            document.getElementById('filterStart').value = filterStart;
+        }
+        if (document.getElementById('filterEnd')) {
+            document.getElementById('filterEnd').value = filterEnd;
+        }
+        showAccountDetails();
+    });
+</script>
+</body>
+</html>

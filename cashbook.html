@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trismart · Accounts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    :root {
+      --bg:        #f4f6fb;
+      --bg2:       #ffffff;
+      --bg3:       #f1f3f5;
+      --border:    #e2e6ef;
+      --border2:   #cdd3e0;
+      --text:      #1a1e2e;
+      --text-fade: #6b7490;
+      --text-dim:  #a0a8c0;
+      --blue:      #4361ee;
+      --cyan:      #00b4d8;
+      --green:     #10b981;
+      --orange:    #f59e0b;
+      --pink:      #f72585;
+      --purple:    #7c3aed;
+      --danger:    #ef4444;
+      --radius:    12px;
+      --radius-lg: 16px;
+      --shadow:    0 2px 12px rgba(67,97,238,0.08);
+      --shadow-lg: 0 6px 24px rgba(67,97,238,0.13);
+      --header-h:  54px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      background-image:
+        linear-gradient(rgba(67,97,238,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(67,97,238,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    .shell {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+    }
+
+    /* TOPBAR */
+    .topbar {
+      height: var(--header-h);
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.96);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; gap: 14px;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .logo-mark {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 0.88rem;
+      box-shadow: 0 0 14px rgba(67,97,238,0.28); flex-shrink: 0;
+    }
+    .logo-text { font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+    .logo-text span { color: var(--blue); }
+    .page-badge {
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 100px; padding: 3px 11px;
+      font-size: 0.68rem; font-weight: 700; color: var(--text-fade);
+    }
+
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    .month-pill {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--bg3); border: 1.5px solid var(--border2);
+      border-radius: 100px; padding: 5px 13px;
+      font-size: 0.75rem; font-weight: 700; color: var(--text-fade);
+      transition: border-color 0.18s;
+    }
+    .month-pill:focus-within { border-color: var(--blue); }
+    .month-pill i { font-size: 0.7rem; color: var(--blue); }
+    .month-pill input[type="month"] {
+      background: transparent; border: none; outline: none;
+      font-family: 'DM Sans', sans-serif; font-size: 0.75rem;
+      font-weight: 700; color: var(--text); cursor: pointer; width: 108px;
+    }
+    .month-pill input[type="month"]::-webkit-calendar-picker-indicator { opacity: 0.5; cursor: pointer; }
+    .back-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 100px; padding: 5px 14px;
+      font-size: 0.75rem; font-weight: 700; color: var(--text-fade);
+      text-decoration: none; transition: all 0.18s;
+    }
+    .back-btn:hover { border-color: var(--blue); color: var(--blue); background: white; }
+
+    /* CONTENT */
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 18px 28px 16px;
+      gap: 16px;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .divider {
+      display: flex; align-items: center; gap: 10px;
+      flex-shrink: 0;
+    }
+    .divider span {
+      font-size: 0.58rem; font-weight: 800; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 0.14em; white-space: nowrap;
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* STATS ROW */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 12px; flex-shrink: 0;
+    }
+    .stat-chip {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px;
+      box-shadow: var(--shadow); position: relative; overflow: hidden;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .stat-chip::before {
+      content: ''; position: absolute; right: -10px; top: -10px;
+      width: 55px; height: 55px; border-radius: 50%;
+      filter: blur(18px); opacity: 0.15;
+    }
+    .sc-blue::before   { background: var(--blue); }
+    .sc-green::before  { background: var(--green); }
+    .sc-orange::before { background: var(--orange); }
+    .stat-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 1.25rem; font-weight: 700; line-height: 1;
+    }
+    .sc-blue   .stat-val { color: var(--blue); }
+    .sc-green  .stat-val { color: var(--green); }
+    .sc-orange .stat-val { color: var(--orange); }
+    .stat-lbl {
+      font-size: 0.6rem; font-weight: 800; color: var(--text-fade);
+      text-transform: uppercase; letter-spacing: 0.09em;
+    }
+
+    /* MAIN GRID */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* MODULE CARDS */
+    .module-cards {
+      display: flex; flex-direction: column; gap: 10px;
+      min-height: 0;
+    }
+
+    .module-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 16px 18px;
+      text-decoration: none; color: var(--text);
+      display: flex; align-items: center; gap: 14px;
+      transition: all 0.2s; box-shadow: var(--shadow);
+      position: relative; overflow: hidden; flex: 1;
+    }
+    .module-card::before {
+      content: ''; position: absolute; right: -14px; top: -14px;
+      width: 60px; height: 60px; border-radius: 50%;
+      filter: blur(18px); opacity: 0; transition: opacity 0.2s;
+    }
+    .card-blue::before   { background: var(--blue); }
+    .card-green::before  { background: var(--green); }
+    .card-purple::before { background: var(--purple); }
+    .card-pink::before   { background: var(--pink); }
+
+    .module-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .module-card:hover::before { opacity: 0.2; }
+    .card-blue:hover   { border-color: rgba(67,97,238,0.3); }
+    .card-green:hover  { border-color: rgba(16,185,129,0.3); }
+    .card-purple:hover { border-color: rgba(124,58,237,0.3); }
+    .card-pink:hover   { border-color: rgba(247,37,133,0.3); }
+
+    .mod-icon {
+      width: 46px; height: 46px; border-radius: 13px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; color: white; flex-shrink: 0;
+    }
+    .card-blue   .mod-icon { background: linear-gradient(135deg, var(--blue), var(--cyan));   box-shadow: 0 4px 12px rgba(67,97,238,0.25); }
+    .card-green  .mod-icon { background: linear-gradient(135deg, var(--green), #059669);       box-shadow: 0 4px 12px rgba(16,185,129,0.2); }
+    .card-purple .mod-icon { background: linear-gradient(135deg, var(--purple), #6d28d9);      box-shadow: 0 4px 12px rgba(124,58,237,0.2); }
+    .card-pink   .mod-icon { background: linear-gradient(135deg, var(--pink), #db2777);        box-shadow: 0 4px 12px rgba(247,37,133,0.2); }
+
+    .mod-info { flex: 1; min-width: 0; }
+    .mod-info h3 { font-size: 0.88rem; font-weight: 800; color: var(--text); margin-bottom: 3px; }
+    .mod-info p  { font-size: 0.7rem; color: var(--text-fade); line-height: 1.4; }
+
+    .mod-num-tag {
+      font-size: 0.58rem; font-weight: 800; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 0.12em;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 100px; padding: 2px 8px; flex-shrink: 0;
+    }
+    .mod-arrow {
+      width: 28px; height: 28px; border-radius: 8px;
+      border: 1px solid var(--border2); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; color: var(--text-dim); transition: all 0.2s;
+    }
+    .module-card:hover .mod-arrow {
+      background: var(--blue); border-color: var(--blue); color: white;
+    }
+    .card-green:hover  .mod-arrow { background: var(--green);  border-color: var(--green); }
+    .card-purple:hover .mod-arrow { background: var(--purple); border-color: var(--purple); }
+    .card-pink:hover   .mod-arrow { background: var(--pink);   border-color: var(--pink); }
+
+    /* QUICK ACCESS PANEL */
+    .panel {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden;
+      box-shadow: var(--shadow); display: flex; flex-direction: column;
+      min-height: 0;
+    }
+    .panel-hdr {
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .panel-hdr-left { display: flex; align-items: center; gap: 7px; }
+    .hdr-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--blue); box-shadow: 0 0 6px rgba(67,97,238,0.5);
+      animation: pulse 2s infinite;
+    }
+    .panel-hdr h3 { font-size: 0.8rem; font-weight: 700; }
+    .panel-badge {
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 100px; padding: 2px 9px;
+      font-size: 0.6rem; font-weight: 700; color: var(--text-fade);
+    }
+    .list-wrap { flex: 1; overflow-y: auto; min-height: 0; }
+
+    .list-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      text-decoration: none; color: var(--text); transition: background 0.15s;
+    }
+    .list-item:last-child { border-bottom: none; }
+    .list-item:hover { background: var(--bg3); }
+
+    .list-icon {
+      width: 34px; height: 34px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.82rem; flex-shrink: 0;
+    }
+    .li-blue   { background: rgba(67,97,238,0.1);  color: var(--blue); }
+    .li-green  { background: rgba(16,185,129,0.1); color: var(--green); }
+    .li-orange { background: rgba(245,158,11,0.1); color: var(--orange); }
+    .li-pink   { background: rgba(247,37,133,0.1); color: var(--pink); }
+    .li-purple { background: rgba(124,58,237,0.1); color: var(--purple); }
+
+    .list-body { flex: 1; min-width: 0; }
+    .list-title { font-size: 0.78rem; font-weight: 700; color: var(--text); margin-bottom: 1px; }
+    .list-sub   { font-size: 0.62rem; color: var(--text-fade); }
+    .list-arrow { color: var(--text-dim); font-size: 0.7rem; flex-shrink: 0; transition: all 0.18s; }
+    .list-item:hover .list-arrow { color: var(--blue); transform: translateX(3px); }
+
+    /* STATUS BAR */
+    .status-bar {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2px;
+    }
+    .status-left { display: flex; align-items: center; gap: 6px; }
+    .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 5px var(--green);
+      animation: pulse 2s infinite;
+    }
+    .status-text { font-size: 0.62rem; font-weight: 700; color: var(--text-dim); }
+    .status-right { font-size: 0.62rem; color: var(--text-dim); font-family: 'DM Mono', monospace; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo-mark"><i class="fas fa-store-alt"></i></div>
+      <div class="logo-text">Tri<span>smart</span></div>
+      <div class="page-badge"><i class="fas fa-chart-pie" style="margin-right:4px;color:var(--blue);font-size:0.6rem;"></i>Accounts</div>
+    </div>
+    <div class="topbar-right">
+      <div class="month-pill">
+        <i class="fas fa-calendar"></i>
+        <input type="month" id="globalMonth">
+      </div>
+      <a href="admin.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- Stats row -->
+    <div class="stats-row">
+      <div class="stat-chip sc-blue">
+        <div class="stat-val" id="statSales">K 0.00</div>
+        <div class="stat-lbl">Sales this month</div>
+      </div>
+      <div class="stat-chip sc-green">
+        <div class="stat-val" id="statProfit">K 0.00</div>
+        <div class="stat-lbl">Profit this month</div>
+      </div>
+      <div class="stat-chip sc-orange">
+        <div class="stat-val" id="statReports">0</div>
+        <div class="stat-lbl">Reports this month</div>
+      </div>
+    </div>
+
+    <!-- Module divider -->
+    <div class="divider"><span>Financial Modules</span></div>
+
+    <!-- Main grid -->
+    <div class="main-grid">
+
+      <!-- LEFT — module cards (now 4 cards) -->
+      <div class="module-cards">
+
+        <a class="module-card card-blue" href="total-sales.html">
+          <div class="mod-icon"><i class="fas fa-chart-line"></i></div>
+          <div class="mod-info">
+            <h3>Total Sales</h3>
+            <p>Revenue records and full sales ledger for all branches</p>
+          </div>
+          <div class="mod-num-tag">01</div>
+          <div class="mod-arrow"><i class="fas fa-arrow-right"></i></div>
+        </a>
+
+        <a class="module-card card-green" href="profit-tracker.html">
+          <div class="mod-icon"><i class="fas fa-coins"></i></div>
+          <div class="mod-info">
+            <h3>Profit Tracker</h3>
+            <p>Net performance, monthly margins and profit breakdown</p>
+          </div>
+          <div class="mod-num-tag">02</div>
+          <div class="mod-arrow"><i class="fas fa-arrow-right"></i></div>
+        </a>
+
+        <a class="module-card card-purple" href="cashflow-tracker.html">
+          <div class="mod-icon"><i class="fas fa-money-bill-transfer"></i></div>
+          <div class="mod-info">
+            <h3>Cash Flow</h3>
+            <p>Cash movement, account balances and flow analysis</p>
+          </div>
+          <div class="mod-num-tag">03</div>
+          <div class="mod-arrow"><i class="fas fa-arrow-right"></i></div>
+        </a>
+
+        <a class="module-card card-pink" href="receipt.html">
+          <div class="mod-icon"><i class="fas fa-receipt"></i></div>
+          <div class="mod-info">
+            <h3>Receipt Manager</h3>
+            <p>Customer receipts, payment tracking and digital records</p>
+          </div>
+          <div class="mod-num-tag">04</div>
+          <div class="mod-arrow"><i class="fas fa-arrow-right"></i></div>
+        </a>
+
+        <a class="module-card card-purple" href="payroll.html">
+          <div class="mod-icon"><i class="fas fa-users"></i></div>
+          <div class="mod-info">
+            <h3>Payroll</h3>
+            <p>Employees and pay roll management</p>
+          </div>
+          <div class="mod-num-tag">05</div>
+          <div class="mod-arrow"><i class="fas fa-arrow-right"></i></div>
+        </a>
+
+      </div>
+
+      <!-- RIGHT — quick access panel (updated with Receipt link) -->
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-hdr-left">
+            <div class="hdr-dot"></div>
+            <h3>Quick Access</h3>
+          </div>
+          <div class="panel-badge">5 pages</div>
+        </div>
+        <div class="list-wrap">
+          <a class="list-item" href="total-sales.html">
+            <div class="list-icon li-blue"><i class="fas fa-chart-line"></i></div>
+            <div class="list-body">
+              <div class="list-title">Total Sales</div>
+              <div class="list-sub">Full revenue ledger and sales records</div>
+            </div>
+            <i class="fas fa-chevron-right list-arrow"></i>
+          </a>
+          <a class="list-item" href="profit-tracker.html">
+            <div class="list-icon li-green"><i class="fas fa-coins"></i></div>
+            <div class="list-body">
+              <div class="list-title">Profit Tracker</div>
+              <div class="list-sub">Monthly margins and net performance</div>
+            </div>
+            <i class="fas fa-chevron-right list-arrow"></i>
+          </a>
+          <a class="list-item" href="cashflow-tracker.html">
+            <div class="list-icon li-orange"><i class="fas fa-money-bill-transfer"></i></div>
+            <div class="list-body">
+              <div class="list-title">Cash Flow</div>
+              <div class="list-sub">Cash movement and account balances</div>
+            </div>
+            <i class="fas fa-chevron-right list-arrow"></i>
+          </a>
+          <a class="list-item" href="receipt.html">
+            <div class="list-icon li-pink"><i class="fas fa-receipt"></i></div>
+            <div class="list-body">
+              <div class="list-title">Receipt Manager</div>
+              <div class="list-sub">Customer receipts, payment tracking</div>
+            </div>
+            <i class="fas fa-chevron-right list-arrow"></i>
+          </a>
+          <a class="list-item" href="cashbook.html">
+            <div class="list-icon li-purple"><i class="fas fa-book-open"></i></div>
+            <div class="list-body">
+              <div class="list-title">Cash Ledger</div>
+              <div class="list-sub">Detailed cash book and transaction log</div>
+            </div>
+            <i class="fas fa-chevron-right list-arrow"></i>
+          </a>
+        </div>
+      </div>
+
+    </div><!-- end main-grid -->
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div class="status-left">
+        <div class="live-dot"></div>
+        <div class="status-text">Connected · Live data</div>
+      </div>
+      <div class="status-right" id="clockEl">--:--</div>
+    </div>
+
+  </div><!-- end content -->
+
+</div><!-- end shell -->
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script>
+  /* ── Firebase ── */
+  if (!firebase.apps.length) {
+    firebase.initializeApp({
+      apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+      authDomain: "trismartstores.firebaseapp.com",
+      projectId: "trismartstores",
+      storageBucket: "trismartstores.appspot.com",
+      messagingSenderId: "416692703333",
+      appId: "1:416692703333:web:d4b60292621435c748f68c"
+    });
+  }
+  const db = firebase.firestore();
+  db.enablePersistence().catch(() => {});
+
+  /* ── Month picker ── */
+  const monthInput = document.getElementById('globalMonth');
+  monthInput.value = localStorage.getItem('accounts_month') || new Date().toISOString().substring(0, 7);
+  monthInput.addEventListener('change', () => {
+    localStorage.setItem('accounts_month', monthInput.value);
+    updateStats();
+  });
+
+  /* ── Clock ── */
+  function tick() {
+    document.getElementById('clockEl').textContent =
+      new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+  tick(); setInterval(tick, 30000);
+
+  /* ── Data ── */
+  let salesData = [], reportsData = [];
+
+  function fmt(n) {
+    return 'K ' + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function updateStats() {
+    const [year, month] = monthInput.value.split('-').map(Number);
+    let monthlySales = 0;
+
+    salesData.forEach(t => {
+      if (!t.date) return;
+      const [y, m] = t.date.split('-').map(Number);
+      if (y === year && m === month) monthlySales += (t.amount || 0);
+    });
+
+    const reportCount = reportsData.filter(r => {
+      if (!r.date) return false;
+      const [y, m] = r.date.split('-').map(Number);
+      return y === year && m === month;
+    }).length;
+
+    document.getElementById('statSales').textContent   = fmt(monthlySales);
+    document.getElementById('statProfit').textContent  = fmt(monthlySales);
+    document.getElementById('statReports').textContent = reportCount;
+  }
+
+  /* ── Live listeners ── */
+  db.collection('Sales transactions').onSnapshot(snap => {
+    salesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    updateStats();
+  }, err => console.error(err));
+
+  db.collection('dailyCashReports').onSnapshot(snap => {
+    reportsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    updateStats();
+  }, err => console.error(err));
+</script>
+</body>
+</html>
