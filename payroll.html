@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Trismart · Payroll</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --p:#1e3a8a;--pl:#3b82f6;--g:#10b981;--r:#dc2626;--o:#f59e0b;--c:#06b6d4;
+  --bg:#f1f5f9;--s:#fff;--bd:#e2e8f0;--t:#0f172a;--tm:#64748b;--dim:#94a3b8;
+  --rad:10px;--sh:0 1px 3px rgba(0,0,0,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--t);font-size:13px;min-height:100vh}
+
+/* TOPBAR */
+.topbar{background:var(--s);border-bottom:1px solid var(--bd);padding:0 14px;height:50px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:var(--sh);position:sticky;top:0;z-index:50;flex-wrap:wrap}
+.tl{display:flex;align-items:center;gap:10px}
+.logo{display:flex;align-items:center;gap:7px}
+.logo i{font-size:1.1rem;color:var(--p)}
+.logo h1{font-size:.88rem;font-weight:800;background:linear-gradient(135deg,var(--p),var(--pl));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.month-pick{background:var(--bg);border:1px solid var(--bd);border-radius:30px;padding:4px 10px;display:flex;align-items:center;gap:6px;font-size:.72rem}
+.month-pick input{border:none;background:transparent;font-weight:600;font-size:.72rem;outline:none;color:var(--t)}
+.back-btn{background:var(--bg);border:1px solid var(--bd);border-radius:30px;padding:5px 12px;font-size:.7rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;text-decoration:none;color:var(--t);transition:.15s}
+.back-btn:hover{background:var(--p);color:#fff;border-color:var(--p)}
+.btn{padding:5px 12px;border-radius:30px;font-weight:600;font-size:.7rem;display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:1px solid var(--bd);background:var(--bg);color:var(--t);transition:.15s;white-space:nowrap}
+.btn-p{background:var(--p);color:#fff;border-color:var(--p)}
+.btn-p:hover{background:var(--pl)}
+.btn-g{background:var(--g);color:#fff;border-color:var(--g)}
+.btn-o{background:var(--o);color:#fff;border-color:var(--o)}
+.btn-r{background:var(--r);color:#fff;border-color:var(--r)}
+.btn-sm{padding:3px 9px;font-size:.64rem}
+.btn:hover:not(.btn-p):not(.btn-g):not(.btn-o):not(.btn-r){background:var(--p);color:#fff;border-color:var(--p)}
+
+/* STATS */
+.wrap{padding:12px 14px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.sc{background:var(--s);border:1px solid var(--bd);border-radius:var(--rad);padding:11px 12px;box-shadow:var(--sh)}
+.sc h3{font-size:.56rem;text-transform:uppercase;letter-spacing:.06em;color:var(--tm);margin-bottom:4px;font-weight:700}
+.sc .val{font-size:1rem;font-weight:800;color:var(--p);line-height:1}
+.sc .sub{font-size:.6rem;color:var(--dim);margin-top:3px}
+
+/* ACTION BAR */
+.abar{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;background:var(--s);border:1px solid var(--bd);border-radius:var(--rad);padding:10px 12px}
+.abar-title{width:100%;font-size:.6rem;font-weight:700;color:var(--tm);text-transform:uppercase;margin-bottom:4px}
+
+/* FILTER */
+.fbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.fg{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.fc{background:var(--s);border:1px solid var(--bd);border-radius:30px;padding:5px 11px;display:flex;align-items:center;gap:6px;font-size:.72rem}
+.fc i{color:var(--dim);font-size:.65rem}
+.fc select,.fc input{border:none;background:transparent;font-weight:500;outline:none;font-size:.72rem;color:var(--t)}
+.fc input{width:130px}
+.clr{background:transparent;border:1px solid var(--bd);border-radius:30px;padding:5px 11px;display:flex;align-items:center;gap:5px;cursor:pointer;font-size:.68rem;color:var(--tm);transition:.15s}
+.clr:hover{background:var(--r);color:#fff;border-color:var(--r)}
+.badge{background:var(--bg);padding:4px 10px;border-radius:30px;font-size:.68rem;color:var(--tm)}
+
+/* TABLE */
+.tw{background:var(--s);border-radius:var(--rad);border:1px solid var(--bd);overflow:auto;box-shadow:var(--sh)}
+table{width:100%;border-collapse:collapse;font-size:.71rem;min-width:900px}
+th{background:#f8fafc;padding:9px 10px;text-align:left;font-weight:700;color:var(--tm);border-bottom:1px solid var(--bd);font-size:.6rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fafc}
+.paid{color:var(--g);font-weight:700}
+.pend{color:var(--o);font-weight:700}
+.bb{background:#fef3c7;color:#d97706;padding:1px 6px;border-radius:10px;font-size:.6rem;font-weight:700;display:inline-block}
+.ab{background:#fee2e2;color:var(--r);padding:1px 6px;border-radius:10px;font-size:.6rem;font-weight:700;display:inline-block}
+.lb{background:#dbeafe;color:var(--p);padding:1px 6px;border-radius:10px;font-size:.6rem;font-weight:700;display:inline-block}
+.emp-name{font-weight:700;font-size:.76rem}
+.emp-pos{font-size:.62rem;color:var(--tm)}
+.empty-cell{color:transparent;font-size:.7rem;user-select:none}
+
+/* DOTS MENU */
+.mc{text-align:right;position:relative;width:30px}
+.dots{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px;color:var(--tm);font-size:.8rem}
+.dots:hover{background:var(--bg)}
+.dd{position:absolute;right:0;top:26px;background:#fff;border:1px solid var(--bd);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.12);z-index:100;min-width:140px;display:none;overflow:hidden}
+.dd.show{display:block}
+.di{padding:7px 13px;display:flex;align-items:center;gap:9px;font-size:.7rem;cursor:pointer;width:100%;text-align:left;background:none;border:none;color:var(--t);transition:.1s}
+.di:hover{background:var(--bg)}
+.di.del:hover{color:var(--r)}
+.di i{width:12px;color:var(--tm)}
+
+/* MODALS */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);align-items:center;justify-content:center;z-index:1000;padding:12px}
+.mo.open{display:flex}
+.mc2{background:#fff;width:100%;max-width:520px;border-radius:18px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,.15);animation:pop .18s ease;max-height:92vh;overflow-y:auto}
+.mc2.lg{max-width:640px}
+@keyframes pop{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.mh h2{font-size:.9rem;font-weight:800}
+.mh h2 i{margin-right:6px}
+.cx{background:var(--bg);border:none;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:.75rem;color:var(--tm)}
+.cx:hover{background:var(--r);color:#fff}
+.fg2{margin-bottom:10px}
+.fg2 label{font-size:.58rem;font-weight:700;text-transform:uppercase;color:var(--tm);display:block;margin-bottom:4px;letter-spacing:.04em}
+.fg2 input,.fg2 select,.fg2 textarea{width:100%;padding:7px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);font-size:.76rem;outline:none;transition:.15s}
+.fg2 input:focus,.fg2 select:focus,.fg2 textarea:focus{border-color:var(--pl);background:#fff}
+.fg2 textarea{resize:vertical;min-height:50px}
+.fr{display:flex;gap:10px}
+.fr .fg2{flex:1}
+.sv{width:100%;background:var(--p);color:#fff;border:none;padding:9px;border-radius:30px;font-weight:700;font-size:.76rem;margin-top:8px;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;gap:7px}
+.sv:hover{background:var(--pl)}
+.sv.red{background:var(--r)}
+.sv.red:hover{background:#b91c1c}
+.sv.grn{background:var(--g)}
+.sv.org{background:var(--o)}
+
+/* EMPLOYEE DETAIL PANEL */
+.emp-detail-tabs{display:flex;border-bottom:1px solid var(--bd);margin-bottom:12px;gap:2px}
+.edt{padding:6px 12px;background:none;border:none;font-size:.7rem;font-weight:700;color:var(--tm);cursor:pointer;border-bottom:2px solid transparent}
+.edt.act{color:var(--p);border-bottom-color:var(--p)}
+.tab-panel{display:none}
+.tab-panel.act{display:block}
+
+/* HISTORY LIST */
+.hist-item{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;margin-bottom:5px;background:var(--bg);font-size:.7rem}
+.hist-item .hi-left{display:flex;flex-direction:column;gap:2px}
+.hist-item .hi-label{font-weight:700}
+.hist-item .hi-sub{font-size:.62rem;color:var(--tm)}
+.hist-item .hi-amt{font-weight:800;font-family:monospace}
+.hist-item .hi-amt.pos{color:var(--g)}
+.hist-item .hi-amt.neg{color:var(--r)}
+.hist-del{background:none;border:none;color:var(--r);cursor:pointer;padding:3px 6px;border-radius:5px;font-size:.65rem}
+.hist-del:hover{background:#fee2e2}
+
+/* ADD INLINE FORM */
+.add-inline{background:var(--bg);border:1px dashed var(--bd);border-radius:10px;padding:12px;margin-bottom:10px}
+.add-inline h4{font-size:.65rem;font-weight:700;text-transform:uppercase;color:var(--tm);margin-bottom:8px}
+
+/* PAYSLIP */
+.ps{font-family:'Segoe UI',sans-serif;max-width:500px;margin:0 auto;background:#fff}
+.ps-hdr{background:linear-gradient(135deg,var(--p),var(--pl));color:#fff;padding:18px 20px;border-radius:12px 12px 0 0;text-align:center}
+.ps-hdr h2{font-size:1.1rem;font-weight:800;letter-spacing:.02em}
+.ps-hdr p{font-size:.7rem;opacity:.85;margin-top:3px}
+.ps-info{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:14px 16px;background:#f8fafc;border-left:1px solid var(--bd);border-right:1px solid var(--bd)}
+.ps-info-item{font-size:.7rem}
+.ps-info-item strong{display:block;font-size:.58rem;text-transform:uppercase;color:var(--tm);margin-bottom:1px}
+.ps-section{padding:10px 16px;border-left:1px solid var(--bd);border-right:1px solid var(--bd)}
+.ps-section-title{font-size:.6rem;font-weight:800;text-transform:uppercase;color:var(--tm);letter-spacing:.06em;margin-bottom:7px;display:flex;align-items:center;gap:5px}
+.ps-section-title::before{content:'';flex:1;height:1px;background:var(--bd)}
+.ps-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #f1f5f9;font-size:.72rem}
+.ps-row:last-child{border-bottom:none}
+.ps-row .lbl{color:var(--tm)}
+.ps-row .amt{font-weight:700;font-family:monospace}
+.ps-row .amt.pos{color:var(--g)}
+.ps-row .amt.neg{color:var(--r)}
+.ps-total{background:linear-gradient(135deg,var(--p),var(--pl));color:#fff;padding:12px 16px;display:flex;justify-content:space-between;border-radius:0 0 12px 12px;font-weight:800;font-size:.9rem}
+.ps-actions{display:flex;gap:8px;margin-top:14px}
+.ps-actions .btn{flex:1;justify-content:center}
+
+/* TOAST */
+.ta{position:fixed;bottom:16px;right:14px;z-index:2000;display:flex;flex-direction:column;gap:6px}
+.toast{background:#fff;border-left:3px solid var(--g);padding:9px 14px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);display:flex;align-items:center;gap:8px;font-size:.72rem;animation:tin .2s ease}
+@keyframes tin{from{transform:translateX(60px);opacity:0}to{transform:none;opacity:1}}
+
+/* PRINT */
+@media print{
+  body>*:not(#printArea){display:none!important}
+  #printArea{display:block!important;position:fixed;inset:0;background:#fff;z-index:9999;padding:20px}
+}
+#printArea{display:none}
+
+/* RESPONSIVE */
+@media(max-width:640px){
+  .stats{grid-template-columns:1fr 1fr}
+  .sc .val{font-size:.88rem}
+  .wrap{padding:10px 10px}
+  .fr{flex-direction:column}
+}
+@media(max-width:380px){
+  .stats{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tl">
+    <a href="cashbook.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+    <div class="logo"><i class="fas fa-users"></i><h1>Trismart</h1></div>
+    <div class="month-pick"><i class="fas fa-calendar" style="color:var(--tm);font-size:.65rem"></i><input type="month" id="monthSelect"></div>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <button class="btn btn-p" id="addEmployeeBtn"><i class="fas fa-user-plus"></i> Add Employee</button>
+    <button class="btn" id="exportAllPdfBtn"><i class="fas fa-file-pdf" style="color:#dc2626"></i> Export All</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- STATS -->
+  <div class="stats">
+    <div class="sc"><h3>Employees</h3><div class="val" id="totalEmployees">0</div><div class="sub">Active staff</div></div>
+    <div class="sc"><h3>Gross Payroll</h3><div class="val" id="totalPayroll">K0</div><div class="sub">This month</div></div>
+    <div class="sc"><h3>Paid</h3><div class="val" id="totalPaid" style="color:var(--g)">K0</div><div class="sub">Processed</div></div>
+    <div class="sc"><h3>Pending</h3><div class="val" id="totalPending" style="color:var(--o)">K0</div><div class="sub">Unpaid</div></div>
+  </div>
+
+  <!-- ACTION BAR -->
+  <div class="abar">
+    <div class="abar-title">Quick Actions</div>
+    <button class="btn btn-g" id="processPayrollBtn"><i class="fas fa-calculator"></i> Process All</button>
+    <button class="btn btn-o" id="addBonusBtn"><i class="fas fa-gift"></i> Bonus</button>
+    <button class="btn" id="addAdvanceBtn"><i class="fas fa-hand-holding-usd"></i> Advance</button>
+    <button class="btn" id="addLoanBtn"><i class="fas fa-file-invoice-dollar"></i> Loan</button>
+  </div>
+
+  <!-- FILTER -->
+  <div class="fbar">
+    <div class="fg">
+      <div class="fc"><i class="fas fa-search"></i><input type="text" id="searchFilter" placeholder="Search…"></div>
+      <div class="fc"><i class="fas fa-filter"></i><select id="statusFilter"><option value="">All Status</option><option value="paid">Paid</option><option value="pending">Pending</option></select></div>
+      <button class="clr" id="clearFiltersBtn"><i class="fas fa-times"></i> Clear</button>
+    </div>
+    <div class="badge" id="filterStats">0 records</div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="tw">
+    <table>
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Basic</th>
+          <th>Bonus</th>
+          <th>Advance</th>
+          <th>Loan Ded.</th>
+          <th>Net Pay</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--tm)"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="ta" id="toastRoot"></div>
+
+<!-- PRINT AREA -->
+<div id="printArea"></div>
+
+<!-- EMPLOYEE MODAL -->
+<div id="employeeModal" class="mo">
+  <div class="mc2">
+    <div class="mh"><h2 id="empModalTitle"><i class="fas fa-user"></i> Add Employee</h2><button class="cx" onclick="closeModal('employeeModal')"><i class="fas fa-times"></i></button></div>
+    <form id="employeeForm">
+      <input type="hidden" id="employeeId">
+      <div class="fr">
+        <div class="fg2"><label>Full Name</label><input type="text" id="empName" required placeholder="e.g. John Banda"></div>
+        <div class="fg2"><label>NRC Number</label><input type="text" id="empNrc" placeholder="e.g. 123456/78/1"></div>
+      </div>
+      <div class="fr">
+        <div class="fg2"><label>Position</label><input type="text" id="empPosition" required placeholder="e.g. Sales Rep"></div>
+        <div class="fg2"><label>Basic Salary (ZMW)</label><input type="number" id="empBasic" step="0.01" min="0" required placeholder="0.00"></div>
+      </div>
+      <div class="fr">
+        <div class="fg2"><label>Phone</label><input type="text" id="empPhone" placeholder="+260…"></div>
+        <div class="fg2"><label>Bank / Account No.</label><input type="text" id="empBankAccount" placeholder="Account number"></div>
+      </div>
+      <div class="fg2"><label>Email (optional)</label><input type="email" id="empEmail" placeholder="email@…"></div>
+      <button type="submit" class="sv"><i class="fas fa-save"></i> Save Employee</button>
+    </form>
+  </div>
+</div>
+
+<!-- EMPLOYEE DETAIL MODAL -->
+<div id="detailModal" class="mo">
+  <div class="mc2 lg">
+    <div class="mh"><h2 id="detailModalTitle"><i class="fas fa-user-edit"></i> Employee Details</h2><button class="cx" onclick="closeModal('detailModal')"><i class="fas fa-times"></i></button></div>
+    <div class="emp-detail-tabs">
+      <button class="edt act" onclick="switchTab('bonus')">🎁 Bonus</button>
+      <button class="edt" onclick="switchTab('advance')">💵 Advance</button>
+      <button class="edt" onclick="switchTab('loan')">🏦 Loan</button>
+      <button class="edt" onclick="switchTab('history')">📋 History</button>
+    </div>
+    <div class="tab-panel act" id="tab-bonus"><div class="add-inline"><h4><i class="fas fa-plus"></i> Add Bonus</h4><form id="bonusForm"><div class="fr"><div class="fg2"><label>Amount (ZMW)</label><input type="number" id="bonusAmount" step="0.01" min="0" required></div><div class="fg2"><label>Month</label><input type="month" id="bonusMonth" required></div></div><div class="fg2"><label>Reason</label><input type="text" id="bonusReason" placeholder="e.g. Performance bonus"></div><button type="submit" class="sv org"><i class="fas fa-gift"></i> Add Bonus</button></form></div><div id="bonusHistoryList"><div style="text-align:center;color:var(--tm);font-size:.7rem;padding:10px">No bonuses recorded</div></div></div>
+    <div class="tab-panel" id="tab-advance"><div class="add-inline"><h4><i class="fas fa-plus"></i> Record Advance</h4><form id="advanceForm"><div class="fr"><div class="fg2"><label>Amount (ZMW)</label><input type="number" id="advanceAmount" step="0.01" min="0" required></div><div class="fg2"><label>Month</label><input type="month" id="advanceMonth" required></div></div><div class="fg2"><label>Reason</label><input type="text" id="advanceReason" placeholder="Reason for advance"></div><button type="submit" class="sv"><i class="fas fa-hand-holding-usd"></i> Record Advance</button></form></div><div id="advanceHistoryList"><div style="text-align:center;color:var(--tm);font-size:.7rem;padding:10px">No advances recorded</div></div></div>
+    <div class="tab-panel" id="tab-loan"><div class="add-inline"><h4><i class="fas fa-plus"></i> Register Loan</h4><form id="loanForm"><div class="fr"><div class="fg2"><label>Loan Amount (ZMW)</label><input type="number" id="loanAmount" step="0.01" min="0" required></div><div class="fg2"><label>Monthly Deduction</label><input type="number" id="loanMonthlyDeduction" step="0.01" min="0" required></div></div><div class="fr"><div class="fg2"><label>Start Month</label><input type="month" id="loanStartMonth" required></div><div class="fg2"><label>Purpose</label><input type="text" id="loanPurpose" placeholder="Purpose"></div></div><button type="submit" class="sv"><i class="fas fa-file-invoice-dollar"></i> Register Loan</button></form></div><div id="loanHistoryList"><div style="text-align:center;color:var(--tm);font-size:.7rem;padding:10px">No loans recorded</div></div></div>
+    <div class="tab-panel" id="tab-history"><div id="fullHistoryList"><div style="text-align:center;color:var(--tm);font-size:.7rem;padding:10px">No records</div></div></div>
+  </div>
+</div>
+
+<!-- PAYSLIP MODAL -->
+<div id="payslipModal" class="mo">
+  <div class="mc2 lg">
+    <div class="mh"><h2><i class="fas fa-receipt"></i> Payslip</h2><button class="cx" onclick="closeModal('payslipModal')"><i class="fas fa-times"></i></button></div>
+    <div id="payslipContent"></div>
+    <div class="ps-actions" style="margin-top:12px">
+      <button class="btn btn-p" id="printPayslipBtn"><i class="fas fa-print"></i> Print</button>
+      <button class="btn btn-r" id="downloadPayslipBtn"><i class="fas fa-file-pdf"></i> Download PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div id="deleteModal" class="mo">
+  <div class="mc2" style="max-width:320px">
+    <div class="mh"><h2><i class="fas fa-trash" style="color:var(--r)"></i> Confirm Delete</h2><button class="cx" onclick="closeModal('deleteModal')"><i class="fas fa-times"></i></button></div>
+    <p style="font-size:.76rem;color:var(--tm);margin-bottom:16px" id="deleteMsg">Are you sure?</p>
+    <input type="hidden" id="deleteTargetId">
+    <input type="hidden" id="deleteCollection">
+    <button id="confirmDeleteBtn" class="sv red"><i class="fas fa-trash"></i> Delete</button>
+  </div>
+</div>
+
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+  authDomain:"trismartstores.firebaseapp.com",
+  projectId:"trismartstores",
+  storageBucket:"trismartstores.appspot.com",
+  messagingSenderId:"416692703333",
+  appId:"1:416692703333:web:d4b60292621435c748f68c"
+});
+const db = firebase.firestore();
+db.enablePersistence().catch(()=>{});
+
+let employees=[], bonuses=[], advances=[], loans=[], payrollRecords=[];
+let currentMonth = localStorage.getItem('payroll_month') || new Date().toISOString().slice(0,7);
+let filteredRecords=[];
+let activeDetailEmpId = null;
+let currentPayslipEmp = null;
+
+document.getElementById('monthSelect').value = currentMonth;
+
+function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function zmw(n){return 'ZMW '+parseFloat(n||0).toFixed(2)}
+function toast(msg,type='success'){
+  const d=document.createElement('div');
+  d.className='toast';
+  d.style.borderLeftColor=type==='error'?'#dc2626':type==='info'?'#f59e0b':'#10b981';
+  d.innerHTML=`<i class="fas ${type==='error'?'fa-exclamation-circle':'fa-check-circle'}" style="color:${type==='error'?'#dc2626':type==='info'?'#f59e0b':'#10b981'}"></i> ${msg}`;
+  document.getElementById('toastRoot').appendChild(d);
+  setTimeout(()=>d.remove(),3000);
+}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function openModal(id){document.getElementById(id).classList.add('open')}
+window.closeModal=closeModal;
+
+function switchTab(name){
+  document.querySelectorAll('.edt').forEach(b=>b.classList.remove('act'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('act'));
+  document.querySelector(`.edt[onclick="switchTab('${name}')"]`).classList.add('act');
+  document.getElementById('tab-'+name).classList.add('act');
+}
+window.switchTab=switchTab;
+
+async function loadAllData(){
+  const [eSnap,bSnap,aSnap,lSnap,pSnap] = await Promise.all([
+    db.collection('payroll_employees').orderBy('name').get(),
+    db.collection('payroll_bonuses').get(),
+    db.collection('payroll_advances').get(),
+    db.collection('payroll_loans').get(),
+    db.collection('payroll_records').where('month','==',currentMonth).get()
+  ]);
+  employees=[]; eSnap.forEach(d=>employees.push({id:d.id,...d.data()}));
+  bonuses=[];   bSnap.forEach(d=>bonuses.push({id:d.id,...d.data()}));
+  advances=[];  aSnap.forEach(d=>advances.push({id:d.id,...d.data()}));
+  loans=[];     lSnap.forEach(d=>loans.push({id:d.id,...d.data()}));
+  payrollRecords=[]; pSnap.forEach(d=>payrollRecords.push({id:d.id,...d.data()}));
+  applyAndRender();
+  updateStats();
+}
+
+function empBonus(id,month){return bonuses.filter(b=>b.employeeId===id&&b.month===month).reduce((s,b)=>s+(b.amount||0),0)}
+function empAdvance(id,month){return advances.filter(a=>a.employeeId===id&&a.month===month).reduce((s,a)=>s+(a.amount||0),0)}
+function empLoan(id,month){return loans.filter(l=>l.employeeId===id&&l.startMonth<=month&&(l.remainingBalance??l.amount)>0).reduce((s,l)=>s+(l.monthlyDeduction||0),0)}
+
+function updateStats(){
+  let gross=0,paid=0,pend=0;
+  employees.forEach(emp=>{
+    const net=(emp.basicSalary||0)+empBonus(emp.id,currentMonth)-empAdvance(emp.id,currentMonth)-empLoan(emp.id,currentMonth);
+    gross+=net;
+    const rec=payrollRecords.find(r=>r.employeeId===emp.id);
+    if(rec&&rec.status==='paid') paid+=net; else pend+=net;
+  });
+  document.getElementById('totalEmployees').textContent=employees.length;
+  document.getElementById('totalPayroll').textContent='K'+gross.toFixed(0);
+  document.getElementById('totalPaid').textContent='K'+paid.toFixed(0);
+  document.getElementById('totalPending').textContent='K'+pend.toFixed(0);
+}
+
+function applyAndRender(){
+  const srch=document.getElementById('searchFilter').value.toLowerCase().trim();
+  const stat=document.getElementById('statusFilter').value;
+  filteredRecords=[];
+  employees.forEach(emp=>{
+    const bonus=empBonus(emp.id,currentMonth);
+    const advance=empAdvance(emp.id,currentMonth);
+    const loanDed=empLoan(emp.id,currentMonth);
+    const net=(emp.basicSalary||0)+bonus-advance-loanDed;
+    const rec=payrollRecords.find(r=>r.employeeId===emp.id);
+    const status=rec?rec.status:'pending';
+    if(srch&&!emp.name.toLowerCase().includes(srch)&&!(emp.position||'').toLowerCase().includes(srch)) return;
+    if(stat&&status!==stat) return;
+    filteredRecords.push({...emp,bonus,advance,loanDeduction:loanDed,netSalary:net,status,recordId:rec?rec.id:null});
+  });
+  document.getElementById('filterStats').textContent=`${filteredRecords.length} employee(s)`;
+  renderTable();
+}
+
+function renderTable(){
+  const tb=document.getElementById('tableBody');
+  if(!filteredRecords.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--tm)">📭 No employees found</td></tr>';return;}
+  tb.innerHTML=filteredRecords.map(e=>`
+    <tr>
+      <td><div class="emp-name">${esc(e.name)}</div><div class="emp-pos">${esc(e.position||'')}</div></td>
+      <td>${zmw(e.basicSalary)}</td>
+      <td>${e.bonus>0?`<span class="bb">+${zmw(e.bonus)}</span>`:'<span class="empty-cell"> </span>'}</td>
+      <td>${e.advance>0?`<span class="ab">-${zmw(e.advance)}</span>`:'<span class="empty-cell"> </span>'}</td>
+      <td>${e.loanDeduction>0?`<span class="lb">-${zmw(e.loanDeduction)}</span>`:'<span class="empty-cell"> </span>'}</td>
+      <td><strong>${zmw(e.netSalary)}</strong></td>
+      <td class="${e.status==='paid'?'paid':'pend'}">${e.status==='paid'?'✓ Paid':'⏳ Pending'}</td>
+      <td class="mc"><button class="dots" onclick="toggleDots(event,'${e.id}')"><i class="fas fa-ellipsis-v"></i></button>
+        <div class="dd" id="dd-${e.id}"><button class="di" onclick="viewPayslip('${e.id}')"><i class="fas fa-receipt"></i> Payslip</button>
+        <button class="di" onclick="openDetailModal('${e.id}')"><i class="fas fa-wallet"></i> Bonus / Advance / Loan</button>
+        <button class="di" onclick="editEmployee('${e.id}')"><i class="fas fa-edit"></i> Edit</button>
+        ${e.status==='pending'?`<button class="di" onclick="markPaid('${e.id}')"><i class="fas fa-check-circle"></i> Mark Paid</button>`:''}
+        <button class="di del" onclick="confirmDelete('${e.id}','payroll_employees','Delete ${esc(e.name)}?')"><i class="fas fa-trash"></i> Delete</button></div>
+      </td>
+    </tr>`).join('');
+}
+
+function toggleDots(e,id){e.stopPropagation();document.querySelectorAll('.dd').forEach(d=>d.classList.remove('show'));document.getElementById('dd-'+id).classList.toggle('show');}
+window.toggleDots=toggleDots;
+document.addEventListener('click',()=>document.querySelectorAll('.dd').forEach(d=>d.classList.remove('show')));
+
+document.getElementById('addEmployeeBtn').onclick=()=>{
+  document.getElementById('employeeForm').reset();
+  document.getElementById('employeeId').value='';
+  document.getElementById('empModalTitle').innerHTML='<i class="fas fa-user-plus"></i> Add Employee';
+  openModal('employeeModal');
+};
+
+window.editEmployee=id=>{
+  const e=employees.find(x=>x.id===id);
+  if(!e) return;
+  document.getElementById('employeeId').value=e.id;
+  document.getElementById('empName').value=e.name||'';
+  document.getElementById('empNrc').value=e.nrc||'';
+  document.getElementById('empPosition').value=e.position||'';
+  document.getElementById('empBasic').value=e.basicSalary||0;
+  document.getElementById('empPhone').value=e.phone||'';
+  document.getElementById('empBankAccount').value=e.bankAccount||'';
+  document.getElementById('empEmail').value=e.email||'';
+  document.getElementById('empModalTitle').innerHTML='<i class="fas fa-edit"></i> Edit Employee';
+  openModal('employeeModal');
+};
+
+document.getElementById('employeeForm').onsubmit=async e=>{
+  e.preventDefault();
+  const id=document.getElementById('employeeId').value;
+  const data={
+    name:document.getElementById('empName').value.trim(),
+    nrc:document.getElementById('empNrc').value.trim(),
+    position:document.getElementById('empPosition').value.trim(),
+    basicSalary:parseFloat(document.getElementById('empBasic').value)||0,
+    phone:document.getElementById('empPhone').value.trim(),
+    bankAccount:document.getElementById('empBankAccount').value.trim(),
+    email:document.getElementById('empEmail').value.trim(),
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try{
+    if(id) await db.collection('payroll_employees').doc(id).update(data);
+    else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();await db.collection('payroll_employees').add(data);}
+    toast(id?'Employee updated':'Employee added');
+    closeModal('employeeModal');
+    await loadAllData();
+  }catch(err){toast(err.message,'error');}
+};
+
+window.openDetailModal=async (empId)=>{
+  activeDetailEmpId=empId;
+  const emp=employees.find(e=>e.id===empId);
+  if(!emp) return;
+  document.getElementById('detailModalTitle').innerHTML=`<i class="fas fa-user-edit"></i> ${esc(emp.name)}`;
+  document.getElementById('bonusMonth').value=currentMonth;
+  document.getElementById('advanceMonth').value=currentMonth;
+  document.getElementById('loanStartMonth').value=currentMonth;
+  switchTab('bonus');
+  renderDetailLists(empId);
+  openModal('detailModal');
+};
+
+function renderDetailLists(empId){
+  const empBonuses=bonuses.filter(b=>b.employeeId===empId).sort((a,b)=>b.month?.localeCompare(a.month||'')||0);
+  const bl=document.getElementById('bonusHistoryList');
+  bl.innerHTML=empBonuses.length?empBonuses.map(b=>`<div class="hist-item"><div class="hi-left"><div class="hi-label">🎁 ${b.reason||'Bonus'}</div><div class="hi-sub">${b.month||''}</div></div><div style="display:flex;align-items:center;gap:8px"><div class="hi-amt pos">+${zmw(b.amount)}</div><button class="hist-del" onclick="deleteRecord('${b.id}','payroll_bonuses')"><i class="fas fa-trash"></i></button></div></div>`).join(''):'<div style="text-align:center;color:var(--tm);font-size:.7rem;padding:10px">No bonuses yet</div>';
+  const empAdvances=advances.filter(a=>a.employeeId===empId).sort((a,b)=>b.month?.localeCompare(a.month||'')||0);
+  const al=document.getElementById('advanceHistoryList');
+  al.innerHTML=empAdvances.length?empAdvances.map(a=>`<div class="hist-item"><div class="hi-left"><div class="hi-label">💵 ${a.reason||'Advance'}</div><div class="hi-sub">${a.month||''}</div></div><div style="display:flex;align-items:center;gap:8px"><div class="hi-amt neg">-${zmw(a.amount)}</div><button class="hist-del" onclick="deleteRecord('${a.id}','payroll_advances')"><i class="fas fa-trash"></i></button></div></div>`).join(''):'<div style="text-align:center;color:var(--tm);font-size:.7rem;padding:10px">No advances yet</div>';
+  const empLoans=loans.filter(l=>l.employeeId===empId).sort((a,b)=>b.startMonth?.localeCompare(a.startMonth||'')||0);
+  const ll=document.getElementById('loanHistoryList');
+  ll.innerHTML=empLoans.length?empLoans.map(l=>`<div class="hist-item"><div class="hi-left"><div class="hi-label">🏦 ${l.purpose||'Loan'}</div><div class="hi-sub">From ${l.startMonth||''} · ${zmw(l.monthlyDeduction)}/mo</div></div><div style="display:flex;align-items:center;gap:8px"><div class="hi-amt neg">${zmw(l.remainingBalance??l.amount)} left</div><button class="hist-del" onclick="deleteRecord('${l.id}','payroll_loans')"><i class="fas fa-trash"></i></button></div></div>`).join(''):'<div style="text-align:center;color:var(--tm);font-size:.7rem;padding:10px">No loans yet</div>';
+  const all=[...empBonuses.map(b=>({...b,_type:'bonus',_date:b.month||''})),...empAdvances.map(a=>({...a,_type:'advance',_date:a.month||''})),...empLoans.map(l=>({...l,_type:'loan',_date:l.startMonth||''}))].sort((a,b)=>b._date.localeCompare(a._date));
+  const hl=document.getElementById('fullHistoryList');
+  hl.innerHTML=all.length?all.map(r=>{if(r._type==='bonus')return `<div class="hist-item"><div class="hi-left"><div class="hi-label">🎁 Bonus — ${r.reason||''}</div><div class="hi-sub">${r.month||''}</div></div><div class="hi-amt pos">+${zmw(r.amount)}</div></div>`;if(r._type==='advance')return `<div class="hist-item"><div class="hi-left"><div class="hi-label">💵 Advance — ${r.reason||''}</div><div class="hi-sub">${r.month||''}</div></div><div class="hi-amt neg">-${zmw(r.amount)}</div></div>`;return `<div class="hist-item"><div class="hi-left"><div class="hi-label">🏦 Loan — ${r.purpose||''}</div><div class="hi-sub">From ${r.startMonth||''}</div></div><div class="hi-amt neg">-${zmw(r.monthlyDeduction)}/mo</div></div>`;}).join(''):'<div style="text-align:center;color:var(--tm);font-size:.7rem;padding:10px">No records</div>';
+}
+
+document.getElementById('bonusForm').onsubmit=async e=>{e.preventDefault();if(!activeDetailEmpId)return;try{await db.collection('payroll_bonuses').add({employeeId:activeDetailEmpId,amount:parseFloat(document.getElementById('bonusAmount').value)||0,month:document.getElementById('bonusMonth').value,reason:document.getElementById('bonusReason').value.trim(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});toast('Bonus added!');document.getElementById('bonusForm').reset();document.getElementById('bonusMonth').value=currentMonth;await loadAllData();renderDetailLists(activeDetailEmpId);}catch(err){toast(err.message,'error');}};
+document.getElementById('advanceForm').onsubmit=async e=>{e.preventDefault();if(!activeDetailEmpId)return;try{await db.collection('payroll_advances').add({employeeId:activeDetailEmpId,amount:parseFloat(document.getElementById('advanceAmount').value)||0,month:document.getElementById('advanceMonth').value,reason:document.getElementById('advanceReason').value.trim(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});toast('Advance recorded!');document.getElementById('advanceForm').reset();document.getElementById('advanceMonth').value=currentMonth;await loadAllData();renderDetailLists(activeDetailEmpId);}catch(err){toast(err.message,'error');}};
+document.getElementById('loanForm').onsubmit=async e=>{e.preventDefault();if(!activeDetailEmpId)return;const amount=parseFloat(document.getElementById('loanAmount').value)||0;const monthly=parseFloat(document.getElementById('loanMonthlyDeduction').value)||0;try{await db.collection('payroll_loans').add({employeeId:activeDetailEmpId,amount:amount,monthlyDeduction:monthly,startMonth:document.getElementById('loanStartMonth').value,remainingBalance:amount,purpose:document.getElementById('loanPurpose').value.trim(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});toast('Loan registered!');document.getElementById('loanForm').reset();document.getElementById('loanStartMonth').value=currentMonth;await loadAllData();renderDetailLists(activeDetailEmpId);}catch(err){toast(err.message,'error');}};
+document.getElementById('addBonusBtn').onclick=()=>{if(!employees.length){toast('Add employees first','info');return;}openDetailModal(filteredRecords[0]?.id||employees[0]?.id);setTimeout(()=>switchTab('bonus'),50);};
+document.getElementById('addAdvanceBtn').onclick=()=>{if(!employees.length){toast('Add employees first','info');return;}openDetailModal(filteredRecords[0]?.id||employees[0]?.id);setTimeout(()=>switchTab('advance'),50);};
+document.getElementById('addLoanBtn').onclick=()=>{if(!employees.length){toast('Add employees first','info');return;}openDetailModal(filteredRecords[0]?.id||employees[0]?.id);setTimeout(()=>switchTab('loan'),50);};
+window.deleteRecord=async(id,col)=>{if(!confirm('Delete this record?'))return;try{await db.collection(col).doc(id).delete();toast('Deleted');await loadAllData();if(activeDetailEmpId)renderDetailLists(activeDetailEmpId);}catch(err){toast(err.message,'error');}};
+window.confirmDelete=(id,col,msg)=>{document.getElementById('deleteTargetId').value=id;document.getElementById('deleteCollection').value=col;document.getElementById('deleteMsg').textContent=msg||'Are you sure?';openModal('deleteModal');};
+document.getElementById('confirmDeleteBtn').onclick=async()=>{const id=document.getElementById('deleteTargetId').value;const col=document.getElementById('deleteCollection').value;if(!id||!col)return;try{await db.collection(col).doc(id).delete();toast('Deleted');closeModal('deleteModal');await loadAllData();}catch(err){toast(err.message,'error');}};
+window.markPaid=async(empId)=>{const emp=employees.find(e=>e.id===empId);if(!emp)return;const bonus=empBonus(empId,currentMonth);const advance=empAdvance(empId,currentMonth);const loanDed=empLoan(empId,currentMonth);const net=(emp.basicSalary||0)+bonus-advance-loanDed;try{const existing=payrollRecords.find(r=>r.employeeId===empId);const data={employeeId:empId,employeeName:emp.name,month:currentMonth,basicSalary:emp.basicSalary||0,bonus,advance,loanDeduction:loanDed,netSalary:net,status:'paid',paymentDate:new Date().toISOString(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()};if(existing)await db.collection('payroll_records').doc(existing.id).update(data);else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();await db.collection('payroll_records').add(data);}await db.collection('Cashflow transactions').add({date:new Date().toISOString().slice(0,10),type:'debit',account:'Expenses A/c',description:`Payroll - ${emp.name} (${currentMonth})`,reference:`PAY-${currentMonth}`,amount:net,isPayroll:true,createdAt:firebase.firestore.FieldValue.serverTimestamp()});toast(`${emp.name} marked as paid`);await loadAllData();}catch(err){toast(err.message,'error');}};
+document.getElementById('processPayrollBtn').onclick=async()=>{const pending=employees.filter(emp=>!payrollRecords.find(r=>r.employeeId===emp.id&&r.status==='paid'));if(!pending.length){toast('All salaries already processed!','info');return;}for(const emp of pending){const bonus=empBonus(emp.id,currentMonth);const advance=empAdvance(emp.id,currentMonth);const loanDed=empLoan(emp.id,currentMonth);const net=(emp.basicSalary||0)+bonus-advance-loanDed;await db.collection('payroll_records').add({employeeId:emp.id,employeeName:emp.name,month:currentMonth,basicSalary:emp.basicSalary||0,bonus,advance,loanDeduction:loanDed,netSalary:net,status:'paid',paymentDate:new Date().toISOString(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});await db.collection('Cashflow transactions').add({date:new Date().toISOString().slice(0,10),type:'debit',account:'Expenses A/c',description:`Payroll - ${emp.name} (${currentMonth})`,reference:`PAYROLL-${currentMonth}`,amount:net,isPayroll:true,createdAt:firebase.firestore.FieldValue.serverTimestamp()});}toast(`✅ Processed ${pending.length} payrolls!`);await loadAllData();};
+
+function buildPayslipHTML(emp){
+  const bonus=empBonus(emp.id,currentMonth);
+  const advance=empAdvance(emp.id,currentMonth);
+  const loanDed=empLoan(emp.id,currentMonth);
+  const gross=emp.basicSalary||0;
+  const totalEarnings=gross+bonus;
+  const totalDeductions=advance+loanDed;
+  const net=totalEarnings-totalDeductions;
+  const rec=payrollRecords.find(r=>r.employeeId===emp.id);
+  const status=rec&&rec.status==='paid'?'✓ PAID':'⏳ PENDING';
+  const statusColor=rec&&rec.status==='paid'?'#10b981':'#f59e0b';
+  const empBonusList=bonuses.filter(b=>b.employeeId===emp.id&&b.month===currentMonth);
+  const empAdvList=advances.filter(a=>a.employeeId===emp.id&&a.month===currentMonth);
+  const empLoanList=loans.filter(l=>l.employeeId===emp.id&&l.startMonth<=currentMonth&&(l.remainingBalance??l.amount)>0);
+  return `<div class="ps" id="payslipPrintContent"><div class="ps-hdr"><h2>TRISMART</h2><p>Employee Payslip — ${currentMonth}</p></div><div class="ps-info"><div class="ps-info-item"><strong>Employee</strong>${esc(emp.name)}</div><div class="ps-info-item"><strong>NRC</strong>${esc(emp.nrc||'—')}</div><div class="ps-info-item"><strong>Position</strong>${esc(emp.position||'—')}</div><div class="ps-info-item"><strong>Account</strong>${esc(emp.bankAccount||'—')}</div><div class="ps-info-item"><strong>Status</strong><span style="font-weight:800;color:${statusColor}">${status}</span></div></div><div class="ps-section"><div class="ps-section-title">Earnings</div><div class="ps-row"><span class="lbl">Basic Salary</span><span class="amt pos">+${zmw(gross)}</span></div>${empBonusList.map(b=>`<div class="ps-row"><span class="lbl">Bonus (${esc(b.reason||'bonus')})</span><span class="amt pos">+${zmw(b.amount)}</span></div>`).join('')}<div class="ps-row" style="border-top:1px solid var(--bd);font-weight:700"><span class="lbl">Total Earnings</span><span class="amt pos">${zmw(totalEarnings)}</span></div></div><div class="ps-section"><div class="ps-section-title">Deductions</div>${advance>0||loanDed>0?[...empAdvList.map(a=>`<div class="ps-row"><span class="lbl">Salary Advance (${esc(a.reason||'advance')})</span><span class="amt neg">-${zmw(a.amount)}</span></div>`),...empLoanList.map(l=>`<div class="ps-row"><span class="lbl">Loan (${esc(l.purpose||'loan')})</span><span class="amt neg">-${zmw(l.monthlyDeduction)}</span></div>`)]:'<div class="ps-row"><span class="lbl" style="font-style:italic">No deductions</span><span class="amt">—</span></div>'}<div class="ps-row" style="border-top:1px solid var(--bd);font-weight:700"><span class="lbl">Total Deductions</span><span class="amt neg">-${zmw(totalDeductions)}</span></div></div><div class="ps-total"><span>NET PAY</span><span>${zmw(net)}</span></div><div style="text-align:center;font-size:.58rem;color:var(--tm);padding:8px 0;border-left:1px solid var(--bd);border-right:1px solid var(--bd)">Generated ${new Date().toLocaleDateString('en-GB')} · Trismart Payroll</div></div>`;
+}
+
+window.viewPayslip=async(empId)=>{const emp=employees.find(e=>e.id===empId);if(!emp)return;currentPayslipEmp=emp;document.getElementById('payslipContent').innerHTML=buildPayslipHTML(emp);openModal('payslipModal');};
+document.getElementById('printPayslipBtn').onclick=()=>{if(!currentPayslipEmp)return;const area=document.getElementById('printArea');area.innerHTML=buildPayslipHTML(currentPayslipEmp);window.print();};
+function downloadPayslipPDF(emp){const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'portrait',unit:'pt',format:'a5'});const pw=doc.internal.pageSize.getWidth();let y=30;doc.setFillColor(30,58,138);doc.roundedRect(20,y,pw-40,55,4,4,'F');doc.setTextColor(255,255,255);doc.setFontSize(16);doc.setFont(undefined,'bold');doc.text('TRISMART',pw/2,y+22,{align:'center'});doc.setFontSize(9);doc.setFont(undefined,'normal');doc.text(`Employee Payslip — ${currentMonth}`,pw/2,y+40,{align:'center'});y+=70;doc.setTextColor(0);doc.setFontSize(8);const infoItems=[['Employee',emp.name],['NRC',emp.nrc||'—'],['Position',emp.position||'—'],['Account',emp.bankAccount||'—']];infoItems.forEach((item,i)=>{const x=i%2===0?25:pw/2;if(i%2===0&&i>0)y+=22;doc.setFont(undefined,'bold');doc.text(item[0]+':',x,y);doc.setFont(undefined,'normal');doc.text(item[1],x+55,y);});y+=30;doc.setFillColor(240,245,255);doc.roundedRect(20,y,pw-40,16,3,3,'F');doc.setFont(undefined,'bold');doc.setFontSize(8);doc.setTextColor(30,58,138);doc.text('EARNINGS',25,y+11);y+=22;const bonus=empBonus(emp.id,currentMonth);const empBonusList=bonuses.filter(b=>b.employeeId===emp.id&&b.month===currentMonth);doc.setTextColor(0);doc.setFont(undefined,'normal');doc.setFontSize(8);doc.text('Basic Salary',25,y);doc.setFont(undefined,'bold');doc.setTextColor(16,185,129);doc.text(`+ZMW ${(emp.basicSalary||0).toFixed(2)}`,pw-25,y,{align:'right'});y+=14;doc.setTextColor(0);doc.setFont(undefined,'normal');empBonusList.forEach(b=>{doc.text(`Bonus (${b.reason||'bonus'})`,25,y);doc.setFont(undefined,'bold');doc.setTextColor(16,185,129);doc.text(`+ZMW ${(b.amount||0).toFixed(2)}`,pw-25,y,{align:'right'});doc.setTextColor(0);doc.setFont(undefined,'normal');y+=14;});const totalEarnings=(emp.basicSalary||0)+bonus;doc.setFont(undefined,'bold');doc.setFillColor(220,252,231);doc.roundedRect(20,y,pw-40,14,2,2,'F');doc.text('Total Earnings',25,y+10);doc.setTextColor(16,185,129);doc.text(`ZMW ${totalEarnings.toFixed(2)}`,pw-25,y+10,{align:'right'});y+=22;doc.setTextColor(0);doc.setFillColor(240,245,255);doc.roundedRect(20,y,pw-40,16,3,3,'F');doc.setFont(undefined,'bold');doc.setFontSize(8);doc.setTextColor(30,58,138);doc.text('DEDUCTIONS',25,y+11);y+=22;const advance=empAdvance(emp.id,currentMonth);const loanDed=empLoan(emp.id,currentMonth);const empAdvList=advances.filter(a=>a.employeeId===emp.id&&a.month===currentMonth);const empLoanList=loans.filter(l=>l.employeeId===emp.id&&l.startMonth<=currentMonth&&(l.remainingBalance??l.amount)>0);doc.setTextColor(0);doc.setFont(undefined,'normal');doc.setFontSize(8);if(advance===0&&loanDed===0){doc.text('No deductions this month',25,y);y+=14;}else{empAdvList.forEach(a=>{doc.text(`Salary Advance (${a.reason||'advance'})`,25,y);doc.setFont(undefined,'bold');doc.setTextColor(220,38,38);doc.text(`-ZMW ${(a.amount||0).toFixed(2)}`,pw-25,y,{align:'right'});doc.setTextColor(0);doc.setFont(undefined,'normal');y+=14;});empLoanList.forEach(l=>{doc.text(`Loan (${l.purpose||'loan'})`,25,y);doc.setFont(undefined,'bold');doc.setTextColor(220,38,38);doc.text(`-ZMW ${(l.monthlyDeduction||0).toFixed(2)}`,pw-25,y,{align:'right'});doc.setTextColor(0);doc.setFont(undefined,'normal');y+=14;});}const totalDed=advance+loanDed;if(totalDed>0){doc.setFont(undefined,'bold');doc.setFillColor(254,226,226);doc.roundedRect(20,y,pw-40,14,2,2,'F');doc.setTextColor(0);doc.text('Total Deductions',25,y+10);doc.setTextColor(220,38,38);doc.text(`-ZMW ${totalDed.toFixed(2)}`,pw-25,y+10,{align:'right'});y+=22;}y+=6;doc.setFillColor(30,58,138);doc.roundedRect(20,y,pw-40,30,4,4,'F');doc.setTextColor(255);doc.setFont(undefined,'bold');doc.setFontSize(12);doc.text('NET PAY',30,y+20);const net=totalEarnings-totalDed;doc.text(`ZMW ${net.toFixed(2)}`,pw-25,y+20,{align:'right'});y+=45;doc.setFontSize(7);doc.setTextColor(150);doc.text(`Generated ${new Date().toLocaleDateString('en-GB')} · Trismart`,pw/2,y,{align:'center'});doc.save(`Payslip_${emp.name.replace(/\s+/g,'_')}_${currentMonth}.pdf`);toast(`Payslip downloaded for ${emp.name}`);}
+document.getElementById('downloadPayslipBtn').onclick=()=>{if(currentPayslipEmp)downloadPayslipPDF(currentPayslipEmp);};
+document.getElementById('exportAllPdfBtn').onclick=async()=>{const{jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});const pw=doc.internal.pageSize.getWidth();doc.setFillColor(30,58,138);doc.rect(0,0,pw,45,'F');doc.setTextColor(255);doc.setFont(undefined,'bold');doc.setFontSize(16);doc.text('TRISMART — Payroll Report',20,28);doc.setFontSize(9);doc.setFont(undefined,'normal');doc.text(`Month: ${currentMonth} | Exported: ${new Date().toLocaleDateString()}`,pw-20,28,{align:'right'});let y=65;const cols=['#','Employee','NRC','Position','Basic','Bonus','Advance','Loan Ded.','Net Pay','Status'];const colX=[15,40,125,200,270,330,385,445,510,580];doc.setFillColor(241,245,249);doc.rect(15,y-10,pw-30,16,'F');doc.setTextColor(100);doc.setFontSize(7);doc.setFont(undefined,'bold');cols.forEach((c,i)=>doc.text(c,colX[i],y));y+=12;doc.setFont(undefined,'normal');doc.setFontSize(7.5);filteredRecords.forEach((emp,idx)=>{if(y>doc.internal.pageSize.getHeight()-40){doc.addPage();y=30;}if(idx%2===0){doc.setFillColor(248,250,252);doc.rect(15,y-9,pw-30,14,'F');}doc.setTextColor(0);doc.text(String(idx+1),colX[0],y);doc.text(emp.name.substring(0,20),colX[1],y);doc.text((emp.nrc||'—').substring(0,18),colX[2],y);doc.text((emp.position||'').substring(0,15),colX[3],y);doc.text(emp.basicSalary.toFixed(2),colX[4],y);doc.setTextColor(emp.bonus>0?16:0,emp.bonus>0?185:0,emp.bonus>0?129:0);doc.text(emp.bonus>0?'+'+emp.bonus.toFixed(2):'',colX[5],y);doc.setTextColor(emp.advance>0?220:0,emp.advance>0?38:0,emp.advance>0?38:0);doc.text(emp.advance>0?'-'+emp.advance.toFixed(2):'',colX[6],y);doc.text(emp.loanDeduction>0?'-'+emp.loanDeduction.toFixed(2):'',colX[7],y);doc.setTextColor(0,0,0);doc.setFont(undefined,'bold');doc.text(emp.netSalary.toFixed(2),colX[8],y);doc.setTextColor(emp.status==='paid'?16:245,emp.status==='paid'?185:158,emp.status==='paid'?129:11);doc.setFont(undefined,'normal');doc.text(emp.status.toUpperCase(),colX[9],y);doc.setTextColor(0);y+=14;});y+=4;doc.setFillColor(30,58,138);doc.setTextColor(255);doc.setFont(undefined,'bold');doc.rect(15,y-9,pw-30,16,'F');const totNet=filteredRecords.reduce((s,e)=>s+e.netSalary,0);const totBasic=filteredRecords.reduce((s,e)=>s+e.basicSalary,0);doc.text(`TOTAL (${filteredRecords.length} employees)`,colX[0],y);doc.text(totBasic.toFixed(2),colX[4],y);doc.text('ZMW '+totNet.toFixed(2),colX[8]-10,y);doc.save(`Trismart_Payroll_${currentMonth}.pdf`);toast('All payrolls exported to PDF');};
+document.getElementById('searchFilter').addEventListener('input',applyAndRender);
+document.getElementById('statusFilter').addEventListener('change',applyAndRender);
+document.getElementById('clearFiltersBtn').onclick=()=>{document.getElementById('searchFilter').value='';document.getElementById('statusFilter').value='';applyAndRender();toast('Filters cleared','info');};
+document.getElementById('monthSelect').addEventListener('change',()=>{currentMonth=document.getElementById('monthSelect').value;localStorage.setItem('payroll_month',currentMonth);loadAllData();});
+loadAllData();
+</script>
+</body>
+</html>

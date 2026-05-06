@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Trismart Loans - Loans</title>
+
+  <!-- Font Awesome (header only) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Firebase (v8) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <style>
+    :root{
+      --sidebar-width:260px;
+      --primary:#1e3c72;
+      --accent:#2a5298;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}
+    body{background:#f5f7fb;color:#222;min-height:100vh;overflow-x:hidden}
+
+    /* Sidebar (uniform look) */
+    .sidebar{
+      position:fixed;
+      left:0;
+      top:0;
+      bottom:0;
+      width:var(--sidebar-width);
+      padding:22px;
+      display:flex;
+      flex-direction:column;
+      gap:20px;
+      background:linear-gradient(180deg,var(--primary) 0%,var(--accent) 100%);
+      color:#fff;
+      z-index:60;
+      box-shadow:6px 0 30px rgba(16,24,40,0.12);
+      transition:transform 0.3s ease, width 0.3s ease;
+      overflow:auto;
+    }
+    .sidebar.closed{
+      transform:translateX(-100%);
+    }
+    .sidebar.open{transform:translateX(0)}
+    .brand{display:flex;gap:12px;align-items:center}
+    .brand i{font-size:1.6rem;background:rgba(255,255,255,0.07);padding:10px;border-radius:8px}
+    .brand .title{font-weight:700;font-size:1.05rem}
+    .nav{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+    .menu-item{display:flex;gap:12px;align-items:center;padding:11px;border-radius:8px;color:rgba(255,255,255,0.95);text-decoration:none}
+    .menu-item:hover{background:rgba(255,255,255,0.06);transform:translateX(4px)}
+    .menu-item.active{background:rgba(255,255,255,0.10);border-right:4px solid rgba(255,255,255,0.12)}
+
+    /* Main area shifts when sidebar hidden */
+    .main{transition:margin-left .3s ease;padding-bottom:60px;min-height:100vh;width:100%}
+    .main.sidebar-open{margin-left:var(--sidebar-width);width:calc(100% - var(--sidebar-width))}
+
+    .header{background:white;padding:12px 20px;box-shadow:0 2px 10px rgba(0,0,0,0.06);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:30}
+    .header-left{display:flex;align-items:center;gap:12px}
+    .sidebar-toggle{width:40px;height:40px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+    .logo-text{font-weight:700;color:var(--primary)}
+    .avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,var(--primary),var(--accent));font-weight:700}
+
+    .container{padding:20px;max-width:1400px;margin:0 auto;width:100%}
+    .card{background:white;border-radius:10px;box-shadow:0 6px 18px rgba(16,24,40,0.05);overflow:hidden;margin-bottom:16px}
+    .card-header{padding:14px 18px;border-bottom:1px solid #eef2f7;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .card-body{padding:12px 18px;overflow:auto}
+    .card-body table-container{max-height:500px;overflow-y:auto}
+    .form-control{padding:10px;border-radius:8px;border:1px solid #e6edf3;width:100%}
+    .btn{padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:700;transition:background 0.2s}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-primary:hover{background:var(--accent)}
+    table{width:100%;border-collapse:collapse;min-width:1000px}
+    thead th{position:sticky;top:0;background:#fafbfc;padding:12px;text-align:left;color:var(--primary);font-weight:700;border-bottom:1px solid #eef2f7;z-index:10}
+    td{padding:12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+    tr:hover{background:#fbfdff}
+    .status-pill{padding:6px 12px;border-radius:20px;font-weight:700;font-size:.85rem;text-transform:capitalize}
+    .status-active{background:#d1f7e6;color:#0a6c43}
+    .status-paid{background:#d4edda;color:#155724}
+    .status-overdue{background:#f8d7da;color:#721c24}
+
+    /* Dots & dropdown */
+    .dots-btn{background:transparent;border:none;font-size:20px;padding:4px 8px;cursor:pointer;border-radius:6px;color:inherit}
+    .dots-btn:hover{background:rgba(0,0,0,0.05)}
+    .dropdown{position:relative;display:inline-block}
+    .dropdown-menu{position:absolute;right:0;top:calc(100% + 6px);background:white;border:1px solid #e6edf3;box-shadow:0 12px 30px rgba(10,25,47,0.15);border-radius:8px;min-width:220px;z-index:120;display:none;padding:6px}
+    .dropdown:hover .dropdown-menu{display:block}
+    .dropdown-menu.show{display:block}
+    .dropdown-menu button, .dropdown-menu a{display:block;width:100%;text-align:left;padding:8px 10px;border:none;background:transparent;cursor:pointer;color:#111;border-radius:6px;text-decoration:none;font-weight:600}
+    .dropdown-menu button:hover, .dropdown-menu a:hover{background:#f6f9fb}
+
+    .small-muted { font-size:.9rem; color:#666; display:block }
+
+    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:center;justify-content:center;padding:16px}
+    .modal.active{display:flex}
+    .modal-card{background:white;border-radius:8px;max-width:720px;width:100%;max-height:90vh;overflow-y:auto}
+    .modal-head{background:var(--primary);color:#fff;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
+    .modal-body{padding:14px}
+    .modal-footer{padding:12px;background:#f8fafc;display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0}
+
+    /* Interest Calculation Styles */
+    .interest-section {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border: 1px solid #eef2f7;
+    }
+    
+    .interest-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #e6edf3;
+      padding-bottom: 8px;
+    }
+    
+    .interest-toggle label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    
+    .interest-toggle input[type="radio"] {
+      accent-color: var(--primary);
+    }
+    
+    .interest-input-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    
+    .calculation-result {
+      background: white;
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 8px;
+      border: 1px solid #e6edf3;
+      display: none;
+    }
+    
+    .calculation-result.show {
+      display: block;
+    }
+    
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 0.95rem;
+    }
+    
+    .result-row.total {
+      font-weight: bold;
+      border-top: 1px solid #e6edf3;
+      padding-top: 8px;
+      margin-top: 4px;
+      color: var(--primary);
+    }
+    
+    .interest-amount {
+      font-weight: 600;
+      color: #2a5298;
+    }
+    
+    .principal-amount {
+      font-weight: 600;
+      color: #1e3c72;
+    }
+
+    @media(max-width:900px){
+      .sidebar.closed{transform:translateX(-100%)}
+      .sidebar.open{transform:translateX(0);width:100%;z-index:1000}
+      .main.sidebar-open{margin-left:0;width:100%}
+      .container{padding:16px}
+      .card-header{flex-direction:column;align-items:flex-start;gap:10px}
+      .card-header > div{width:100%}
+      .interest-input-group{grid-template-columns:1fr}
+      .modal-card{max-width:95%;margin:0}
+    }
+
+    @media(max-width:768px){
+      table{display:block;overflow-x:auto;white-space:nowrap}
+      thead th{position:static}
+    }
+
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:900}
+    .overlay.active{display:block}
+  </style>
+</head>
+<body>
+  <aside class="sidebar open" id="sidebar">
+    <div class="brand">
+      <i class="fas fa-hand-holding-usd"></i>
+      <div class="title">TRI<span style="color: rgba(255,255,255,0.95)">SMART</span></div>
+    </div>
+
+   <nav class="nav">
+      <a class="menu-item" href="loan-dashboard.html"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+      <a class="menu-item" href="customers.html"><i class="fas fa-users"></i><span>Customers</span></a>
+      <a class="menu-item active" href="loans.html"><i class="fas fa-file-invoice-dollar"></i><span>Loans</span></a>
+      <a class="menu-item" href="accounts.html"><i class="fas fa-book"></i><span>Accounts</span></a>
+      <a class="menu-item" href="reports.html"><i class="fas fa-chart-line"></i><span>Reports</span></a>
+      <a class="menu-item" id="sidebarLogout" href="#"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+    </nav>
+
+    <div style="margin-top:auto;font-size:.9rem;opacity:.95;">
+      <div style="font-weight:700;">Welcome, <span id="sidebarName">Chris</span></div>
+      <div style="font-size:.82rem;opacity:.9;">Loan management</div>
+    </div>
+  </aside>
+
+  <div class="main sidebar-open" id="main">
+    <header class="header">
+      <div class="header-left">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+        <div class="logo-text">TRI SMART LOANS</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="avatar" id="userAvatar">C</div>
+        <div style="text-align:right;">
+          <div id="userName">Chris</div>
+          <div style="font-size:.8rem;color:#666;">Loan Officer</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="card">
+        <div class="card-header">
+          <strong>Loans</strong>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input id="search" placeholder="Search by customer or loan id..." class="form-control" style="width:220px">
+            <!-- Persistent status filter -->
+            <select id="statusFilter" class="form-control" style="width:160px">
+              <option value="active">Active loans</option>
+              <option value="paid">Paid loans</option>
+              <option value="all">All loans</option>
+            </select>
+            <button id="openCreateLoanBtn" class="btn btn-primary"><i class="fas fa-plus"></i> New Loan</button>
+          </div>
+        </div>
+
+        <div class="card-body" id="loansList">
+          <div style="text-align:center;padding:18px;color:#666" id="loadingLoans"><i class="fas fa-spinner fa-spin"></i><div style="margin-top:8px">Loading loans...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create / Edit Loan modal -->
+  <div class="modal" id="createLoanModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div id="createLoanTitle">Create Loan</div>
+        <button class="dots-btn" id="closeCreateLoan">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>
+            <label style="display:block;font-weight:700;margin-bottom:6px">Loan ID</label>
+            <input id="loanLoanId" class="form-control" placeholder="LN123456">
+          </div>
+          <div>
+            <label style="display:block;font-weight:700;margin-bottom:6px">Customer</label>
+            <select id="loanCustomerSelect" class="form-control"></select>
+          </div>
+        </div>
+
+        <!-- Interest Calculation Section -->
+        <div class="interest-section">
+          <div style="margin-bottom:8px;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-calculator"></i>
+            <span>Interest Calculation</span>
+          </div>
+          
+          <div class="interest-toggle">
+            <label>
+              <input type="radio" name="interestType" value="percentage" checked>
+              <span>Percentage Interest</span>
+            </label>
+            <label>
+              <input type="radio" name="interestType" value="fixed">
+              <span>Fixed Interest</span>
+            </label>
+          </div>
+          
+          <div id="percentageFields" class="interest-input-group">
+            <div>
+              <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem">Principal Amount</label>
+              <input id="loanPrincipal" class="form-control" type="number" step="0.01" placeholder="0.00" min="0">
+            </div>
+            <div>
+              <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem">Interest Rate (%)</label>
+              <input id="loanInterestRate" class="form-control" type="number" step="0.01" placeholder="0.00" min="0">
+            </div>
+          </div>
+          
+          <div id="fixedFields" class="interest-input-group" style="display:none;">
+            <div>
+              <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem">Principal Amount</label>
+              <input id="loanPrincipalFixed" class="form-control" type="number" step="0.01" placeholder="0.00" min="0">
+            </div>
+            <div>
+              <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem">Fixed Interest Amount</label>
+              <input id="loanFixedInterest" class="form-control" type="number" step="0.01" placeholder="0.00" min="0">
+            </div>
+          </div>
+          
+          <button id="calculateTotalBtn" class="btn btn-primary" style="width:100%;margin-top:8px;">
+            <i class="fas fa-calculator"></i> Calculate Total
+          </button>
+          
+          <div id="calculationResult" class="calculation-result">
+            <div class="result-row">
+              <span>Principal Amount:</span>
+              <span class="principal-amount" id="displayPrincipal">$0.00</span>
+            </div>
+            <div class="result-row">
+              <span>Interest Amount:</span>
+              <span class="interest-amount" id="displayInterest">$0.00</span>
+            </div>
+            <div class="result-row total">
+              <span>Total Loan Amount:</span>
+              <span id="displayTotal">$0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>
+            <label style="display:block;font-weight:700;margin-bottom:6px">Total Amount</label>
+            <input id="loanTotal" class="form-control" type="number" step="0.01" placeholder="0.00" readonly>
+          </div>
+          <div>
+            <label style="display:block;font-weight:700;margin-bottom:6px">Start Date</label>
+            <input id="loanStartDate" class="form-control" type="date">
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>
+            <label style="display:block;font-weight:700;margin-bottom:6px">Next Payment Date</label>
+            <input id="loanNextDate" class="form-control" type="date">
+          </div>
+          <div>
+            <label style="display:block;font-weight:700;margin-bottom:6px">Next Payment Amount</label>
+            <input id="loanNextAmount" class="form-control" type="number" step="0.01" placeholder="0.00" min="0">
+          </div>
+        </div>
+
+        <div style="margin-bottom:10px">
+          <label style="display:block;font-weight:700;margin-bottom:6px">Notes</label>
+          <input id="loanNotes" class="form-control" placeholder="Optional notes">
+        </div>
+
+        <div class="small-muted">First enter principal and interest (either percentage or fixed amount), click "Calculate Total", then the total will be shown and can be saved.</div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelCreateLoan" class="btn">Cancel</button>
+        <button id="saveCreateLoan" class="btn btn-primary">Save Loan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Set Next Payment modal -->
+  <div class="modal" id="nextPaymentModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>Set Next Payment</div>
+        <button class="dots-btn" id="closeNextModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:10px">
+          <strong id="nextLoanRef">Loan</strong>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>
+            <label style="display:block;margin-bottom:6px">Next Payment Date</label>
+            <input id="nextPaymentDate" class="form-control" type="date">
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:6px">Next Payment Amount</label>
+            <input id="nextPaymentAmount" class="form-control" type="number" step="0.01" placeholder="0.00" min="0">
+          </div>
+        </div>
+        <div style="margin-bottom:10px">
+          <label style="display:block;margin-bottom:6px">Notes (optional)</label>
+          <input id="nextPaymentNotes" class="form-control" placeholder="Notes about next payment">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelNext" class="btn">Cancel</button>
+        <button id="saveNext" class="btn btn-primary">Save Next Payment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Record Payment modal: now includes account selector -->
+  <div class="modal" id="paymentModal">
+    <div class="modal-card">
+      <div class="modal-head"><div id="paymentModalTitle">Record Payment</div><button class="dots-btn" id="closePaymentModal">✕</button></div>
+      <div class="modal-body">
+        <div style="margin-bottom:10px"><strong id="paymentLoanRef">Loan</strong></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>
+            <label style="display:block;margin-bottom:6px">Amount</label>
+            <input id="paymentAmount" class="form-control" type="number" placeholder="Amount" min="0.01" step="0.01">
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:6px">Payment Date</label>
+            <input id="paymentDate" class="form-control" type="date">
+          </div>
+        </div>
+
+        <div style="margin-bottom:10px">
+          <label style="display:block;margin-bottom:6px">Pay From Account</label>
+          <select id="paymentAccountSelect" class="form-control">
+            <option value="">-- select account --</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:10px">
+          <label style="display:block;margin-bottom:6px">Notes</label>
+          <input id="paymentNotes" class="form-control" placeholder="Reference / Notes (optional)">
+        </div>
+
+        <div class="small-muted">Select an account to withdraw the payment from. If the account balance is insufficient the payment will be refused.</div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelPayment" class="btn">Cancel</button>
+        <button id="savePayment" class="btn btn-primary">Save Payment</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+      authDomain: "trismartstores.firebaseapp.com",
+      projectId: "trismartstores",
+      storageBucket: "trismartstores.appspot.com",
+      messagingSenderId: "416692703333",
+      appId: "1:416692703333:web:d4b60292621435c748f68c",
+      measurementId: "G-NJPQ7L3QWJ"
+    };
+
+    // Init Firebase (v8)
+    let app, db;
+    try { 
+      app = firebase.initializeApp(firebaseConfig); 
+      db = firebase.firestore(); 
+    } catch(e) { 
+      console.warn('Firebase init error:', e); 
+      if (firebase.apps && firebase.apps.length) { 
+        app = firebase.app(); 
+        db = firebase.firestore(); 
+      }
+    }
+
+    const currentUser = localStorage.getItem('username') || 'Chris';
+    document.getElementById('sidebarName').textContent = currentUser;
+    document.getElementById('userName').textContent = currentUser;
+    document.getElementById('userAvatar').textContent = currentUser.charAt(0).toUpperCase();
+
+    // DOM refs
+    const loansList = document.getElementById('loansList');
+    const loadingLoans = document.getElementById('loadingLoans');
+    const searchInput = document.getElementById('search');
+    const statusFilterEl = document.getElementById('statusFilter');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const main = document.getElementById('main');
+
+    // Create Loan modal refs - UPDATED WITH INTEREST FIELDS
+    const openCreateLoanBtn = document.getElementById('openCreateLoanBtn');
+    const createLoanModal = document.getElementById('createLoanModal');
+    const closeCreateLoan = document.getElementById('closeCreateLoan');
+    const cancelCreateLoan = document.getElementById('cancelCreateLoan');
+    const saveCreateLoan = document.getElementById('saveCreateLoan');
+    const loanLoanId = document.getElementById('loanLoanId');
+    const loanCustomerSelect = document.getElementById('loanCustomerSelect');
+    const loanTotal = document.getElementById('loanTotal');
+    const loanStartDate = document.getElementById('loanStartDate');
+    const loanNextDate = document.getElementById('loanNextDate');
+    const loanNextAmount = document.getElementById('loanNextAmount');
+    const loanNotes = document.getElementById('loanNotes');
+    
+    // Interest calculation refs
+    const interestTypeRadios = document.querySelectorAll('input[name="interestType"]');
+    const loanPrincipal = document.getElementById('loanPrincipal');
+    const loanInterestRate = document.getElementById('loanInterestRate');
+    const loanPrincipalFixed = document.getElementById('loanPrincipalFixed');
+    const loanFixedInterest = document.getElementById('loanFixedInterest');
+    const percentageFields = document.getElementById('percentageFields');
+    const fixedFields = document.getElementById('fixedFields');
+    const calculateTotalBtn = document.getElementById('calculateTotalBtn');
+    const calculationResult = document.getElementById('calculationResult');
+    const displayPrincipal = document.getElementById('displayPrincipal');
+    const displayInterest = document.getElementById('displayInterest');
+    const displayTotal = document.getElementById('displayTotal');
+
+    // Next Payment modal refs
+    const nextPaymentModal = document.getElementById('nextPaymentModal');
+    const nextLoanRef = document.getElementById('nextLoanRef');
+    const nextPaymentDate = document.getElementById('nextPaymentDate');
+    const nextPaymentAmount = document.getElementById('nextPaymentAmount');
+    const nextPaymentNotes = document.getElementById('nextPaymentNotes');
+    const closeNextModal = document.getElementById('closeNextModal');
+    const cancelNext = document.getElementById('cancelNext');
+    const saveNext = document.getElementById('saveNext');
+
+    // Payment modal refs
+    const paymentModal = document.getElementById('paymentModal');
+    const paymentLoanRef = document.getElementById('paymentLoanRef');
+    const paymentAmountEl = document.getElementById('paymentAmount');
+    const paymentDateEl = document.getElementById('paymentDate');
+    const paymentAccountSelect = document.getElementById('paymentAccountSelect');
+    const paymentNotesEl = document.getElementById('paymentNotes');
+    const closePaymentModal = document.getElementById('closePaymentModal');
+    const cancelPayment = document.getElementById('cancelPayment');
+    const savePayment = document.getElementById('savePayment');
+
+    // Data
+    let loans = [];
+    let customers = [];
+    let accounts = []; // accounts for paying from
+    let activeLoanIdForPayment = null;
+    let activeLoanIdForNext = null;
+    const FILTER_KEY = 'loansStatusFilter';
+
+    // Interest calculation variables
+    let calculatedPrincipal = 0;
+    let calculatedInterest = 0;
+    let calculatedTotal = 0;
+
+    // helpers
+    function escapeHtml(s){ if(s===undefined||s===null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+    function toDate(v){ if(!v) return null; if (v && typeof v.toDate === 'function') return v.toDate(); if (typeof v === 'string') { const d = new Date(v); return isNaN(d) ? null : d; } if (typeof v === 'number') return new Date(v); return null; }
+    function fmtNum(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+    // Sidebar toggle - FIXED: sidebar is open by default
+    sidebar.classList.add('open');
+    main.classList.add('sidebar-open');
+    
+    sidebarToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      sidebar.classList.toggle('closed');
+      main.classList.toggle('sidebar-open');
+    });
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 900 && 
+          sidebar.classList.contains('open') && 
+          !sidebar.contains(e.target) && 
+          e.target !== sidebarToggle && 
+          !sidebarToggle.contains(e.target)) {
+        sidebar.classList.remove('open');
+        sidebar.classList.add('closed');
+        main.classList.remove('sidebar-open');
+      }
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.dropdown')) {
+        document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+      }
+    });
+
+    // Interest Calculation Functions
+    function setupInterestCalculation() {
+      // Toggle between percentage and fixed interest
+      interestTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+          if (this.value === 'percentage') {
+            percentageFields.style.display = 'grid';
+            fixedFields.style.display = 'none';
+            // Clear fixed fields
+            loanPrincipalFixed.value = '';
+            loanFixedInterest.value = '';
+          } else {
+            percentageFields.style.display = 'none';
+            fixedFields.style.display = 'grid';
+            // Clear percentage fields
+            loanPrincipal.value = '';
+            loanInterestRate.value = '';
+          }
+          // Clear calculation results when switching
+          calculationResult.classList.remove('show');
+          loanTotal.value = '';
+        });
+      });
+
+      // Calculate total button
+      calculateTotalBtn.addEventListener('click', calculateTotalLoan);
+      
+      // Auto-calculate when pressing Enter in input fields
+      loanPrincipal.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') calculateTotalLoan();
+      });
+      
+      loanInterestRate.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') calculateTotalLoan();
+      });
+      
+      loanPrincipalFixed.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') calculateTotalLoan();
+      });
+      
+      loanFixedInterest.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') calculateTotalLoan();
+      });
+    }
+
+    function calculateTotalLoan() {
+      const interestType = document.querySelector('input[name="interestType"]:checked').value;
+      
+      if (interestType === 'percentage') {
+        const principal = parseFloat(loanPrincipal.value) || 0;
+        const rate = parseFloat(loanInterestRate.value) || 0;
+        
+        if (principal <= 0) {
+          alert('Please enter a valid principal amount');
+          return;
+        }
+        
+        if (rate <= 0) {
+          alert('Please enter a valid interest rate');
+          return;
+        }
+        
+        calculatedPrincipal = principal;
+        calculatedInterest = (principal * rate) / 100;
+        calculatedTotal = principal + calculatedInterest;
+        
+      } else { // fixed interest
+        const principal = parseFloat(loanPrincipalFixed.value) || 0;
+        const fixedInterest = parseFloat(loanFixedInterest.value) || 0;
+        
+        if (principal <= 0) {
+          alert('Please enter a valid principal amount');
+          return;
+        }
+        
+        if (fixedInterest <= 0) {
+          alert('Please enter a valid fixed interest amount');
+          return;
+        }
+        
+        calculatedPrincipal = principal;
+        calculatedInterest = fixedInterest;
+        calculatedTotal = principal + fixedInterest;
+      }
+      
+      // Update display
+      displayPrincipal.textContent = `$${fmtNum(calculatedPrincipal)}`;
+      displayInterest.textContent = `$${fmtNum(calculatedInterest)}`;
+      displayTotal.textContent = `$${fmtNum(calculatedTotal)}`;
+      
+      // Update the total loan amount field
+      loanTotal.value = calculatedTotal.toFixed(2);
+      
+      // Show calculation result
+      calculationResult.classList.add('show');
+    }
+
+    // UI: open payment modal and populate account list
+    async function openRecordNextPayment(loanId) {
+      document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+      const l = loans.find(x => x.id === loanId);
+      if (!l) return alert('Loan not found');
+      activeLoanIdForPayment = loanId;
+      paymentLoanRef.textContent = `${l.loanId || l.id} — ${l.customerName}`;
+      paymentAmountEl.value = l.nextPaymentAmount ? l.nextPaymentAmount.toFixed(2) : '';
+      if (l.nextPaymentDate) {
+        const d = l.nextPaymentDate;
+        paymentDateEl.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      } else {
+        paymentDateEl.value = new Date().toISOString().split('T')[0];
+      }
+
+      paymentNotesEl.value = l.nextPaymentNotes || '';
+
+      await loadAccountsForPayment();
+      paymentModal.classList.add('active');
+    }
+
+    async function loadAccountsForPayment(){
+      paymentAccountSelect.innerHTML = '<option value="">Loading accounts…</option>';
+      accounts = [];
+      try {
+        // robust query: prefer createdBy, then userId, else fallback
+        let docs = [];
+        try {
+          const snap = await db.collection('accounts').where('createdBy','==',currentUser).orderBy('createdAt','desc').get();
+          docs = snap.docs;
+        } catch(e1){
+          try {
+            const snap2 = await db.collection('accounts').where('userId','==',currentUser).orderBy('createdAt','desc').get();
+            docs = snap2.docs;
+          } catch(e2) {
+            const all = await db.collection('accounts').get();
+            docs = all.docs.filter(d=> {
+              const data = d.data();
+              if (data.createdBy && data.createdBy === currentUser) return true;
+              if (data.userId && data.userId === currentUser) return true;
+              return false;
+            });
+          }
+        }
+
+        accounts = docs.map(d => {
+          const data = d.data();
+          return {
+            id: d.id,
+            name: data.name || '',
+            type: data.type || '',
+            balance: Number(data.balance || 0)
+          };
+        });
+
+        // populate select
+        paymentAccountSelect.innerHTML = '<option value="">-- select account --</option>';
+        accounts.forEach(a=>{
+          const label = `${a.name} — ${fmtNum(a.balance)}`;
+          paymentAccountSelect.appendChild(new Option(label, a.id));
+        });
+      } catch (err) {
+        paymentAccountSelect.innerHTML = '<option value="">Unable to load accounts</option>';
+        console.error('loadAccountsForPayment', err);
+        alert('Unable to load accounts for payment. See console.');
+      }
+    }
+
+    // Save payment: check selected account balance, then create payment + statements + update loan and account
+    savePayment.addEventListener('click', async () => {
+      if (!activeLoanIdForPayment) return alert('No loan selected');
+      const amt = Number(paymentAmountEl.value || 0);
+      if (!amt || amt <= 0) return alert('Enter a valid amount');
+      const selectedAccountId = paymentAccountSelect.value;
+      if (!selectedAccountId) return alert('Select an account to pay from');
+
+      try {
+        // fetch account latest
+        const accRef = db.collection('accounts').doc(selectedAccountId);
+        const accSnap = await accRef.get();
+        if (!accSnap.exists) return alert('Selected account not found');
+        const acc = accSnap.data();
+        const accBalance = Number(acc.balance || 0);
+
+        if (accBalance < amt) {
+          return alert('Insufficient funds in selected account');
+        }
+
+        // fetch loan current
+        const loanRef = db.collection('loans').doc(activeLoanIdForPayment);
+        const loanSnap = await loanRef.get();
+        if (!loanSnap.exists) return alert('Loan not found');
+        const loanDoc = loanSnap.data();
+
+        // compute new loan balances
+        const currentPaid = Number(loanDoc.paidAmount || 0);
+        const currentTotal = Number(loanDoc.totalAmount || 0);
+        const newPaid = currentPaid + amt;
+        const newRemaining = Math.max(0, currentTotal - newPaid);
+        const newLoanStatus = newRemaining <= 0 ? 'paid' : (loanDoc.status || 'active');
+
+        // compute new account balance
+        const newAccBalance = accBalance - amt;
+
+        // prepare batch: add payment, add loan statement, add account statement, update loan, update account
+        const batch = db.batch();
+
+        // payments doc
+        const paymentsCol = db.collection('payments');
+        const paymentDocRef = paymentsCol.doc();
+        batch.set(paymentDocRef, {
+          loanId: activeLoanIdForPayment,
+          amount: amt,
+          paymentDate: paymentDateEl.value || new Date().toISOString().split('T')[0],
+          notes: paymentNotesEl.value || '',
+          accountId: selectedAccountId,
+          createdBy: currentUser,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // loan statement (dr)
+        const statementsCol = db.collection('statements');
+        const loanStmtRef = statementsCol.doc();
+        batch.set(loanStmtRef, {
+          loanId: activeLoanIdForPayment,
+          date: firebase.firestore.FieldValue.serverTimestamp(),
+          reference: `Payment ${loanDoc.loanId || activeLoanIdForPayment}`,
+          dr: Number(amt),
+          cr: 0,
+          balance: newRemaining,
+          createdBy: currentUser
+        });
+
+        // account statement (dr reduces account)
+        const accStmtRef = statementsCol.doc();
+        batch.set(accStmtRef, {
+          accountId: selectedAccountId,
+          date: firebase.firestore.FieldValue.serverTimestamp(),
+          reference: `Payment for loan ${loanDoc.loanId || activeLoanIdForPayment}`,
+          dr: Number(amt),
+          cr: 0,
+          balance: newAccBalance,
+          createdBy: currentUser
+        });
+
+        // update loan
+        const loanUpdate = {
+          paidAmount: newPaid,
+          remainingAmount: newRemaining,
+          status: newLoanStatus,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        // clear nextPayment if matched
+        if (loanDoc.nextPaymentAmount && Math.abs(Number(loanDoc.nextPaymentAmount) - amt) < 0.005) {
+          loanUpdate.nextPaymentAmount = 0;
+          loanUpdate.nextPaymentDate = null;
+          loanUpdate.nextPaymentNotes = '';
+        }
+        batch.update(loanRef, loanUpdate);
+
+        // update account balance
+        batch.update(accRef, { balance: Number(newAccBalance), updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+
+        // commit batch
+        await batch.commit();
+
+        // success: reload loans, close modal
+        await loadLoans();
+        paymentModal.classList.remove('active');
+        activeLoanIdForPayment = null;
+        alert('Payment recorded and account debited.');
+      } catch (err) {
+        console.error('recordPayment (with account) error', err);
+        alert('Error recording payment: ' + (err.message || err));
+      }
+    });
+
+    closePaymentModal.addEventListener('click', ()=> paymentModal.classList.remove('active'));
+    cancelPayment.addEventListener('click', ()=> paymentModal.classList.remove('active'));
+
+    // Set Next Payment modal functions
+    async function openSetNextModal(loanId) {
+      document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
+      const l = loans.find(x => x.id === loanId);
+      if (!l) return alert('Loan not found');
+      activeLoanIdForNext = loanId;
+      nextLoanRef.textContent = `${l.loanId || l.id} — ${l.customerName}`;
+      
+      // Set default values
+      if (l.nextPaymentDate) {
+        const d = l.nextPaymentDate;
+        nextPaymentDate.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      } else {
+        // Default to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        nextPaymentDate.value = tomorrow.toISOString().split('T')[0];
+      }
+      
+      nextPaymentAmount.value = l.nextPaymentAmount ? l.nextPaymentAmount.toFixed(2) : '';
+      nextPaymentNotes.value = l.nextPaymentNotes || '';
+      
+      nextPaymentModal.classList.add('active');
+    }
+
+    saveNext.addEventListener('click', async () => {
+      if (!activeLoanIdForNext) return;
+      const dateVal = nextPaymentDate.value;
+      const amountVal = Number(nextPaymentAmount.value || 0);
+      const notesVal = nextPaymentNotes.value.trim();
+
+      if (!dateVal) return alert('Please select a date');
+      if (!amountVal || amountVal <= 0) return alert('Please enter a valid amount');
+
+      try {
+        await db.collection('loans').doc(activeLoanIdForNext).update({
+          nextPaymentDate: dateVal,
+          nextPaymentAmount: amountVal,
+          nextPaymentNotes: notesVal,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        await loadLoans();
+        nextPaymentModal.classList.remove('active');
+        activeLoanIdForNext = null;
+        alert('Next payment updated');
+      } catch (err) {
+        console.error('saveNext error', err);
+        alert('Error updating next payment: ' + err.message);
+      }
+    });
+
+    closeNextModal.addEventListener('click', () => nextPaymentModal.classList.remove('active'));
+    cancelNext.addEventListener('click', () => nextPaymentModal.classList.remove('active'));
+
+    // Create loan functions and load functions
+    openCreateLoanBtn.addEventListener('click', async () => {
+      await ensureCustomersLoaded();
+      loanLoanId.value = generateLoanId();
+      loanCustomerSelect.value = customers.length ? customers[0].id : '';
+      
+      // Reset interest calculation fields
+      loanPrincipal.value = '';
+      loanInterestRate.value = '';
+      loanPrincipalFixed.value = '';
+      loanFixedInterest.value = '';
+      loanTotal.value = '';
+      calculationResult.classList.remove('show');
+      
+      loanStartDate.value = new Date().toISOString().split('T')[0];
+      loanNextDate.value = '';
+      loanNextAmount.value = '';
+      loanNotes.value = '';
+      createLoanModal.classList.add('active');
+    });
+    
+    closeCreateLoan.addEventListener('click', () => createLoanModal.classList.remove('active'));
+    cancelCreateLoan.addEventListener('click', () => createLoanModal.classList.remove('active'));
+    
+    saveCreateLoan.addEventListener('click', createLoan);
+
+    function generateLoanId(){ 
+      const ts = Date.now().toString().slice(-6); 
+      const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+      return 'LN' + ts + random; 
+    }
+
+    async function ensureCustomersLoaded(){
+      if (customers && customers.length) {
+        populateCustomerSelect();
+        return;
+      }
+      try {
+        const snap = await db.collection('customers').where('createdBy','==',currentUser).get();
+        customers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        populateCustomerSelect();
+      } catch (err) {
+        console.warn('ensureCustomersLoaded', err);
+        loanCustomerSelect.innerHTML = '<option value="">-- Unknown customer --</option>';
+      }
+    }
+    
+    function populateCustomerSelect(){
+      loanCustomerSelect.innerHTML = '';
+      loanCustomerSelect.appendChild(new Option('-- Select customer --',''));
+      customers.forEach(c => {
+        const label = (c.firstName || '') + (c.lastName ? (' ' + c.lastName) : '');
+        loanCustomerSelect.appendChild(new Option(label || c.name || c.email || c.id, c.id));
+      });
+    }
+
+    async function createLoan(){
+      const loanIdVal = (loanLoanId.value || '').trim();
+      const customerIdVal = loanCustomerSelect.value || '';
+      const customer = customers.find(c => c.id === customerIdVal);
+      const customerNameVal = customer ? `${customer.firstName || ''} ${customer.lastName || ''}`.trim() : '';
+      const total = Number(loanTotal.value || 0) || 0;
+      const startDate = loanStartDate.value ? new Date(loanStartDate.value).toISOString() : null;
+      const nextDate = loanNextDate.value ? new Date(loanNextDate.value).toISOString() : null;
+      const nextAmt = Number(loanNextAmount.value || 0) || 0;
+      const notes = (loanNotes.value || '').trim();
+
+      if (!loanIdVal) return alert('Enter Loan ID');
+      if (!customerIdVal && !customerNameVal) return alert('Select a customer (or add one first)');
+      if (!total || total <= 0) return alert('You must calculate the total first. Click "Calculate Total" button.');
+
+      try {
+        saveCreateLoan.disabled = true;
+        saveCreateLoan.textContent = 'Saving...';
+
+        // Determine interest type and values
+        const interestType = document.querySelector('input[name="interestType"]:checked').value;
+        let interestData = {};
+        
+        if (interestType === 'percentage') {
+          const principal = parseFloat(loanPrincipal.value) || 0;
+          const rate = parseFloat(loanInterestRate.value) || 0;
+          interestData = {
+            interestType: 'percentage',
+            principalAmount: principal,
+            interestRate: rate,
+            interestAmount: calculatedInterest
+          };
+        } else {
+          const principal = parseFloat(loanPrincipalFixed.value) || 0;
+          const fixedInterest = parseFloat(loanFixedInterest.value) || 0;
+          interestData = {
+            interestType: 'fixed',
+            principalAmount: principal,
+            fixedInterestAmount: fixedInterest
+          };
+        }
+
+        const newLoan = {
+          loanId: loanIdVal,
+          customerId: customerIdVal || null,
+          customerName: customerNameVal || '',
+          totalAmount: total,
+          paidAmount: 0,
+          remainingAmount: total,
+          status: 'active',
+          startDate: startDate,
+          nextPaymentDate: nextDate,
+          nextPaymentAmount: nextAmt,
+          nextPaymentNotes: notes,
+          notes: notes,
+          createdBy: currentUser,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          // Store interest calculation data
+          ...interestData
+        };
+
+        await db.collection('loans').add(newLoan);
+
+        await loadLoans();
+        createLoanModal.classList.remove('active');
+        alert('Loan created successfully');
+      } catch (err) {
+        console.error('createLoan', err);
+        alert('Error creating loan: ' + (err.message || err));
+      } finally {
+        saveCreateLoan.disabled = false;
+        saveCreateLoan.textContent = 'Save Loan';
+      }
+    }
+
+    // Load loans/accounts and render
+    async function loadLoans() {
+      loadingLoans.style.display = 'block';
+      loansList.innerHTML = '';
+      loans = [];
+      customers = [];
+
+      try {
+        if (!db) throw new Error('Firestore not initialized');
+
+        // customers
+        try {
+          const cs = await db.collection('customers').where('createdBy','==',currentUser).get();
+          customers = cs.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch (e) {
+          try {
+            const cs2 = await db.collection('customers').where('userId','==',currentUser).get();
+            customers = cs2.docs.map(d => ({ id: d.id, ...d.data() }));
+          } catch (_) {
+            customers = [];
+          }
+        }
+
+        // loans
+        let loanDocs;
+        try {
+          const q = await db.collection('loans').where('createdBy','==',currentUser).orderBy('createdAt','desc').get();
+          loanDocs = q.docs;
+        } catch (e) {
+          try {
+            const q2 = await db.collection('loans').where('userId','==',currentUser).orderBy('createdAt','desc').get();
+            loanDocs = q2.docs;
+          } catch (e2) {
+            const all = await db.collection('loans').get();
+            loanDocs = all.docs.filter(doc => {
+              const d = doc.data();
+              if (d.createdBy && d.createdBy === currentUser) return true;
+              if (d.userId && d.userId === currentUser) return true;
+              return false;
+            });
+          }
+        }
+
+        loans = loanDocs.map(doc => {
+          const d = doc.data();
+          const customer = customers.find(c => c.id === d.customerId);
+          return {
+            id: doc.id,
+            loanId: d.loanId || '',
+            customerId: d.customerId || '',
+            customerName: d.customerName || (customer ? `${customer.firstName||''} ${customer.lastName||''}`.trim() : ''),
+            totalAmount: Number(d.totalAmount || d.amount || 0),
+            paidAmount: Number(d.paidAmount || 0),
+            remainingAmount: Number(d.remainingAmount != null ? d.remainingAmount : ((d.totalAmount || d.amount || 0) - (d.paidAmount || 0))),
+            status: (d.status || 'active').toLowerCase(),
+            nextPaymentDate: toDate(d.nextPaymentDate || null),
+            nextPaymentAmount: Number(d.nextPaymentAmount || 0),
+            nextPaymentNotes: d.nextPaymentNotes || '',
+            notes: d.notes || '',
+            // Include interest data if available
+            interestType: d.interestType,
+            principalAmount: d.principalAmount ? Number(d.principalAmount) : null,
+            interestRate: d.interestRate ? Number(d.interestRate) : null,
+            interestAmount: d.interestAmount ? Number(d.interestAmount) : null,
+            fixedInterestAmount: d.fixedInterestAmount ? Number(d.fixedInterestAmount) : null
+          };
+        });
+
+        applySearch();
+      } catch (err) {
+        console.error('loadLoans error:', err);
+        loansList.innerHTML = `<div style="padding:18px;color:#b00020">
+          <i class="fas fa-exclamation-triangle"></i>
+          <div style="margin-top:8px">Error loading loans: ${escapeHtml(err.message || String(err))}</div>
+          <div style="margin-top:8px;font-size:0.9rem">Check console for details</div>
+        </div>`;
+      } finally {
+        loadingLoans.style.display = 'none';
+      }
+    }
+
+    function renderLoansTable(list) {
+      if (!list || list.length === 0) {
+        loansList.innerHTML = '<div style="padding:18px;color:#666">No loans found.</div>';
+        return;
+      }
+
+      let html = `<div class="table-container" style="max-height:500px;overflow-y:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Loan ID</th>
+              <th>Customer</th>
+              <th>Principal</th>
+              <th>Interest</th>
+              <th>Total</th>
+              <th>Paid</th>
+              <th>Remaining</th>
+              <th>Status</th>
+              <th>Next Payment</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      list.forEach(l => {
+        const nextInfo = l.nextPaymentDate ? 
+          `${l.nextPaymentDate.toLocaleDateString()} · ${fmtNum(l.nextPaymentAmount)}` : 
+          'Not set';
+        
+        let statusClass = 'status-active';
+        if (l.status === 'paid') statusClass = 'status-paid';
+        if (l.status === 'overdue') statusClass = 'status-overdue';
+        
+        // Display interest information
+        const principal = l.principalAmount ? fmtNum(l.principalAmount) : fmtNum(l.totalAmount);
+        const interest = l.interestType === 'percentage' 
+          ? (l.interestRate ? `${fmtNum(l.interestRate)}%` : 'N/A')
+          : (l.fixedInterestAmount ? fmtNum(l.fixedInterestAmount) : 'N/A');
+        
+        html += `<tr>
+          <td><strong>${escapeHtml(l.loanId || l.id.slice(0,8))}</strong></td>
+          <td>${escapeHtml(l.customerName || 'Unknown')}</td>
+          <td>${principal}</td>
+          <td>${interest}</td>
+          <td><strong>${fmtNum(l.totalAmount)}</strong></td>
+          <td>${fmtNum(l.paidAmount)}</td>
+          <td><strong style="color:${l.remainingAmount > 0 ? '#d32f2f' : '#388e3c'}">${fmtNum(l.remainingAmount)}</strong></td>
+          <td><span class="status-pill ${statusClass}">${escapeHtml(l.status)}</span></td>
+          <td>${escapeHtml(nextInfo)}</td>
+          <td style="white-space:nowrap">
+            <div class="dropdown">
+              <button class="dots-btn" onclick="toggleRowDropdown('${escapeHtml(l.id)}')">⋯</button>
+              <div class="dropdown-menu" data-loan-id="${escapeHtml(l.id)}">
+                <button onclick="viewLoan('${escapeHtml(l.id)}')">View Details</button>
+                <button onclick="openSetNextModal('${escapeHtml(l.id)}')">Set Next Payment</button>
+                <button onclick="openRecordNextPayment('${escapeHtml(l.id)}')">Record Payment</button>
+                <a href="statement.html?loanId=${encodeURIComponent(l.id)}">View Statements</a>
+              </div>
+            </div>
+          </td>
+        </tr>`;
+      });
+
+      html += `</tbody></table></div>`;
+      loansList.innerHTML = html;
+    }
+
+    function applySearch() {
+      const term = (searchInput.value || '').toLowerCase().trim();
+      const filterValue = localStorage.getItem(FILTER_KEY) || 'active';
+      let filtered = loans.slice();
+
+      if (filterValue !== 'all') {
+        filtered = filtered.filter(l => l.status === filterValue);
+      }
+
+      if (term) {
+        filtered = filtered.filter(l => {
+          return (l.customerName || '').toLowerCase().includes(term) ||
+                 (l.loanId || '').toLowerCase().includes(term) ||
+                 (l.id || '').toLowerCase().includes(term);
+        });
+      }
+
+      renderLoansTable(filtered);
+    }
+
+    // expose functions used inline
+    window.toggleRowDropdown = function(loanId) {
+      document.querySelectorAll('.dropdown-menu').forEach(m => {
+        if (m.getAttribute('data-loan-id') !== loanId) m.classList.remove('show');
+      });
+      const menu = document.querySelector(`.dropdown-menu[data-loan-id="${loanId}"]`);
+      if (!menu) return;
+      menu.classList.toggle('show');
+    };
+
+    window.viewLoan = function(loanId) {
+      const l = loans.find(x => x.id === loanId);
+      if (!l) return alert('Loan not found');
+      
+      let interestInfo = '';
+      if (l.interestType === 'percentage') {
+        interestInfo = `Interest Type: Percentage\nInterest Rate: ${l.interestRate || 0}%\nPrincipal Amount: ${fmtNum(l.principalAmount || l.totalAmount)}\nInterest Amount: ${fmtNum(l.interestAmount || 0)}`;
+      } else if (l.interestType === 'fixed') {
+        interestInfo = `Interest Type: Fixed Amount\nPrincipal Amount: ${fmtNum(l.principalAmount || l.totalAmount)}\nFixed Interest: ${fmtNum(l.fixedInterestAmount || 0)}`;
+      } else {
+        interestInfo = `Interest Type: Not specified (old loan)`;
+      }
+      
+      alert(`Loan Details:\n\n` +
+            `Loan ID: ${l.loanId || l.id}\n` +
+            `Customer: ${l.customerName}\n\n` +
+            `${interestInfo}\n\n` +
+            `Total Amount: ${fmtNum(l.totalAmount)}\n` +
+            `Paid Amount: ${fmtNum(l.paidAmount)}\n` +
+            `Remaining Amount: ${fmtNum(l.remainingAmount)}\n` +
+            `Status: ${l.status}\n` +
+            `Next Payment: ${l.nextPaymentDate ? l.nextPaymentDate.toLocaleDateString() : 'Not set'}\n` +
+            `Next Amount: ${l.nextPaymentAmount ? fmtNum(l.nextPaymentAmount) : '0.00'}\n` +
+            `Notes: ${l.notes || 'None'}`);
+    };
+
+    window.openSetNextModal = openSetNextModal;
+    window.openRecordNextPayment = openRecordNextPayment;
+
+    // init
+    document.addEventListener('DOMContentLoaded', () => {
+      statusFilterEl.value = localStorage.getItem(FILTER_KEY) || 'active';
+      
+      // Setup interest calculation
+      setupInterestCalculation();
+      
+      loadLoans();
+      
+      searchInput.addEventListener('input', applySearch);
+      
+      statusFilterEl.addEventListener('change', (e) => {
+        localStorage.setItem(FILTER_KEY, e.target.value);
+        applySearch();
+      });
+
+      // Set default dates
+      const today = new Date().toISOString().split('T')[0];
+      loanStartDate.value = today;
+      paymentDateEl.value = today;
+      nextPaymentDate.value = today;
+    });
+  </script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+</body>
+</html>

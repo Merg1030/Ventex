@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Sales History</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #121212;
+            color: #ffffff;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            background: #1e1e2d;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #f5c242;
+            margin-bottom: 20px;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        select {
+            min-width: 250px;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background-color: #2c2c2c;
+            color: #ffffff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #444;
+        }
+
+        th {
+            background-color: #f5c242;
+            color: #121212;
+            position: sticky;
+            top: 0;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #2c2c2c;
+        }
+
+        tbody tr:hover {
+            background-color: #3a3a3a;
+        }
+
+        .total-sales {
+            font-weight: bold;
+            margin-top: 20px;
+            text-align: right;
+            font-size: 1.1em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #f5c242;
+        }
+
+        .error {
+            text-align: center;
+            padding: 20px;
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Product Sales History</h2>
+
+        <div class="filter-container">
+            <select id="productFilter">
+                <option value="">All Products</option>
+                <!-- Products will be loaded here -->
+            </select>
+        </div>
+
+        <div id="loadingMessage" class="loading">Loading sales data...</div>
+        <div id="errorMessage" class="error" style="display: none;"></div>
+
+        <table id="salesHistoryTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Product Code</th>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                    <th>Unit Price (ZMW)</th>
+                    <th>Total (ZMW)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Sales data will appear here -->
+            </tbody>
+        </table>
+
+        <div class="total-sales" id="totalSalesHistory">
+            Total Sales: ZMW 0.00
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            query, 
+            where,
+            getDocs,
+            orderBy
+        } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB-lm7Y3r1F6Vv8PKvY8glLabZDbJsHM1k",
+            authDomain: "trismartstores.firebaseapp.com",
+            projectId: "trismartstores",
+            storageBucket: "trismartstores.appspot.com",
+            messagingSenderId: "416692703333",
+            appId: "1:416692703333:web:d4b60292621435c748f68c",
+            measurementId: "G-NJPQ7L3QWJ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // DOM elements
+        const productFilter = document.getElementById('productFilter');
+        const salesTableBody = document.querySelector('#salesHistoryTable tbody');
+        const totalSalesElement = document.getElementById('totalSalesHistory');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Check for branchId
+        const branchId = localStorage.getItem('branchId');
+        if (!branchId) {
+            showError('Please select a branch first');
+            window.location.href = 'dashboard.html';
+            return;
+        }
+
+        // Main function to load and display data
+        async function initializePage() {
+            try {
+                // Load products first
+                await loadProducts();
+                
+                // Then load sales data
+                await loadSalesData();
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showError('Failed to initialize page. Please refresh.');
+            } finally {
+                loadingMessage.style.display = 'none';
+            }
+        }
+
+        // Load products into the filter dropdown
+        async function loadProducts() {
+            try {
+                const productsQuery = query(
+                    collection(db, 'inventory'),
+                    where('branchId', '==', branchId)
+                );
+                
+                const snapshot = await getDocs(productsQuery);
+                const products = [];
+                
+                snapshot.forEach(doc => {
+                    const product = doc.data();
+                    products.push({
+                        code: product.code,
+                        name: product.name
+                    });
+                });
+
+                // Sort products by name
+                products.sort((a, b) => a.name.localeCompare(b.name));
+
+                // Add to dropdown
+                products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.code;
+                    option.textContent = `${product.name} (${product.code})`;
+                    productFilter.appendChild(option);
+                });
+
+            } catch (error) {
+                console.error('Error loading products:', error);
+                showError('Failed to load products');
+                throw error;
+            }
+        }
+
+        // Load sales data based on current filter
+        async function loadSalesData(productCode = '') {
+            try {
+                loadingMessage.style.display = 'block';
+                errorMessage.style.display = 'none';
+                salesTableBody.innerHTML = '';
+
+                // Base query with branch filter
+                let salesQuery = query(
+                    collection(db, 'sales'),
+                    where('branchId', '==', branchId),
+                    orderBy('date', 'desc')
+                );
+
+                // Add product filter if specified
+                if (productCode) {
+                    salesQuery = query(
+                        salesQuery,
+                        where('code', '==', productCode)
+                    );
+                }
+
+                const snapshot = await getDocs(salesQuery);
+                let totalSales = 0;
+
+                if (snapshot.empty) {
+                    const row = salesTableBody.insertRow();
+                    const cell = row.insertCell();
+                    cell.colSpan = 6;
+                    cell.textContent = 'No sales records found';
+                    cell.style.textAlign = 'center';
+                    totalSalesElement.textContent = 'Total Sales: ZMW 0.00';
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const sale = doc.data();
+                    const total = sale.price * sale.quantity;
+                    totalSales += total;
+
+                    const row = salesTableBody.insertRow();
+                    
+                    // Format date as "Jan 1, 2023"
+                    const saleDate = new Date(sale.date);
+                    const formattedDate = saleDate.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+
+                    row.innerHTML = `
+                        <td>${formattedDate}</td>
+                        <td>${sale.code}</td>
+                        <td>${sale.name}</td>
+                        <td>${sale.quantity}</td>
+                        <td>${sale.price.toFixed(2)}</td>
+                        <td>${total.toFixed(2)}</td>
+                    `;
+                });
+
+                totalSalesElement.textContent = `Total Sales: ZMW ${totalSales.toFixed(2)}`;
+
+            } catch (error) {
+                console.error('Error loading sales data:', error);
+                showError('Failed to load sales data. Please check console for details.');
+                throw error;
+            } finally {
+                loadingMessage.style.display = 'none';
+            }
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            loadingMessage.style.display = 'none';
+        }
+
+        // Event listener for product filter
+        productFilter.addEventListener('change', () => {
+            const selectedProduct = productFilter.value;
+            loadSalesData(selectedProduct);
+        });
+
+        // Initialize the page when loaded
+        window.addEventListener('load', initializePage);
+    </script>
+</body>
+</html>

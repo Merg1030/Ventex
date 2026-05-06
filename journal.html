@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Account Details - TRISMART</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- jsPDF for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- Firebase v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <style>
+    :root{ --sidebar-width:260px; --primary:#1e3c72; --accent:#2a5298; --muted:#666; --surface:#fff; --shadow: 0 6px 18px rgba(16,24,40,0.05); }
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}
+    body{background:#f5f7fb;color:#222;min-height:100vh}
+
+    /* Sidebar (same uniform look) */
+    .sidebar{ position:fixed; left:0; top:0; bottom:0; width:var(--sidebar-width); padding:22px; display:flex; flex-direction:column; gap:20px; background:linear-gradient(180deg,var(--primary),var(--accent)); color:#fff; z-index:60; box-shadow:6px 0 30px rgba(16,24,40,0.12); transition:transform .28s ease; overflow:auto; }
+    .sidebar.hidden{ transform: translateX(-120%); }
+    .brand{ display:flex; gap:12px; align-items:center; }
+    .brand i{ font-size:1.6rem; background:rgba(255,255,255,0.07); padding:10px; border-radius:8px; }
+    .brand .title{ font-weight:700; font-size:1.05rem; }
+    .nav{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+    .menu-item{ display:flex; gap:12px; align-items:center; padding:11px; border-radius:8px; color:rgba(255,255,255,0.95); text-decoration:none; }
+    .menu-item:hover{ background: rgba(255,255,255,0.06); transform:translateX(4px); }
+    .menu-item.active{ background: rgba(255,255,255,0.10); border-right:4px solid rgba(255,255,255,0.12); }
+    .sidebar .footer{ margin-top:auto; font-size:.9rem; opacity:.95; }
+
+    /* Main */
+    .main{ margin-left:var(--sidebar-width); transition:margin-left .28s ease; padding-bottom:60px; min-height:100vh; }
+    .main.sidebar-hidden{ margin-left:0; }
+
+    .container{ padding:22px; max-width:1200px; margin:18px auto; }
+
+    .card{ background:var(--surface); border-radius:10px; box-shadow:var(--shadow); overflow:hidden; margin-bottom:16px; }
+    .card-header{ padding:14px 18px; border-bottom:1px solid #eef2f7; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .card-body{ padding:12px 18px; overflow:auto; min-height:120px; }
+
+    .small-muted{ font-size:.9rem; color:var(--muted); }
+
+    table{ width:100%; border-collapse:collapse; margin-top:8px; }
+    
+    /* Sticky table header */
+    .table-container { max-height: 500px; overflow: auto; position: relative; }
+    table thead { position: sticky; top: 0; z-index: 10; }
+    
+    th{ padding:12px; text-align:left; background:#fafbfc; color:var(--primary); font-weight:700; border-bottom:2px solid #eef2f7; }
+    td{ padding:12px; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+    tr:hover{ background:#fbfdff; }
+
+    /* Proper alignment for numbers - centered per request */
+    .number-cell, .debit-cell, .credit-cell, .balance-cell {
+      text-align: center; 
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+    }
+    
+    .debit-cell { 
+      color: #dc3545; 
+    }
+    
+    .credit-cell { 
+      color: #28a745; 
+    }
+    
+    .balance-cell {
+      font-weight: 700;
+      color: #1e3c72;
+    }
+
+    /* Action dropdown (3 dots) */
+    .actions-dropdown { position: relative; display: inline-block; }
+    .more-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: #f0f2f5;
+      border: 1px solid #e6edf3;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .more-btn:focus { outline: none; box-shadow: 0 0 0 3px rgba(30,60,114,0.08); }
+
+    .actions-menu {
+      position: absolute;
+      right: 0;
+      top: 44px;
+      min-width: 140px;
+      background: #fff;
+      border: 1px solid #e6edf3;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(16,24,40,0.08);
+      display: none;
+      z-index: 30;
+      padding: 8px;
+    }
+    .actions-menu.show { display: block; }
+
+    .actions-menu .menu-item-btn {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      font-weight: 600;
+      color: #333;
+    }
+    .actions-menu .menu-item-btn:hover { background: #f5f7fb; }
+
+    /* Button specific small styles */
+    .menu-item-btn .fa-edit { color: #1e3c72; }
+    .menu-item-btn .fa-trash { color: #dc3545; }
+
+    /* Action buttons (kept for modal or other places) */
+    .action-btns {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    
+    .action-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+    
+    .edit-btn {
+      background: #e7f3ff;
+      color: #1e3c72;
+    }
+    
+    .edit-btn:hover {
+      background: #d4e7ff;
+      transform: translateY(-2px);
+    }
+    
+    .delete-btn {
+      background: #ffeaea;
+      color: #dc3545;
+    }
+    
+    .delete-btn:hover {
+      background: #ffd6d6;
+      transform: translateY(-2px);
+    }
+
+    /* Buttons */
+    .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; font-size: 0.95rem; }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(30, 60, 114, 0.2); }
+    .btn-secondary { background: #f0f2f5; color: #333; border: 1px solid #ddd; }
+    .btn-secondary:hover { background: #e4e6e9; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+
+    .action-buttons { display: flex; gap: 16px; margin-bottom: 24px; justify-content: flex-end; }
+
+    /* create transaction modal */
+    .modal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:200; align-items:center; justify-content:center; padding:16px; }
+    .modal.active{ display:flex; }
+    .modal-card{ width:720px; max-width:96%; background:var(--surface); border-radius:12px; overflow:hidden; box-shadow:var(--shadow); }
+    .modal-head{ background:var(--primary); color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; }
+    .modal-body{ padding:20px; }
+    .modal-footer{ padding:16px 20px; background:#f8fafc; display:flex; justify-content:flex-end; gap:12px; }
+
+    .form-row{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px; }
+    .form-control{ padding:12px; border-radius:8px; border:1px solid #e6edf3; width:100%; font-size:1rem; }
+    .form-control:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(30, 60, 114, 0.1); }
+
+    /* Confirm delete modal */
+    .confirm-modal { display: none; }
+    .confirm-modal.active { display: flex; }
+    .confirm-modal .modal-card { width: 400px; }
+    .confirm-modal .modal-body { text-align: center; padding: 30px 20px; }
+    .confirm-icon { font-size: 48px; color: #dc3545; margin-bottom: 16px; }
+    .confirm-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 20px; }
+    .btn-danger { background: #dc3545; color: white; }
+    .btn-danger:hover { background: #c82333; }
+
+    @media(max-width:900px){
+      .sidebar{ transform:translateX(-120%); position:fixed; }
+      .sidebar.open{ transform:translateX(0); }
+      .main{ margin-left:0; padding:16px; }
+      .action-buttons { flex-direction: column; }
+      .form-row { grid-template-columns: 1fr; }
+      .action-btns { justify-content: flex-start; }
+      .actions-menu { right: 8px; left: auto; top: 48px; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <i class="fas fa-hand-holding-usd"></i>
+      <div class="title">TRI<span style="color: rgba(255,255,255,0.95)">SMART</span></div>
+    </div>
+
+    <nav class="nav">
+      <a class="menu-item" href="loan-dashboard.html"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+      <a class="menu-item" href="customers.html"><i class="fas fa-users"></i><span>Customers</span></a>
+      <a class="menu-item" href="loans.html"><i class="fas fa-file-invoice-dollar"></i><span>Loans</span></a>
+      <a class="menu-item" href="accounts.html"><i class="fas fa-book"></i><span>Accounts</span></a>
+      <a class="menu-item" href="reports.html"><i class="fas fa-chart-line"></i><span>Reports</span></a>
+      <a class="menu-item" id="sidebarLogout" href="#"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+    </nav>
+
+    <div style="margin-top:auto;font-size:.9rem;opacity:.95;">
+      <div style="font-weight:700">Welcome, <span id="sidebarName">Chris</span></div>
+      <div class="muted">Account transactions</div>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="container">
+      <!-- Account Summary Card -->
+      <div class="card" id="accountHeaderCard">
+        <div class="card-header">
+          <div>
+            <div style="font-weight:800;font-size:1.4rem;color:var(--primary)">Interest book</div>
+            <div style="font-weight:600;margin-top:4px">INTEREST</div>
+            <div class="small-muted" style="margin-top:8px">Account ID: <span id="accountIdShort">CG4mQMj4</span></div>
+          </div>
+
+          <div style="text-align:right">
+            <div class="small-muted">Balance</div>
+            <div id="accountBalance" style="font-weight:800;font-size:1.6rem;color:var(--primary)">ZMW 4,000.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button id="downloadBtn" class="btn btn-secondary">
+          <i class="fas fa-file-pdf"></i> Download PDF
+        </button>
+        <button id="openTxnBtn" class="btn btn-primary">
+          <i class="fas fa-plus"></i> Add Transaction
+        </button>
+      </div>
+
+      <!-- Transactions Card -->
+      <div class="card">
+        <div class="card-header">
+          <strong>Transactions</strong>
+          <div style="display:flex;gap:12px;align-items:center">
+            <input id="searchTx" placeholder="Search reference..." class="form-control" style="width:260px">
+            <select id="filterDrCr" class="form-control" style="width:140px">
+              <option value="all">All</option>
+              <option value="dr">Debit only</option>
+              <option value="cr">Credit only</option>
+            </select>
+            <button id="refreshBtn" class="btn btn-secondary">Refresh</button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="table-container">
+            <div id="transactionsList">
+              <!-- Transactions will be loaded here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add/Edit transaction modal -->
+  <div class="modal" id="txnModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div style="font-weight:600;font-size:1.1rem" id="txnTitle">Add Transaction</div>
+        <button style="background:none;border:none;color:white;font-size:1.2rem;cursor:pointer" id="closeTxn">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editingId" value="">
+        
+        <div style="margin-bottom:16px">
+          <label style="display:block;margin-bottom:8px;font-weight:600">Date</label>
+          <input id="txnDate" class="form-control" type="date">
+        </div>
+
+        <div style="margin-bottom:16px">
+          <label style="display:block;margin-bottom:8px;font-weight:600">Reference</label>
+          <input id="txnRef" class="form-control" type="text" placeholder="e.g., Deposit, Payment, Interest">
+        </div>
+
+        <div class="form-row">
+          <div>
+            <label style="display:block;margin-bottom:8px;font-weight:600">Debit (ZMW)</label>
+            <input id="txnDr" class="form-control" type="number" step="0.01" min="0" placeholder="0.00">
+          </div>
+          <div>
+            <label style="display:block;margin-bottom:8px;font-weight:600">Credit (ZMW)</label>
+            <input id="txnCr" class="form-control" type="number" step="0.01" min="0" placeholder="0.00">
+          </div>
+        </div>
+
+        <div style="margin-top:16px" class="small-muted">
+          <i class="fas fa-info-circle"></i> Note: When saved, a statement entry will be created and the account balance will be updated.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="cancelTxn" class="btn btn-secondary">Cancel</button>
+        <button id="saveTxn" class="btn btn-primary">Save Transaction</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm delete modal -->
+  <div class="modal confirm-modal" id="confirmDeleteModal">
+    <div class="modal-card">
+      <div class="modal-head" style="background:#dc3545;">
+        <div style="font-weight:600;font-size:1.1rem">Confirm Delete</div>
+        <button style="background:none;border:none;color:white;font-size:1.2rem;cursor:pointer" id="closeDelete">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="confirm-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div style="font-weight:600;font-size:1.1rem;margin-bottom:8px">Delete Transaction</div>
+        <div style="color:#666;margin-bottom:20px">Are you sure you want to delete this transaction? This action cannot be undone.</div>
+        
+        <div style="background:#f8f9fa;padding:12px;border-radius:6px;margin-bottom:20px;text-align:left">
+          <div><strong>Reference:</strong> <span id="deleteRef"></span></div>
+          <div><strong>Date:</strong> <span id="deleteDate"></span></div>
+          <div><strong>Amount:</strong> <span id="deleteAmount"></span></div>
+        </div>
+        
+        <div class="confirm-buttons">
+          <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+          <button id="confirmDelete" class="btn btn-danger">Delete Transaction</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+      authDomain: "trismartstores.firebaseapp.com",
+      projectId: "trismartstores",
+      storageBucket: "trismartstores.appspot.com",
+      messagingSenderId: "416692703333",
+      appId: "1:416692703333:web:d4b60292621435c748f68c",
+      measurementId: "G-NJPQ7L3QWJ"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const currentUser = localStorage.getItem('username') || 'Chris';
+    document.getElementById('sidebarName').textContent = currentUser;
+
+    // UI elements
+    const accountBalanceEl = document.getElementById('accountBalance');
+    const transactionsList = document.getElementById('transactionsList');
+    const openTxnBtn = document.getElementById('openTxnBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const txnModal = document.getElementById('txnModal');
+    const closeTxn = document.getElementById('closeTxn');
+    const cancelTxn = document.getElementById('cancelTxn');
+    const saveTxn = document.getElementById('saveTxn');
+    const txnDate = document.getElementById('txnDate');
+    const txnRef = document.getElementById('txnRef');
+    const txnDr = document.getElementById('txnDr');
+    const txnCr = document.getElementById('txnCr');
+    const searchTx = document.getElementById('searchTx');
+    const filterDrCr = document.getElementById('filterDrCr');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const txnTitle = document.getElementById('txnTitle');
+    const editingId = document.getElementById('editingId');
+    
+    // Delete modal elements
+    const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+    const closeDelete = document.getElementById('closeDelete');
+    const cancelDelete = document.getElementById('cancelDelete');
+    const confirmDelete = document.getElementById('confirmDelete');
+    const deleteRef = document.getElementById('deleteRef');
+    const deleteDate = document.getElementById('deleteDate');
+    const deleteAmount = document.getElementById('deleteAmount');
+
+    let accountId = 'CG4mQMj4';
+    let statements = [];
+    let transactionToDelete = null;
+
+    // Helper functions
+    function formatZ(n) { 
+      if (n === 0 || n === '') return '';
+      return Number(n || 0).toFixed(2);
+    }
+
+    function formatDisplay(n) {
+      if (n === 0 || n === '') return '';
+      return Number(n || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    function formatBalance(n) {
+      return 'ZMW ' + Number(n || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    function escapeHtml(s) { 
+      if (s === undefined || s === null) return ''; 
+      return String(s).replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&#39;'); 
+    }
+
+    // Load transactions immediately
+    loadTransactions();
+
+    // Event listeners
+    openTxnBtn.addEventListener('click', () => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      txnDate.value = `${year}-${month}-${day}`;
+      txnRef.value = '';
+      txnDr.value = '';
+      txnCr.value = '';
+      editingId.value = '';
+      txnTitle.textContent = 'Add Transaction';
+      saveTxn.textContent = 'Save Transaction';
+      txnModal.classList.add('active');
+    });
+    
+    downloadBtn.addEventListener('click', downloadPDF);
+    
+    closeTxn.addEventListener('click', () => txnModal.classList.remove('active'));
+    cancelTxn.addEventListener('click', () => txnModal.classList.remove('active'));
+    saveTxn.addEventListener('click', saveTransaction);
+    searchTx.addEventListener('input', renderTransactions);
+    filterDrCr.addEventListener('change', renderTransactions);
+    refreshBtn.addEventListener('click', loadTransactions);
+    
+    // Delete modal events
+    closeDelete.addEventListener('click', () => confirmDeleteModal.classList.remove('active'));
+    cancelDelete.addEventListener('click', () => confirmDeleteModal.classList.remove('active'));
+    confirmDelete.addEventListener('click', deleteTransaction);
+
+    // Close any opened actions-menu if click outside
+    document.addEventListener('click', function(e) {
+      // if the click is not inside any actions-dropdown, close all menus
+      if (!e.target.closest('.actions-dropdown')) {
+        document.querySelectorAll('.actions-menu.show').forEach(menu => menu.classList.remove('show'));
+      }
+    });
+
+    // Toggle actions menu for a transaction row
+    function toggleActionsMenu(evt, id) {
+      evt.stopPropagation();
+      const menu = document.getElementById(`actions-menu-${id}`);
+      if (!menu) return;
+      const isShown = menu.classList.contains('show');
+      // hide all menus first
+      document.querySelectorAll('.actions-menu.show').forEach(m => m.classList.remove('show'));
+      if (!isShown) menu.classList.add('show');
+    }
+
+    async function loadTransactions() {
+      try {
+        // Show loading state
+        transactionsList.innerHTML = '<div style="text-align:center;padding:40px;color:#666"><i class="fas fa-spinner fa-spin fa-2x"></i><div style="margin-top:16px">Loading transactions...</div></div>';
+        
+        // Try to load from Firestore
+        let stmSnap;
+        try {
+          stmSnap = await db.collection('statements').where('accountId', '==', accountId).orderBy('date', 'asc').get();
+        } catch (err) {
+          // If orderBy fails, try without ordering
+          stmSnap = await db.collection('statements').where('accountId', '==', accountId).get();
+        }
+        
+        statements = stmSnap.docs.map(d => ({ 
+          id: d.id, 
+          ...d.data(),
+          dateObj: d.data().date ? new Date(d.data().date) : new Date(),
+          dr: Number(d.data().dr || 0),
+          cr: Number(d.data().cr || 0),
+          balance: Number(d.data().balance || 0)
+        }));
+
+        // Sort by date
+        statements.sort((a, b) => {
+          const dateA = a.dateObj || new Date(a.date || 0);
+          const dateB = b.dateObj || new Date(b.date || 0);
+          return dateA - dateB;
+        });
+
+        // Recalculate balances to ensure consistency
+        recalculateBalances();
+
+        // If no transactions found in Firestore, show sample data
+        if (statements.length === 0) {
+          statements = [
+            {
+              id: '1',
+              date: '2024-01-15',
+              dateObj: new Date('2024-01-15'),
+              reference: 'Initial Deposit',
+              dr: 0,
+              cr: 4000,
+              balance: 4000
+            },
+            {
+              id: '2',
+              date: '2024-01-20',
+              dateObj: new Date('2024-01-20'),
+              reference: 'Interest Earned',
+              dr: 0,
+              cr: 120,
+              balance: 4120
+            },
+            {
+              id: '3',
+              date: '2024-02-01',
+              dateObj: new Date('2024-02-01'),
+              reference: 'Withdrawal',
+              dr: 1000,
+              cr: 0,
+              balance: 3120
+            },
+            {
+              id: '4',
+              date: '2024-02-15',
+              dateObj: new Date('2024-02-15'),
+              reference: 'Monthly Interest',
+              dr: 0,
+              cr: 85.50,
+              balance: 3205.50
+            }
+          ];
+          accountBalanceEl.textContent = formatBalance(3205.50);
+        } else {
+          // Update balance from last transaction
+          if (statements.length > 0) {
+            const lastTransaction = statements[statements.length - 1];
+            accountBalanceEl.textContent = formatBalance(lastTransaction.balance);
+          }
+        }
+
+        renderTransactions();
+        
+      } catch (err) {
+        console.error('Error loading transactions:', err);
+        // Show sample data if Firestore fails
+        statements = [
+          {
+            id: '1',
+            date: '2024-01-15',
+            dateObj: new Date('2024-01-15'),
+            reference: 'Initial Deposit',
+            dr: 0,
+            cr: 4000,
+            balance: 4000
+          },
+          {
+            id: '2',
+            date: '2024-01-20',
+            dateObj: new Date('2024-01-20'),
+            reference: 'Interest Earned',
+            dr: 0,
+            cr: 120,
+            balance: 4120
+          },
+          {
+            id: '3',
+            date: '2024-02-01',
+            dateObj: new Date('2024-02-01'),
+            reference: 'Withdrawal',
+            dr: 1000,
+            cr: 0,
+            balance: 3120
+          }
+        ];
+        accountBalanceEl.textContent = formatBalance(3120);
+        renderTransactions();
+      }
+    }
+
+    function recalculateBalances() {
+      if (statements.length === 0) return;
+      
+      let runningBalance = 0;
+      for (let i = 0; i < statements.length; i++) {
+        runningBalance = runningBalance - statements[i].dr + statements[i].cr;
+        statements[i].balance = runningBalance;
+      }
+    }
+
+    function renderTransactions() {
+      if (!statements || statements.length === 0) {
+        transactionsList.innerHTML = '<div style="padding:60px;text-align:center;color:#666"><i class="fas fa-file-invoice-dollar fa-3x" style="opacity:0.3;margin-bottom:20px"></i><div style="font-size:1.1rem;margin-bottom:12px">No transactions found</div><div class="small-muted">Click "Add Transaction" to create your first transaction</div></div>';
+        return;
+      }
+
+      const term = (searchTx.value || '').toLowerCase().trim();
+      const filter = filterDrCr.value || 'all';
+
+      let filteredStatements = [...statements];
+
+      // Apply filters
+      if (filter === 'dr') {
+        filteredStatements = filteredStatements.filter(s => s.dr > 0);
+      } else if (filter === 'cr') {
+        filteredStatements = filteredStatements.filter(s => s.cr > 0);
+      }
+
+      if (term) {
+        filteredStatements = filteredStatements.filter(s => 
+          (s.reference || '').toLowerCase().includes(term) || 
+          (s.description || '').toLowerCase().includes(term)
+        );
+      }
+
+      // Render table
+      let html = `<table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Reference</th>
+            <th class="num-col" style="text-align:center">Debit</th>
+            <th class="num-col" style="text-align:center">Credit</th>
+            <th class="num-col" style="text-align:center">Balance</th>
+            <th style="text-align:center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+      filteredStatements.forEach(s => {
+        const dateStr = s.dateObj ? s.dateObj.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'short', 
+          day: 'numeric' 
+        }) : (s.date ? new Date(s.date).toLocaleDateString() : '');
+        
+        const debitValue = s.dr > 0 ? formatDisplay(s.dr) : '';
+        const creditValue = s.cr > 0 ? formatDisplay(s.cr) : '';
+        const balanceValue = formatDisplay(s.balance);
+        
+        html += `<tr>
+          <td>${escapeHtml(dateStr)}</td>
+          <td>${escapeHtml(s.reference || s.description || '')}</td>
+          <td class="debit-cell number-cell">${debitValue}</td>
+          <td class="credit-cell number-cell">${creditValue}</td>
+          <td class="balance-cell number-cell">${balanceValue}</td>
+          <td style="text-align:center">
+            <div class="actions-dropdown">
+              <button class="more-btn" onclick="toggleActionsMenu(event, '${s.id}')" aria-expanded="false" title="Actions">
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+              <div class="actions-menu" id="actions-menu-${s.id}">
+                <button class="menu-item-btn" onclick="(function(e){ e.stopPropagation(); editTransaction('${s.id}'); document.getElementById('actions-menu-${s.id}').classList.remove('show'); })(event)">
+                  <i class="fas fa-edit"></i><span>Edit</span>
+                </button>
+                <button class="menu-item-btn" onclick="(function(e){ e.stopPropagation(); showDeleteConfirm('${s.id}'); document.getElementById('actions-menu-${s.id}').classList.remove('show'); })(event)">
+                  <i class="fas fa-trash"></i><span>Delete</span>
+                </button>
+              </div>
+            </div>
+          </td>
+        </tr>`;
+      });
+
+      html += `</tbody></table>`;
+      
+      if (filteredStatements.length === 0) {
+        html = '<div style="padding:40px;text-align:center;color:#666"><i class="fas fa-search fa-2x" style="opacity:0.3;margin-bottom:16px"></i><div style="font-size:1.1rem">No transactions match your search criteria</div></div>';
+      }
+      
+      transactionsList.innerHTML = html;
+    }
+
+    function editTransaction(id) {
+      const transaction = statements.find(s => s.id === id);
+      if (!transaction) return;
+
+      // Format date for input
+      const dateObj = transaction.dateObj || new Date(transaction.date);
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      
+      txnDate.value = `${year}-${month}-${day}`;
+      txnRef.value = transaction.reference || '';
+      txnDr.value = transaction.dr || '';
+      txnCr.value = transaction.cr || '';
+      editingId.value = transaction.id;
+      
+      txnTitle.textContent = 'Edit Transaction';
+      saveTxn.textContent = 'Update Transaction';
+      txnModal.classList.add('active');
+    }
+
+    function showDeleteConfirm(id) {
+      const transaction = statements.find(s => s.id === id);
+      if (!transaction) return;
+
+      transactionToDelete = transaction;
+      
+      // Format date for display
+      const dateObj = transaction.dateObj || new Date(transaction.date);
+      const dateStr = dateObj.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      
+      const amount = transaction.dr > 0 ? `${formatDisplay(transaction.dr)} (Debit)` : `${formatDisplay(transaction.cr)} (Credit)`;
+      
+      deleteRef.textContent = transaction.reference || '';
+      deleteDate.textContent = dateStr;
+      deleteAmount.textContent = amount;
+      
+      confirmDeleteModal.classList.add('active');
+    }
+
+    async function deleteTransaction() {
+      if (!transactionToDelete) return;
+
+      try {
+        confirmDelete.disabled = true;
+        confirmDelete.textContent = 'Deleting...';
+
+        // Delete from Firestore
+        await db.collection('statements').doc(transactionToDelete.id).delete();
+
+        // Remove from local array
+        const index = statements.findIndex(s => s.id === transactionToDelete.id);
+        if (index !== -1) {
+          statements.splice(index, 1);
+        }
+
+        // Recalculate all balances
+        recalculateBalances();
+
+        // Update balance display
+        if (statements.length > 0) {
+          const lastTransaction = statements[statements.length - 1];
+          accountBalanceEl.textContent = formatBalance(lastTransaction.balance);
+        } else {
+          accountBalanceEl.textContent = formatBalance(0);
+        }
+
+        // Close modal and refresh display
+        confirmDeleteModal.classList.remove('active');
+        renderTransactions();
+
+        // Show success message
+        alert('Transaction deleted successfully!');
+
+      } catch (err) {
+        console.error('Error deleting transaction:', err);
+        alert('Error deleting transaction. Please try again.');
+      } finally {
+        confirmDelete.disabled = false;
+        confirmDelete.textContent = 'Delete Transaction';
+        transactionToDelete = null;
+      }
+    }
+
+    async function saveTransaction() {
+      const dateVal = txnDate.value ? new Date(txnDate.value) : new Date();
+      const reference = (txnRef.value || '').trim();
+      const dr = parseFloat(txnDr.value || 0) || 0;
+      const cr = parseFloat(txnCr.value || 0) || 0;
+      const isEdit = editingId.value !== '';
+
+      if (!reference) {
+        alert('Please enter a reference/description');
+        return;
+      }
+      
+      if (dr <= 0 && cr <= 0) {
+        alert('Please enter either a debit or credit amount');
+        return;
+      }
+
+      if (dr > 0 && cr > 0) {
+        alert('Please enter either debit OR credit, not both');
+        return;
+      }
+
+      try {
+        saveTxn.disabled = true;
+        saveTxn.textContent = isEdit ? 'Updating...' : 'Saving...';
+
+        if (isEdit) {
+          // Update existing transaction
+          const index = statements.findIndex(s => s.id === editingId.value);
+          if (index !== -1) {
+            // Update the transaction
+            statements[index].date = dateVal.toISOString();
+            statements[index].dateObj = dateVal;
+            statements[index].reference = reference;
+            statements[index].dr = dr;
+            statements[index].cr = cr;
+            
+            // Update Firestore
+            await db.collection('statements').doc(editingId.value).update({
+              date: dateVal.toISOString(),
+              reference: reference,
+              dr: dr,
+              cr: cr,
+              updatedBy: currentUser,
+              updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+          
+          // Recalculate all balances
+          recalculateBalances();
+          
+          // Update balance display
+          if (statements.length > 0) {
+            const lastTransaction = statements[statements.length - 1];
+            accountBalanceEl.textContent = formatBalance(lastTransaction.balance);
+          }
+          
+        } else {
+          // Calculate new balance
+          const currentBalance = statements.length > 0 ? statements[statements.length - 1].balance : 0;
+          const newBalance = Math.max(0, currentBalance - dr + cr);
+
+          // Create transaction object
+          const newTransaction = {
+            accountId: accountId,
+            date: dateVal.toISOString(),
+            reference: reference,
+            dr: dr,
+            cr: cr,
+            balance: newBalance,
+            createdBy: currentUser,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          };
+
+          // Add to Firestore
+          const docRef = await db.collection('statements').add(newTransaction);
+
+          // Update local data
+          newTransaction.id = docRef.id;
+          newTransaction.dateObj = dateVal;
+          statements.push(newTransaction);
+          
+          // Update balance display
+          accountBalanceEl.textContent = formatBalance(newBalance);
+        }
+
+        // Close modal and refresh display
+        txnModal.classList.remove('active');
+        renderTransactions();
+
+        // Show success message
+        alert(`Transaction ${isEdit ? 'updated' : 'saved'} successfully!`);
+
+      } catch (err) {
+        console.error('Error saving transaction:', err);
+        alert('Error saving transaction. Please try again.');
+      } finally {
+        saveTxn.disabled = false;
+        saveTxn.textContent = isEdit ? 'Update Transaction' : 'Save Transaction';
+        editingId.value = '';
+      }
+    }
+
+    function downloadPDF() {
+      if (!statements || statements.length === 0) {
+        alert('No transactions to download');
+        return;
+      }
+
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Add header
+        doc.setFillColor(30, 60, 114);
+        doc.rect(0, 0, 210, 40, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('TRISMART', 105, 15, { align: 'center' });
+        
+        doc.setFontSize(14);
+        doc.text('Account Statement', 105, 25, { align: 'center' });
+        
+        // Account info
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Account ID: ${accountId}`, 15, 50);
+        doc.text(`Account Name: Interest Book - INTEREST`, 15, 55);
+        doc.text(`Generated On: ${new Date().toLocaleDateString()}`, 15, 60);
+        doc.text(`Generated By: ${currentUser}`, 15, 65);
+        
+        const currentBalance = statements.length > 0 ? statements[statements.length - 1].balance : 0;
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Current Balance: ZMW ${formatDisplay(currentBalance)}`, 150, 60);
+        
+        // Prepare table data
+        const tableData = statements.map(s => {
+          const dateStr = s.dateObj ? s.dateObj.toLocaleDateString() : (s.date || '');
+          return [
+            dateStr,
+            s.reference || s.description || '',
+            s.dr > 0 ? formatDisplay(s.dr) : '',
+            s.cr > 0 ? formatDisplay(s.cr) : '',
+            formatDisplay(s.balance)
+          ];
+        });
+
+        // Add table
+        doc.autoTable({
+          startY: 75,
+          head: [['Date', 'Reference', 'Debit', 'Credit', 'Balance']],
+          body: tableData,
+          headStyles: {
+            fillColor: [30, 60, 114],
+            textColor: 255,
+            fontStyle: 'bold'
+          },
+          alternateRowStyles: {
+            fillColor: [245, 247, 251]
+          },
+          columnStyles: {
+            2: { halign: 'right' },
+            3: { halign: 'right' },
+            4: { halign: 'right' }
+          },
+          margin: { top: 75 },
+          styles: {
+            fontSize: 9,
+            cellPadding: 4
+          }
+        });
+
+        // Add footer
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.setTextColor(128, 128, 128);
+          doc.text(
+            `Page ${i} of ${pageCount}`,
+            doc.internal.pageSize.width / 2,
+            doc.internal.pageSize.height - 10,
+            { align: 'center' }
+          );
+        }
+
+        // Download the PDF
+        doc.save(`Statement_${accountId}_${new Date().toISOString().split('T')[0]}.pdf`);
+        
+      } catch (err) {
+        console.error('Error generating PDF:', err);
+        alert('Error generating PDF. Please try again.');
+      }
+    }
+
+    // Make functions available globally
+    window.editTransaction = editTransaction;
+    window.showDeleteConfirm = showDeleteConfirm;
+    window.toggleActionsMenu = toggleActionsMenu;
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+      renderTransactions();
+    });
+  </script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+</body>
+</html>

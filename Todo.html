@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trismart — To-Do</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    :root {
+      --bg:          #f4f6fb;
+      --bg2:         #ffffff;
+      --bg3:         #f1f3f5;
+      --border:      #e2e6ef;
+      --border2:     #cdd3e0;
+      --text:        #1a1e2e;
+      --text-fade:   #6b7490;
+      --text-dim:    #a0a8c0;
+      --blue:        #4361ee;
+      --cyan:        #00b4d8;
+      --green:       #10b981;
+      --orange:      #f59e0b;
+      --pink:        #f72585;
+      --danger:      #ef4444;
+      --blue-glow:   rgba(67,97,238,0.15);
+      --radius:      12px;
+      --radius-lg:   18px;
+      --header-h:    58px;
+      --sidebar-w:   230px;
+      --shadow:      0 2px 12px rgba(67,97,238,0.08);
+      --shadow-lg:   0 8px 32px rgba(67,97,238,0.13);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ════════════════════════════
+       TOPBAR  (identical to dashboard)
+    ════════════════════════════ */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 16px;
+      z-index: 1100;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+
+    .menu-btn {
+      width: 38px; height: 38px;
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text-fade);
+      font-size: 1rem; transition: all 0.2s; flex-shrink: 0;
+    }
+    .menu-btn:hover { background: var(--blue); color: white; border-color: var(--blue); box-shadow: 0 0 20px var(--blue-glow); }
+
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-mark {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 0.9rem;
+      box-shadow: 0 0 18px rgba(67,97,238,0.3);
+    }
+    .logo-text { font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+    .logo-text span { color: var(--blue); }
+
+    .time-badge {
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 100px; padding: 5px 12px;
+      font-size: 0.7rem; font-family: 'DM Mono', monospace;
+      color: var(--text-fade); white-space: nowrap;
+    }
+
+    /* ════════════════════════════
+       SIDEBAR  (identical to dashboard)
+    ════════════════════════════ */
+    .sidebar {
+      position: fixed;
+      top: var(--header-h); left: 0;
+      width: var(--sidebar-w);
+      height: calc(100vh - var(--header-h));
+      background: rgba(255,255,255,0.98);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border);
+      z-index: 1000;
+      padding: 14px 10px;
+      transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+      overflow-y: auto;
+    }
+    .sidebar.hidden { transform: translateX(-100%); }
+
+    .sidebar-label {
+      font-size: 0.58rem; font-weight: 700; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 0.14em;
+      padding: 0 10px; margin: 12px 0 6px;
+    }
+
+    .sidebar a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; color: var(--text-fade);
+      text-decoration: none; font-size: 0.82rem; font-weight: 500;
+      border-radius: var(--radius); margin-bottom: 2px;
+      transition: all 0.18s;
+    }
+    .sidebar a i { width: 16px; text-align: center; font-size: 0.85rem; }
+    .sidebar a:hover { background: rgba(67,97,238,0.08); color: var(--blue); }
+    .sidebar a.active {
+      background: rgba(67,97,238,0.12); color: var(--blue);
+      font-weight: 700; box-shadow: inset 0 0 0 1px rgba(67,97,238,0.2);
+    }
+
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 999;
+      backdrop-filter: blur(4px);
+    }
+    .sidebar-overlay.show { display: block; }
+
+    /* ════════════════════════════
+       MAIN
+    ════════════════════════════ */
+    main {
+      margin-top: var(--header-h);
+      margin-left: var(--sidebar-w);
+      padding: 18px 16px 32px;
+      min-height: calc(100vh - var(--header-h));
+      transition: margin-left 0.32s cubic-bezier(0.4,0,0.2,1);
+    }
+    main.expanded { margin-left: 0; }
+
+    /* ── PAGE HEADER ── */
+    .page-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
+      animation: slideUp 0.4s ease backwards;
+    }
+    .page-hdr-left h2 {
+      font-size: 1.25rem; font-weight: 800; color: var(--text); letter-spacing: -0.3px;
+    }
+    .page-hdr-left p { font-size: 0.72rem; color: var(--text-fade); margin-top: 3px; }
+
+    /* ── SECTION TABS ── */
+    .section-tabs {
+      display: flex; gap: 6px; flex-wrap: wrap;
+      margin-bottom: 14px;
+      animation: slideUp 0.4s 0.05s ease backwards;
+    }
+    .tab-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 13px; border-radius: 100px;
+      border: 1.5px solid var(--border);
+      background: var(--bg2); color: var(--text-fade);
+      font-size: 0.75rem; font-weight: 600;
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      transition: all 0.18s; white-space: nowrap;
+    }
+    .tab-btn i { font-size: 0.75rem; }
+    .tab-btn:hover { border-color: var(--blue); color: var(--blue); background: rgba(67,97,238,0.05); }
+    .tab-btn.active {
+      background: var(--blue); color: white; border-color: var(--blue);
+      box-shadow: 0 4px 12px rgba(67,97,238,0.25);
+    }
+    .tab-btn .tab-count {
+      background: rgba(255,255,255,0.25); border-radius: 100px;
+      padding: 1px 6px; font-size: 0.6rem; font-weight: 800;
+      min-width: 18px; text-align: center;
+    }
+    .tab-btn:not(.active) .tab-count {
+      background: var(--bg3); color: var(--text-dim);
+    }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 8px; margin-bottom: 14px;
+      animation: slideUp 0.4s 0.1s ease backwards;
+    }
+    .stat-chip {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 12px 10px;
+      box-shadow: var(--shadow); position: relative; overflow: hidden;
+    }
+    .stat-chip::before {
+      content: ''; position: absolute; right: -10px; top: -10px;
+      width: 50px; height: 50px; border-radius: 50%;
+      filter: blur(16px); opacity: 0.2;
+    }
+    .sc-total::before  { background: var(--blue); }
+    .sc-done::before   { background: var(--green); }
+    .sc-pend::before   { background: var(--orange); }
+    .sc-high::before   { background: var(--danger); }
+    .stat-chip .val {
+      font-size: 1.4rem; font-weight: 800; line-height: 1;
+      font-family: 'DM Mono', monospace;
+    }
+    .sc-total .val { color: var(--blue); }
+    .sc-done  .val { color: var(--green); }
+    .sc-pend  .val { color: var(--orange); }
+    .sc-high  .val { color: var(--danger); }
+    .stat-chip .lbl {
+      font-size: 0.58rem; font-weight: 700; color: var(--text-fade);
+      text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px;
+    }
+
+    /* ── ADD TASK (admin only) ── */
+    .add-task-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 14px;
+      box-shadow: var(--shadow); margin-bottom: 14px;
+      animation: slideUp 0.4s 0.15s ease backwards;
+    }
+    .add-task-card .row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .add-task-card input[type="text"] {
+      flex: 1; min-width: 150px;
+      padding: 9px 12px; border: 1.5px solid var(--border);
+      border-radius: var(--radius); font-size: 0.85rem;
+      font-family: 'DM Sans', sans-serif; color: var(--text);
+      background: var(--bg3); outline: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    .add-task-card input[type="text"]:focus {
+      border-color: var(--blue); background: white;
+      box-shadow: 0 0 0 3px rgba(67,97,238,0.1);
+    }
+    .add-task-card select {
+      padding: 9px 10px; border: 1.5px solid var(--border);
+      border-radius: var(--radius); font-size: 0.82rem;
+      font-family: 'DM Sans', sans-serif; color: var(--text);
+      background: var(--bg3); cursor: pointer; outline: none;
+      transition: border-color 0.18s;
+    }
+    .add-task-card select:focus { border-color: var(--blue); }
+
+    .add-btn {
+      padding: 9px 16px;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      color: white; border: none; border-radius: var(--radius);
+      font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      box-shadow: 0 4px 12px rgba(67,97,238,0.2);
+      display: flex; align-items: center; gap: 6px;
+      transition: all 0.18s; white-space: nowrap;
+    }
+    .add-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(67,97,238,0.3); }
+
+    /* ── CHECKLIST CARD ── */
+    .checklist-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden;
+      box-shadow: var(--shadow);
+      animation: slideUp 0.4s 0.2s ease backwards;
+    }
+    .checklist-hdr {
+      padding: 13px 16px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .checklist-hdr-left { display: flex; align-items: center; gap: 8px; }
+    .hdr-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--blue); box-shadow: 0 0 7px rgba(67,97,238,0.5);
+    }
+    .checklist-hdr h3 { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+    .count-badge {
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: 100px; padding: 2px 9px;
+      font-size: 0.63rem; font-weight: 700; color: var(--text-fade);
+    }
+    .clear-done-btn {
+      background: none; border: 1px solid var(--border);
+      border-radius: 8px; padding: 4px 10px;
+      font-size: 0.65rem; font-weight: 700; color: var(--text-fade);
+      cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.18s;
+    }
+    .clear-done-btn:hover { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.05); }
+
+    /* ── TASK ITEMS ── */
+    .checklist { list-style: none; }
+
+    .task-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 16px; border-bottom: 1px solid var(--border);
+      transition: background 0.15s; position: relative;
+      animation: slideIn 0.25s ease backwards;
+    }
+    .task-item:last-child { border-bottom: none; }
+    .task-item:hover { background: var(--bg3); }
+    .task-item.done { background: rgba(16,185,129,0.03); }
+    .task-item.important::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; background: var(--orange); border-radius: 0 3px 3px 0;
+    }
+
+    /* custom checkbox */
+    .task-cb {
+      appearance: none; -webkit-appearance: none;
+      width: 20px; height: 20px; flex-shrink: 0;
+      border: 2px solid var(--border2); border-radius: 6px;
+      background: var(--bg3); cursor: pointer; position: relative;
+      transition: all 0.18s;
+    }
+    .task-cb:checked { background: var(--green); border-color: var(--green); }
+    .task-cb:checked::after {
+      content: ''; position: absolute; left: 5px; top: 2px;
+      width: 5px; height: 9px;
+      border: 2px solid white; border-top: none; border-left: none;
+      transform: rotate(45deg);
+    }
+    .task-cb:hover:not(:checked) { border-color: var(--blue); }
+
+    .task-body { flex: 1; min-width: 0; }
+    .task-text {
+      font-size: 0.82rem; font-weight: 500; color: var(--text);
+      word-break: break-word; cursor: pointer; user-select: none;
+      transition: color 0.15s;
+    }
+    .done .task-text { text-decoration: line-through; color: var(--text-dim); }
+    .task-meta { display: flex; align-items: center; gap: 5px; margin-top: 3px; flex-wrap: wrap; }
+
+    .badge {
+      font-size: 0.58rem; font-weight: 800; padding: 2px 7px;
+      border-radius: 100px; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .badge-high   { background: rgba(239,68,68,0.1);   color: var(--danger); }
+    .badge-medium { background: rgba(245,158,11,0.12);  color: var(--orange); }
+    .badge-low    { background: rgba(16,185,129,0.1);   color: var(--green); }
+
+    .act-btn {
+      background: none; border: none; cursor: pointer;
+      width: 30px; height: 30px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.82rem; color: var(--text-dim);
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .act-btn:hover { background: var(--bg3); }
+    .star-btn.on  { color: var(--orange); }
+    .star-btn:hover { color: var(--orange); }
+    .del-btn:hover  { color: var(--danger); background: rgba(239,68,68,0.08); }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      padding: 44px 16px; text-align: center; color: var(--text-dim);
+    }
+    .empty-state i   { font-size: 2.2rem; margin-bottom: 12px; display: block; color: var(--border2); }
+    .empty-state p   { font-size: 0.8rem; line-height: 1.6; }
+    .empty-state strong { color: var(--text-fade); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      :root { --sidebar-w: 240px; }
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.visible { transform: translateX(0) !important; }
+      main { margin-left: 0 !important; padding: 14px 12px 32px; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .time-badge { display: none; }
+    }
+    @media (min-width: 601px) {
+      .sidebar { transform: translateX(0); }
+      .sidebar.hidden { transform: translateX(-100%); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════
+     TOPBAR
+═══════════════════════ -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="menu-btn" id="menuBtn"><i class="fas fa-bars"></i></div>
+    <div class="logo">
+      <div class="logo-mark"><i class="fas fa-store-alt"></i></div>
+      <div class="logo-text">Tri<span>smart</span></div>
+    </div>
+  </div>
+  <div class="time-badge" id="timeBadge">--:--</div>
+</header>
+
+<!-- ═══════════════════════
+     SIDEBAR
+═══════════════════════ -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-label">Main</div>
+  <a href="Airtel.html"><i class="fas fa-mobile-alt"></i> Airtel Money</a>
+  <a href="warehouse.html"><i class="fas fa-warehouse"></i> Warehouse</a>
+  <a href="sale.html"><i class="fas fa-chart-line"></i> Sales</a>
+  <div class="sidebar-label" style="margin-top:14px;">Tools</div>
+  <a href="Todo.html" class="active"><i class="fas fa-tasks"></i> To-Do</a>
+  <a href="lowstock.html"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
+  <a href="Report.html"><i class="fas fa-file-alt"></i> Daily Report</a>
+</nav>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ═══════════════════════
+     MAIN
+═══════════════════════ -->
+<main id="mainContent" class="expanded">
+
+  <!-- Page header -->
+  <div class="page-hdr">
+    <div class="page-hdr-left">
+      <h2>Shop Checklist</h2>
+      <p id="pageSubtitle">Manage daily tasks for the team</p>
+    </div>
+  </div>
+
+  <!-- Section tabs -->
+  <div class="section-tabs" id="sectionTabs">
+    <button class="tab-btn active" data-section="daily">
+      <i class="fas fa-clipboard-list"></i> Daily Tasks
+      <span class="tab-count" id="cnt-daily">0</span>
+    </button>
+    <button class="tab-btn" data-section="opening">
+      <i class="fas fa-sun"></i> Opening
+      <span class="tab-count" id="cnt-opening">0</span>
+    </button>
+    <button class="tab-btn" data-section="closing">
+      <i class="fas fa-moon"></i> Closing
+      <span class="tab-count" id="cnt-closing">0</span>
+    </button>
+    <button class="tab-btn" data-section="inventory">
+      <i class="fas fa-boxes"></i> Inventory
+      <span class="tab-count" id="cnt-inventory">0</span>
+    </button>
+    <button class="tab-btn" data-section="cleaning">
+      <i class="fas fa-broom"></i> Cleaning
+      <span class="tab-count" id="cnt-cleaning">0</span>
+    </button>
+    <button class="tab-btn" data-section="cashier">
+      <i class="fas fa-cash-register"></i> Cashier
+      <span class="tab-count" id="cnt-cashier">0</span>
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-chip sc-total">
+      <div class="val" id="statTotal">0</div>
+      <div class="lbl">Total</div>
+    </div>
+    <div class="stat-chip sc-done">
+      <div class="val" id="statDone">0</div>
+      <div class="lbl">Done</div>
+    </div>
+    <div class="stat-chip sc-pend">
+      <div class="val" id="statPend">0</div>
+      <div class="lbl">Pending</div>
+    </div>
+    <div class="stat-chip sc-high">
+      <div class="val" id="statHigh">0</div>
+      <div class="lbl">High Priority</div>
+    </div>
+  </div>
+
+  <!-- Add task — ADMIN ONLY (hidden for non-admin) -->
+  <div class="add-task-card" id="addTaskCard" style="display:none;">
+    <form class="row" id="addTaskForm" autocomplete="off">
+      <input type="text" id="newTaskInput" placeholder="Add a new task…" maxlength="120" required>
+      <select id="taskPriority">
+        <option value="">Priority</option>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+      <button type="submit" class="add-btn"><i class="fas fa-plus"></i> Add Task</button>
+    </form>
+  </div>
+
+  <!-- Checklist -->
+  <div class="checklist-card">
+    <div class="checklist-hdr">
+      <div class="checklist-hdr-left">
+        <div class="hdr-dot"></div>
+        <h3 id="listTitle">Daily Tasks</h3>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="count-badge" id="listCount">0</div>
+        <button class="clear-done-btn" id="clearDoneBtn">
+          <i class="fas fa-broom"></i> Clear done
+        </button>
+      </div>
+    </div>
+    <ul class="checklist" id="checklist"></ul>
+  </div>
+
+</main>
+
+<script>
+  /* ─────────────────────────
+     AUTH — check if admin
+  ───────────────────────── */
+  const userName = (localStorage.getItem('userName') || '').toLowerCase().trim();
+  const isAdmin  = userName === 'chris';
+
+  if (isAdmin) {
+    document.getElementById('addTaskCard').style.display = 'block';
+  }
+
+  /* ─────────────────────────
+     SECTION DEFINITIONS (empty by default)
+  ───────────────────────── */
+  const SECTION_LABELS = {
+    daily:     'Daily Tasks',
+    opening:   'Opening Duties',
+    closing:   'Closing Duties',
+    inventory: 'Inventory',
+    cleaning:  'Cleaning',
+    cashier:   'Cashier',
+  };
+
+  // Load from localStorage or start empty for all sections
+  let data = JSON.parse(localStorage.getItem('trismart_todo_v2') || 'null');
+  if (!data) {
+    data = {};
+    Object.keys(SECTION_LABELS).forEach(k => { data[k] = []; });
+  }
+  // Ensure all sections exist
+  Object.keys(SECTION_LABELS).forEach(k => { if (!data[k]) data[k] = []; });
+
+  let activeSection = localStorage.getItem('trismart_todo_section') || 'daily';
+
+  /* ─────────────────────────
+     SIDEBAR TOGGLE
+  ───────────────────────── */
+  const sidebar  = document.getElementById('sidebar');
+  const overlay  = document.getElementById('sidebarOverlay');
+  const menuBtn  = document.getElementById('menuBtn');
+  const mainEl   = document.getElementById('mainContent');
+  const isMobile = () => window.innerWidth <= 600;
+
+  function initSidebar() {
+    if (isMobile()) {
+      sidebar.classList.remove('visible');
+      mainEl.classList.add('expanded');
+      mainEl.style.marginLeft = '0';
+    } else {
+      sidebar.classList.remove('hidden');
+      mainEl.classList.remove('expanded');
+      mainEl.style.marginLeft = '230px';
+    }
+  }
+  initSidebar();
+  window.addEventListener('resize', initSidebar);
+
+  menuBtn.addEventListener('click', () => {
+    if (isMobile()) {
+      const open = sidebar.classList.contains('visible');
+      if (open) { sidebar.classList.remove('visible'); overlay.classList.remove('show'); }
+      else       { sidebar.classList.add('visible');   overlay.classList.add('show'); }
+    } else {
+      const hidden = sidebar.classList.contains('hidden');
+      if (hidden) {
+        sidebar.classList.remove('hidden');
+        mainEl.style.marginLeft = '230px';
+      } else {
+        sidebar.classList.add('hidden');
+        mainEl.style.marginLeft = '0';
+      }
+    }
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('visible');
+    overlay.classList.remove('show');
+  });
+
+  /* ─────────────────────────
+     CLOCK
+  ───────────────────────── */
+  function tick() {
+    document.getElementById('timeBadge').textContent =
+      new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+  tick(); setInterval(tick, 30000);
+
+  /* ─────────────────────────
+     SAVE
+  ───────────────────────── */
+  function save() {
+    localStorage.setItem('trismart_todo_v2', JSON.stringify(data));
+    localStorage.setItem('trismart_todo_section', activeSection);
+  }
+
+  /* ─────────────────────────
+     RENDER
+  ───────────────────────── */
+  function render() {
+    const tasks = data[activeSection] || [];
+    const label = SECTION_LABELS[activeSection] || activeSection;
+
+    // Update titles
+    document.getElementById('listTitle').textContent = label;
+    document.getElementById('pageSubtitle').textContent =
+      `${label} — ${tasks.length} task${tasks.length !== 1 ? 's' : ''}`;
+
+    // Update tab counts & active state
+    Object.keys(SECTION_LABELS).forEach(k => {
+      const el = document.getElementById('cnt-' + k);
+      if (el) el.textContent = data[k]?.length || 0;
+    });
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.section === activeSection);
+    });
+
+    // Stats
+    const total = tasks.length;
+    const done  = tasks.filter(t => t.done).length;
+    const pend  = total - done;
+    const high  = tasks.filter(t => t.priority === 'high' && !t.done).length;
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statDone').textContent  = done;
+    document.getElementById('statPend').textContent  = pend;
+    document.getElementById('statHigh').textContent  = high;
+    document.getElementById('listCount').textContent = total;
+
+    // Task list
+    const ul = document.getElementById('checklist');
+    ul.innerHTML = '';
+
+    if (!tasks.length) {
+      ul.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-clipboard"></i>
+          <p>${isAdmin
+            ? 'No tasks yet.<br>Use the form above to <strong>add the first task</strong>.'
+            : 'No tasks yet.<br><strong>Chris</strong> will add tasks here soon.'
+          }</p>
+        </div>`;
+      return;
+    }
+
+    tasks.forEach((task, idx) => {
+      const li = document.createElement('li');
+      li.className = 'task-item' + (task.done ? ' done' : '') + (task.important ? ' important' : '');
+      li.style.animationDelay = `${idx * 0.035}s`;
+
+      let badgeHTML = '';
+      if (task.priority === 'high')   badgeHTML = `<span class="badge badge-high">High</span>`;
+      if (task.priority === 'medium') badgeHTML = `<span class="badge badge-medium">Medium</span>`;
+      if (task.priority === 'low')    badgeHTML = `<span class="badge badge-low">Low</span>`;
+
+      // Admin sees delete; everyone sees checkbox + star
+      const deleteBtn = isAdmin
+        ? `<button class="act-btn del-btn" data-idx="${idx}" title="Delete task"><i class="fas fa-trash-alt"></i></button>`
+        : '';
+
+      li.innerHTML = `
+        <input type="checkbox" class="task-cb" data-idx="${idx}" ${task.done ? 'checked' : ''}>
+        <div class="task-body">
+          <div class="task-text" data-idx="${idx}">${esc(task.text)}</div>
+          ${badgeHTML ? `<div class="task-meta">${badgeHTML}</div>` : ''}
+        </div>
+        <button class="act-btn star-btn ${task.important ? 'on' : ''}" data-idx="${idx}" title="Mark important">
+          <i class="${task.important ? 'fas' : 'far'} fa-star"></i>
+        </button>
+        ${deleteBtn}`;
+      ul.appendChild(li);
+    });
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  /* ─────────────────────────
+     EVENTS — checklist
+  ───────────────────────── */
+  document.getElementById('checklist').addEventListener('change', e => {
+    if (e.target.classList.contains('task-cb')) {
+      data[activeSection][+e.target.dataset.idx].done = e.target.checked;
+      save(); render();
+    }
+  });
+
+  document.getElementById('checklist').addEventListener('click', e => {
+    // text click = toggle done
+    const txt = e.target.closest('.task-text');
+    if (txt) {
+      const i = +txt.dataset.idx;
+      data[activeSection][i].done = !data[activeSection][i].done;
+      save(); render(); return;
+    }
+    // star
+    const star = e.target.closest('.star-btn');
+    if (star) {
+      const i = +star.dataset.idx;
+      data[activeSection][i].important = !data[activeSection][i].important;
+      save(); render(); return;
+    }
+    // delete (admin only)
+    const del = e.target.closest('.del-btn');
+    if (del && isAdmin) {
+      data[activeSection].splice(+del.dataset.idx, 1);
+      save(); render(); return;
+    }
+  });
+
+  /* ─────────────────────────
+     ADD TASK (admin only)
+  ───────────────────────── */
+  document.getElementById('addTaskForm').addEventListener('submit', e => {
+    e.preventDefault();
+    if (!isAdmin) return;
+    const text = document.getElementById('newTaskInput').value.trim();
+    const priority = document.getElementById('taskPriority').value;
+    if (!text) return;
+    data[activeSection].push({ text, priority, done: false, important: false });
+    document.getElementById('newTaskInput').value = '';
+    document.getElementById('taskPriority').value = '';
+    save(); render();
+  });
+
+  /* ─────────────────────────
+     CLEAR DONE
+  ───────────────────────── */
+  document.getElementById('clearDoneBtn').addEventListener('click', () => {
+    data[activeSection] = data[activeSection].filter(t => !t.done);
+    save(); render();
+  });
+
+  /* ─────────────────────────
+     SECTION TABS
+  ───────────────────────── */
+  document.getElementById('sectionTabs').addEventListener('click', e => {
+    const btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    activeSection = btn.dataset.section;
+    save(); render();
+    if (isMobile()) { sidebar.classList.remove('visible'); overlay.classList.remove('show'); }
+  });
+
+  /* ─────────────────────────
+     INIT
+  ───────────────────────── */
+  render();
+</script>
+</body>
+</html>

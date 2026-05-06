@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trismart — Daily Report</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        :root {
+            --bg:        #f4f6fb;
+            --bg2:       #ffffff;
+            --bg3:       #f1f3f5;
+            --border:    #e2e6ef;
+            --border2:   #cdd3e0;
+            --text:      #1a1e2e;
+            --text-fade: #6b7490;
+            --text-dim:  #a0a8c0;
+            --blue:      #4361ee;
+            --cyan:      #00b4d8;
+            --green:     #10b981;
+            --orange:    #f59e0b;
+            --pink:      #f72585;
+            --danger:    #ef4444;
+            --blue-glow: rgba(67,97,238,0.15);
+            --radius:    12px;
+            --radius-lg: 18px;
+            --shadow:    0 2px 12px rgba(67,97,238,0.08);
+            --shadow-lg: 0 8px 32px rgba(67,97,238,0.13);
+            --header-h:  56px;
+            --sidebar-w: 230px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ════════════════════════════
+           TOPBAR
+        ════════════════════════════ */
+        .topbar {
+            position: fixed; top: 0; left: 0; right: 0;
+            height: var(--header-h);
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px; z-index: 1100;
+        }
+        .topbar-left { display: flex; align-items: center; gap: 12px; }
+
+        .menu-btn {
+            width: 38px; height: 38px;
+            background: var(--bg3); border: 1px solid var(--border2);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--text-fade);
+            font-size: 1rem; transition: all 0.2s; flex-shrink: 0;
+        }
+        .menu-btn:hover { background: var(--blue); color: white; border-color: var(--blue); box-shadow: 0 0 20px var(--blue-glow); }
+
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo-mark {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--blue), var(--cyan));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 0.9rem;
+            box-shadow: 0 0 18px rgba(67,97,238,0.3);
+        }
+        .logo-text { font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+        .logo-text span { color: var(--blue); }
+
+        .time-badge {
+            background: var(--bg3); border: 1px solid var(--border2);
+            border-radius: 100px; padding: 5px 12px;
+            font-size: 0.7rem; font-family: 'DM Mono', monospace;
+            color: var(--text-fade); white-space: nowrap;
+        }
+
+        /* ════════════════════════════
+           SIDEBAR
+        ════════════════════════════ */
+        .sidebar {
+            position: fixed;
+            top: var(--header-h); left: 0;
+            width: var(--sidebar-w);
+            height: calc(100vh - var(--header-h));
+            background: rgba(255,255,255,0.98);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border);
+            z-index: 1000;
+            padding: 14px 10px;
+            transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+            overflow-y: auto;
+        }
+        .sidebar.hidden { transform: translateX(-100%); }
+
+        .sidebar-label {
+            font-size: 0.58rem; font-weight: 700; color: var(--text-dim);
+            text-transform: uppercase; letter-spacing: 0.14em;
+            padding: 0 10px; margin: 12px 0 6px;
+        }
+        .sidebar a {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 12px; color: var(--text-fade);
+            text-decoration: none; font-size: 0.82rem; font-weight: 500;
+            border-radius: var(--radius); margin-bottom: 2px;
+            transition: all 0.18s;
+        }
+        .sidebar a i { width: 16px; text-align: center; font-size: 0.85rem; }
+        .sidebar a:hover { background: rgba(67,97,238,0.08); color: var(--blue); }
+        .sidebar a.active {
+            background: rgba(67,97,238,0.12); color: var(--blue);
+            font-weight: 700; box-shadow: inset 0 0 0 1px rgba(67,97,238,0.2);
+        }
+
+        .sidebar-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5); z-index: 999;
+            backdrop-filter: blur(4px);
+        }
+        .sidebar-overlay.show { display: block; }
+
+        /* ════════════════════════════
+           MAIN
+        ════════════════════════════ */
+        main {
+            margin-top: var(--header-h);
+            margin-left: var(--sidebar-w);
+            padding: 18px 16px 40px;
+            min-height: calc(100vh - var(--header-h));
+            transition: margin-left 0.32s cubic-bezier(0.4,0,0.2,1);
+        }
+        main.expanded { margin-left: 0; }
+
+        .inner { max-width: 520px; margin: 0 auto; }
+
+        /* ════════════════════════════
+           REMINDER BANNER
+        ════════════════════════════ */
+        .reminder-banner {
+            background: linear-gradient(135deg, #fff7ed, #fff3e0);
+            border: 1.5px solid rgba(245,158,11,0.35);
+            border-radius: var(--radius-lg);
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            display: flex; align-items: flex-start; gap: 12px;
+            position: relative; overflow: hidden;
+            animation: slideUp 0.5s ease backwards;
+        }
+        .reminder-banner::before {
+            content: '';
+            position: absolute; right: -20px; top: -20px;
+            width: 90px; height: 90px;
+            background: radial-gradient(circle, rgba(245,158,11,0.18), transparent 70%);
+            pointer-events: none;
+        }
+        .reminder-icon {
+            width: 38px; height: 38px; flex-shrink: 0;
+            background: linear-gradient(135deg, var(--orange), #f97316);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(245,158,11,0.3);
+        }
+        .reminder-body { flex: 1; min-width: 0; }
+        .reminder-body strong {
+            display: block; font-size: 0.85rem; font-weight: 800;
+            color: #92400e; margin-bottom: 3px;
+        }
+        .reminder-body p { font-size: 0.72rem; color: #b45309; line-height: 1.5; }
+        .reminder-date {
+            font-size: 0.62rem; font-weight: 700; color: #d97706;
+            background: rgba(245,158,11,0.12);
+            border: 1px solid rgba(245,158,11,0.2);
+            border-radius: 100px; padding: 2px 9px;
+            white-space: nowrap; align-self: center; flex-shrink: 0;
+        }
+
+        /* ── done banner (green) ── */
+        .reminder-banner.done {
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            border-color: rgba(16,185,129,0.3);
+        }
+        .reminder-banner.done::before { background: radial-gradient(circle, rgba(16,185,129,0.15), transparent 70%); }
+        .reminder-banner.done .reminder-icon { background: linear-gradient(135deg, var(--green), #059669); box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+        .reminder-banner.done .reminder-body strong { color: #064e3b; }
+        .reminder-banner.done .reminder-body p { color: #065f46; }
+        .reminder-banner.done .reminder-date { color: #10b981; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.2); }
+
+        /* ════════════════════════════
+           FILTER ROW
+        ════════════════════════════ */
+        .filter-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 11px 14px;
+            display: flex; align-items: center; gap: 10px;
+            box-shadow: var(--shadow);
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            animation: slideUp 0.5s 0.05s ease backwards;
+        }
+        .filter-card label {
+            font-size: 0.68rem; font-weight: 700; color: var(--text-fade);
+            text-transform: uppercase; letter-spacing: 0.08em;
+        }
+        .filter-card select {
+            background: var(--bg3); border: 1px solid var(--border2);
+            border-radius: 8px; color: var(--text);
+            padding: 5px 10px; font-size: 0.8rem;
+            font-family: 'DM Sans', sans-serif; font-weight: 600;
+            cursor: pointer; outline: none; transition: border-color 0.18s;
+        }
+        .filter-card select:focus { border-color: var(--blue); }
+
+        /* ════════════════════════════
+           TOGGLE BUTTON
+        ════════════════════════════ */
+        .toggle-btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%;
+            background: linear-gradient(135deg, var(--blue), var(--cyan));
+            color: white; font-weight: 700; border: none;
+            border-radius: var(--radius); font-size: 0.88rem;
+            padding: 12px 0; cursor: pointer;
+            box-shadow: 0 4px 14px rgba(67,97,238,0.25);
+            transition: all 0.2s; margin-bottom: 14px;
+            font-family: 'DM Sans', sans-serif;
+            animation: slideUp 0.5s 0.1s ease backwards;
+        }
+        .toggle-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(67,97,238,0.3); }
+
+        /* ════════════════════════════
+           FORM CARD
+        ════════════════════════════ */
+        .form-card {
+            background: var(--bg2); border-radius: var(--radius-lg);
+            padding: 18px 16px 14px; box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border); display: none;
+            margin-bottom: 16px; animation: fadeUp .35s ease;
+        }
+
+        .section-label {
+            font-size: 0.62rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.12em; color: var(--blue);
+            display: flex; align-items: center; gap: 7px;
+            margin: 16px 0 10px; padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section-label:first-child { margin-top: 0; }
+        .section-label i { font-size: 0.72rem; }
+
+        .form-group { margin-bottom: 10px; }
+        .form-group label {
+            display: block; font-size: 0.68rem; font-weight: 700;
+            color: var(--text-fade); text-transform: uppercase;
+            letter-spacing: 0.07em; margin-bottom: 4px;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%; background: var(--bg3);
+            border: 1.5px solid var(--border); border-radius: 9px;
+            color: var(--text); padding: 9px 12px;
+            font-size: 0.85rem; font-family: 'DM Sans', sans-serif;
+            transition: border-color 0.18s, box-shadow 0.18s; outline: none;
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            border-color: var(--blue); box-shadow: 0 0 0 3px rgba(67,97,238,0.1); background: white;
+        }
+        .form-group textarea { min-height: 70px; resize: vertical; line-height: 1.5; }
+
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        .btn-row { display: flex; gap: 10px; margin-top: 14px; }
+        .save-btn {
+            flex: 1;
+            background: linear-gradient(135deg, var(--blue), var(--cyan));
+            color: white; font-weight: 700; border: none;
+            border-radius: var(--radius); padding: 11px 0;
+            font-size: 0.88rem; cursor: pointer; font-family: 'DM Sans', sans-serif;
+            box-shadow: 0 4px 12px rgba(67,97,238,0.2); transition: all 0.18s;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .save-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(67,97,238,0.3); }
+        .clear-btn {
+            flex: 1; background: var(--bg3); color: var(--danger);
+            border: 1.5px solid rgba(239,68,68,0.3);
+            border-radius: var(--radius); padding: 11px 0;
+            font-size: 0.88rem; font-weight: 700; cursor: pointer;
+            font-family: 'DM Sans', sans-serif; transition: all 0.18s;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .clear-btn:hover { background: rgba(239,68,68,0.08); border-color: var(--danger); }
+
+        /* ════════════════════════════
+           REPORTS LIST
+        ════════════════════════════ */
+        .reports-card {
+            background: var(--bg2); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); overflow: hidden;
+            box-shadow: var(--shadow);
+            animation: slideUp 0.5s 0.18s ease backwards;
+        }
+        .reports-hdr {
+            padding: 13px 16px 12px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .reports-hdr h3 {
+            font-size: 0.82rem; font-weight: 700; color: var(--text);
+            display: flex; align-items: center; gap: 7px;
+        }
+        .reports-hdr h3 i { color: var(--blue); }
+        .report-count {
+            background: var(--bg3); border: 1px solid var(--border2);
+            border-radius: 100px; padding: 2px 9px;
+            font-size: 0.63rem; font-weight: 700; color: var(--text-fade);
+        }
+
+        .report-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 11px 16px; border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+        .report-item:last-child { border-bottom: none; }
+        .report-item:hover { background: var(--bg3); }
+
+        .report-item input[type="checkbox"] {
+            width: 18px; height: 18px; accent-color: var(--blue);
+            cursor: pointer; flex-shrink: 0;
+        }
+        .report-num {
+            font-size: 0.62rem; font-weight: 700; color: var(--text-dim);
+            font-family: 'DM Mono', monospace; flex-shrink: 0; width: 18px; text-align: right;
+        }
+        .report-icon {
+            width: 34px; height: 34px; border-radius: 9px;
+            background: linear-gradient(135deg, rgba(67,97,238,0.1), rgba(0,180,216,0.07));
+            border: 1px solid rgba(67,97,238,0.15);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--blue); font-size: 0.78rem; flex-shrink: 0;
+        }
+        .report-info { flex: 1; min-width: 0; }
+        .report-name {
+            font-size: 0.78rem; font-weight: 700; color: var(--text);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .report-sub { font-size: 0.63rem; color: var(--text-fade); margin-top: 1px; }
+
+        .empty-state {
+            padding: 32px 16px; text-align: center;
+            color: var(--text-dim); font-size: 0.8rem;
+        }
+        .empty-state i { font-size: 1.6rem; margin-bottom: 8px; display: block; color: var(--border2); }
+
+        .download-btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: calc(100% - 32px); margin: 12px 16px;
+            background: linear-gradient(135deg, var(--green), #00b4d8);
+            color: white; border: none; border-radius: var(--radius);
+            padding: 11px 0; font-size: 0.83rem; font-weight: 700;
+            cursor: pointer; font-family: 'DM Sans', sans-serif;
+            box-shadow: 0 4px 12px rgba(16,185,129,0.2); transition: all 0.2s;
+        }
+        .download-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(16,185,129,0.3); }
+
+        /* ════════════════════════════
+           ANIMATIONS
+        ════════════════════════════ */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+        /* ════════════════════════════
+           RESPONSIVE
+        ════════════════════════════ */
+        @media (max-width: 600px) {
+            :root { --sidebar-w: 240px; }
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.visible { transform: translateX(0) !important; }
+            main { margin-left: 0 !important; padding: 14px 12px 40px; }
+            .time-badge { display: none; }
+            .field-row { grid-template-columns: 1fr; }
+        }
+        @media (min-width: 601px) {
+            .sidebar { transform: translateX(0); }
+            .sidebar.hidden { transform: translateX(-100%); }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy }
+            from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+            authDomain: "trismartstores.firebaseapp.com",
+            projectId: "trismartstores",
+            storageBucket: "trismartstores.appspot.com",
+            messagingSenderId: "416692703333",
+            appId: "1:416692703333:web:d4b60292621435c748f68c",
+            measurementId: "G-NJPQ7L3QWJ"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db  = getFirestore(app);
+
+        let reportsCache = [];
+        let selectedMonth = "", selectedYear = "";
+        const filterKey = "cashReportFilters";
+
+        /* ── SIDEBAR TOGGLE ── */
+        const sidebar  = document.getElementById('sidebar');
+        const overlay  = document.getElementById('sidebarOverlay');
+        const menuBtn  = document.getElementById('menuBtn');
+        const mainEl   = document.getElementById('mainContent');
+        const isMobile = () => window.innerWidth <= 600;
+
+        function initSidebar() {
+            if (isMobile()) {
+                sidebar.classList.remove('visible');
+                mainEl.classList.add('expanded');
+                mainEl.style.marginLeft = '0';
+            } else {
+                sidebar.classList.remove('hidden');
+                mainEl.classList.remove('expanded');
+                mainEl.style.marginLeft = '230px';
+            }
+        }
+        initSidebar();
+        window.addEventListener('resize', initSidebar);
+
+        menuBtn.addEventListener('click', () => {
+            if (isMobile()) {
+                const open = sidebar.classList.contains('visible');
+                open ? (sidebar.classList.remove('visible'), overlay.classList.remove('show'))
+                     : (sidebar.classList.add('visible'),   overlay.classList.add('show'));
+            } else {
+                const hidden = sidebar.classList.contains('hidden');
+                if (hidden) { sidebar.classList.remove('hidden'); mainEl.style.marginLeft = '230px'; }
+                else        { sidebar.classList.add('hidden');    mainEl.style.marginLeft = '0'; }
+            }
+        });
+        overlay.addEventListener('click', () => { sidebar.classList.remove('visible'); overlay.classList.remove('show'); });
+
+        /* ── CLOCK ── */
+        function tick() {
+            document.getElementById('timeBadge').textContent =
+                new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+        }
+        tick(); setInterval(tick, 30000);
+
+        /* ── TODAY DATE ── */
+        const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+        function todayFormatted() {
+            const n = new Date();
+            return n.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+        }
+
+        /* ── REMINDER BANNER ── */
+        function updateReminder(reports) {
+            const banner = document.getElementById('reminderBanner');
+            // Check if a report for today already exists
+            const done = reports.some(r => r.date === todayStr);
+
+            if (done) {
+                banner.className = 'reminder-banner done';
+                banner.innerHTML = `
+                    <div class="reminder-icon"><i class="fas fa-check"></i></div>
+                    <div class="reminder-body">
+                        <strong>✅ Today's report is complete!</strong>
+                        <p>Great work — your daily report for today has been saved successfully.</p>
+                    </div>
+                    <div class="reminder-date">${todayFormatted().split(',')[0]}</div>`;
+            } else {
+                banner.className = 'reminder-banner';
+                banner.innerHTML = `
+                    <div class="reminder-icon"><i class="fas fa-bell"></i></div>
+                    <div class="reminder-body">
+                        <strong>📋 Complete your report for today!</strong>
+                        <p>Don't forget to fill in and save your daily cash report before the end of shift.</p>
+                    </div>
+                    <div class="reminder-date">${todayFormatted().split(',')[0]}</div>`;
+            }
+        }
+
+        /* ── FILTERS ── */
+        function loadFilters() {
+            const f = localStorage.getItem(filterKey);
+            if (f) {
+                try { ({ month: selectedMonth, year: selectedYear } = JSON.parse(f)); } catch {}
+            } else {
+                const now = new Date();
+                selectedMonth = String(now.getMonth() + 1).padStart(2, '0');
+                selectedYear  = String(now.getFullYear());
+            }
+        }
+        function saveFilters() {
+            localStorage.setItem(filterKey, JSON.stringify({ month: selectedMonth, year: selectedYear }));
+        }
+        function setupSelects() {
+            const ms = document.getElementById('filterMonth');
+            const ys = document.getElementById('filterYear');
+            ms.innerHTML = ''; ys.innerHTML = '';
+            for (let m = 1; m <= 12; m++) {
+                const o = document.createElement('option');
+                o.value = String(m).padStart(2,'0');
+                o.textContent = new Date(2000, m-1, 1).toLocaleString('en-US', { month: 'short' });
+                ms.appendChild(o);
+            }
+            const yr = new Date().getFullYear();
+            for (let y = yr; y >= yr - 5; y--) {
+                const o = document.createElement('option');
+                o.value = String(y); o.textContent = String(y);
+                ys.appendChild(o);
+            }
+            ms.value = selectedMonth; ys.value = selectedYear;
+        }
+
+        /* ── FORMAT HELPERS ── */
+        function fmtDate(dt) {
+            if (!dt) return '';
+            const [y,m,d] = dt.split('-');
+            const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+            return `${Number(d)} ${months[Number(m)-1]} ${y}`;
+        }
+        function fmtDay(dt) {
+            if (!dt) return '';
+            try { return new Date(dt + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'long' }); } catch { return ''; }
+        }
+
+        /* ── LIST REPORTS ── */
+        let allReports = []; // full list for reminder check
+
+        async function listReports() {
+            const wrap    = document.getElementById('reportListWrap');
+            const countEl = document.getElementById('reportCount');
+            wrap.innerHTML = `<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Loading…</div>`;
+
+            const snap = await getDocs(query(collection(db,'dailyCashReports'), orderBy('date','desc')));
+            allReports = [];
+            reportsCache = [];
+
+            if (snap.empty) {
+                wrap.innerHTML = `<div class="empty-state"><i class="fas fa-folder-open"></i>No reports found.</div>`;
+                countEl.textContent = '0';
+                updateReminder([]);
+                return;
+            }
+
+            snap.forEach(doc => allReports.push(doc.data()));
+            updateReminder(allReports);
+
+            let items = '', i = 0;
+            snap.forEach(doc => {
+                const r = doc.data();
+                if (selectedMonth && selectedYear) {
+                    if (!r.date || r.date.length < 7) return;
+                    const [y,m] = r.date.split('-');
+                    if (y !== selectedYear || m !== selectedMonth) return;
+                }
+                reportsCache.push(r);
+                items += `
+                    <div class="report-item">
+                        <input type="checkbox" class="pdf-checkbox" data-idx="${i}">
+                        <div class="report-num">${i+1}</div>
+                        <div class="report-icon"><i class="fas fa-file-alt"></i></div>
+                        <div class="report-info">
+                            <div class="report-name">Report — ${fmtDate(r.date)}</div>
+                            <div class="report-sub">${fmtDay(r.date)}${r.timeIn ? ' · In: '+r.timeIn : ''}${r.timeOut ? ' · Out: '+r.timeOut : ''}</div>
+                        </div>
+                    </div>`;
+                i++;
+            });
+
+            wrap.innerHTML = reportsCache.length
+                ? items
+                : `<div class="empty-state"><i class="fas fa-calendar-times"></i>No reports for this month.</div>`;
+            countEl.textContent = reportsCache.length;
+        }
+
+        window.onload = () => {
+            loadFilters();
+            setupSelects();
+            listReports();
+
+            document.getElementById('filterMonth').addEventListener('change', () => {
+                selectedMonth = document.getElementById('filterMonth').value;
+                saveFilters(); listReports();
+            });
+            document.getElementById('filterYear').addEventListener('change', () => {
+                selectedYear = document.getElementById('filterYear').value;
+                saveFilters(); listReports();
+            });
+
+            // Toggle form
+            let formOpen = false;
+            const form      = document.getElementById('reportForm');
+            const toggleBtn = document.getElementById('toggleFormBtn');
+            toggleBtn.addEventListener('click', () => {
+                formOpen = !formOpen;
+                form.style.display = formOpen ? 'block' : 'none';
+                toggleBtn.innerHTML = formOpen
+                    ? '<i class="fas fa-times"></i> Hide Form'
+                    : '<i class="fas fa-plus"></i> Add New Report';
+            });
+
+            // Save
+            form.addEventListener('submit', async e => {
+                e.preventDefault();
+                const report = {
+                    date:                document.getElementById('reportDate').value,
+                    timeIn:              document.getElementById('timeIn').value,
+                    timeOut:             document.getElementById('timeOut').value,
+                    customerComplaints:  document.getElementById('customerComplaints').value,
+                    customerSuggestions: document.getElementById('customerSuggestions').value,
+                    deductions:          document.getElementById('deductions').value,
+                    totalDeduction:      document.getElementById('totalDeduction').value,
+                    totalSales:          document.getElementById('totalSales').value
+                };
+                if (!report.date) { alert('Please enter a date.'); return; }
+                try {
+                    await addDoc(collection(db,'dailyCashReports'), report);
+                    await listReports();
+                    form.reset();
+                    formOpen = false;
+                    form.style.display = 'none';
+                    toggleBtn.innerHTML = '<i class="fas fa-plus"></i> Add New Report';
+                } catch (err) { alert('Error saving: ' + err.message); }
+            });
+
+            document.getElementById('clearBtn').addEventListener('click', () => form.reset());
+
+            // Download PDF
+            document.getElementById('downloadBtn').addEventListener('click', () => {
+                const checked = [...document.querySelectorAll('.pdf-checkbox')].filter(c => c.checked);
+                if (!checked.length) { alert('Please check at least one report.'); return; }
+                checked.forEach(cb => {
+                    const data = reportsCache[parseInt(cb.dataset.idx)];
+                    if (!data) return;
+                    const doc = new window.jspdf.jsPDF();
+                    let y = 18;
+                    doc.setFontSize(18); doc.setFont(undefined,'bold');
+                    doc.text('TRISMART STORES', 14, y); y += 9;
+                    doc.setFontSize(11); doc.setFont(undefined,'normal');
+                    doc.text('Daily Cash Report', 14, y); y += 12;
+                    doc.setDrawColor(67,97,238); doc.setLineWidth(0.6); doc.line(14,y,196,y); y += 8;
+                    doc.setFontSize(13); doc.setFont(undefined,'bold');
+                    doc.text(`${fmtDate(data.date)}  —  ${fmtDay(data.date)}`, 14, y); y += 9;
+                    doc.setFontSize(10); doc.setFont(undefined,'normal');
+                    doc.text(`Time In: ${data.timeIn||'-'}    Time Out: ${data.timeOut||'-'}`, 14, y); y += 12;
+                    doc.setFont(undefined,'bold'); doc.setFontSize(11);
+                    doc.text('Customer Complaints', 14, y); y += 7;
+                    doc.setFont(undefined,'normal'); doc.setFontSize(10);
+                    const cLines = doc.splitTextToSize(data.customerComplaints?.trim()||'None', 170);
+                    doc.text(cLines, 14, y); y += cLines.length * 6 + 8;
+                    doc.setFont(undefined,'bold'); doc.setFontSize(11);
+                    doc.text('Customer Suggestions', 14, y); y += 7;
+                    doc.setFont(undefined,'normal'); doc.setFontSize(10);
+                    const sLines = doc.splitTextToSize(data.customerSuggestions?.trim()||'None', 170);
+                    doc.text(sLines, 14, y); y += sLines.length * 6 + 8;
+                    doc.setFont(undefined,'bold'); doc.setFontSize(11);
+                    doc.text('Deductions', 14, y); y += 7;
+                    doc.setFont(undefined,'normal'); doc.setFontSize(10);
+                    if (data.deductions?.trim()) {
+                        data.deductions.split('\n').filter(Boolean).forEach(l => { doc.text(l,14,y); y+=6; });
+                    } else { doc.text('None',14,y); y+=6; }
+                    y += 4;
+                    doc.setDrawColor(200,200,200); doc.line(14,y,196,y); y += 6;
+                    doc.setFont(undefined,'bold'); doc.setFontSize(11);
+                    doc.text(`Total Deduction: ZMW ${data.totalDeduction||'0'}`, 14, y); y += 8;
+                    doc.text(`Total Sales:     ZMW ${data.totalSales||'0'}`, 14, y);
+                    doc.save(`Report_${data.date}.pdf`);
+                });
+            });
+        };
+    </script>
+</head>
+<body>
+
+<!-- ═══════════ TOPBAR ═══════════ -->
+<header class="topbar">
+    <div class="topbar-left">
+        <div class="menu-btn" id="menuBtn"><i class="fas fa-bars"></i></div>
+        <div class="logo">
+            <div class="logo-mark"><i class="fas fa-store-alt"></i></div>
+            <div class="logo-text">Tri<span>smart</span></div>
+        </div>
+    </div>
+    <div class="time-badge" id="timeBadge">--:--</div>
+</header>
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-label">Main</div>
+    <a href="Airtel.html"><i class="fas fa-mobile-alt"></i> Airtel Money</a>
+    <a href="warehouse.html"><i class="fas fa-warehouse"></i> Warehouse</a>
+    <a href="sale.html"><i class="fas fa-chart-line"></i> Sales</a>
+    <div class="sidebar-label" style="margin-top:14px;">Tools</div>
+    <a href="Todo.html"><i class="fas fa-tasks"></i> To-Do</a>
+    <a href="lowstock.html"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
+    <a href="Report.html" class="active"><i class="fas fa-file-alt"></i> Daily Report</a>
+</nav>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<main id="mainContent" class="expanded">
+    <div class="inner">
+
+        <!-- Reminder banner -->
+        <div class="reminder-banner" id="reminderBanner">
+            <div class="reminder-icon"><i class="fas fa-bell"></i></div>
+            <div class="reminder-body">
+                <strong>📋 Complete your report for today!</strong>
+                <p>Don't forget to fill in and save your daily cash report before the end of shift.</p>
+            </div>
+            <div class="reminder-date" id="reminderDate">Loading…</div>
+        </div>
+
+        <!-- Filter -->
+        <div class="filter-card">
+            <i class="fas fa-filter" style="color:var(--blue);font-size:0.8rem;"></i>
+            <label for="filterMonth">Month</label>
+            <select id="filterMonth"></select>
+            <label for="filterYear">Year</label>
+            <select id="filterYear"></select>
+        </div>
+
+        <!-- Toggle -->
+        <button type="button" id="toggleFormBtn" class="toggle-btn">
+            <i class="fas fa-plus"></i> Add New Report
+        </button>
+
+        <!-- Form -->
+        <form id="reportForm" class="form-card" autocomplete="off">
+            <div class="section-label"><i class="fas fa-calendar-day"></i> Date & Time</div>
+            <div class="field-row">
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="reportDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Time In</label>
+                    <input type="time" id="timeIn">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Time Out</label>
+                <input type="time" id="timeOut">
+            </div>
+
+            <div class="section-label"><i class="fas fa-comment-dots"></i> Customer Complaints</div>
+            <div class="form-group">
+                <label>Describe any complaints received today</label>
+                <textarea id="customerComplaints" placeholder="e.g. Customer complained about long waiting time…"></textarea>
+            </div>
+
+            <div class="section-label"><i class="fas fa-lightbulb"></i> Customer Suggestions</div>
+            <div class="form-group">
+                <label>Describe any suggestions received today</label>
+                <textarea id="customerSuggestions" placeholder="e.g. Customer suggested we stock more varieties of…"></textarea>
+            </div>
+
+            <div class="section-label"><i class="fas fa-minus-circle"></i> Deductions</div>
+            <div class="form-group">
+                <label>Details (one per line, e.g. Mercy k15)</label>
+                <textarea id="deductions" placeholder="Mercy k15&#10;Transport k20"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Total Deduction (ZMW)</label>
+                <input type="number" id="totalDeduction" placeholder="0.00" min="0" step="0.01">
+            </div>
+
+            <div class="section-label"><i class="fas fa-chart-bar"></i> Sales Summary</div>
+            <div class="form-group">
+                <label>Total Sales (ZMW)</label>
+                <input type="number" id="totalSales" placeholder="0.00" min="0" step="0.01" required>
+            </div>
+
+            <div class="btn-row">
+                <button type="submit" class="save-btn"><i class="fas fa-save"></i> Save Report</button>
+                <button type="button" class="clear-btn" id="clearBtn"><i class="fas fa-times"></i> Clear</button>
+            </div>
+        </form>
+
+        <!-- Reports List -->
+        <div class="reports-card">
+            <div class="reports-hdr">
+                <h3><i class="fas fa-folder-open"></i> Saved Reports</h3>
+                <div class="report-count" id="reportCount">0</div>
+            </div>
+            <div id="reportListWrap">
+                <div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Loading…</div>
+            </div>
+            <button type="button" id="downloadBtn" class="download-btn">
+                <i class="fas fa-download"></i> Download Checked as PDF
+            </button>
+        </div>
+
+    </div><!-- end .inner -->
+</main>
+
+</body>
+</html>

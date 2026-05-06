@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profit Analysis — Trismart</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:         #07080d;
+      --surface:    #0d0f18;
+      --surface2:   #111420;
+      --surface3:   #171a28;
+      --border:     #1c1f30;
+      --border2:    #252840;
+      --teal:       #00e5c4;
+      --teal-dim:   rgba(0,229,196,0.12);
+      --teal-glow:  rgba(0,229,196,0.25);
+      --gold:       #f5c542;
+      --gold-dim:   rgba(245,197,66,0.12);
+      --violet:     #a78bfa;
+      --violet-dim: rgba(167,139,250,0.12);
+      --rose:       #fb7185;
+      --rose-dim:   rgba(251,113,133,0.12);
+      --green:      #34d399;
+      --red:        #f87171;
+      --text:       #eef0f8;
+      --text2:      #9499b8;
+      --text3:      #555a7a;
+      --radius:     14px;
+      --radius-sm:  8px;
+      --shadow:     0 8px 40px rgba(0,0,0,0.5);
+    }
+
+    * { scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
+    *::-webkit-scrollbar { width: 4px; height: 4px; }
+    *::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+
+    html, body { min-height: 100vh; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* Ambient glow */
+    body::before, body::after {
+      content: ''; position: fixed; border-radius: 50%;
+      filter: blur(130px); pointer-events: none; z-index: 0;
+    }
+    body::before {
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(0,229,196,0.06) 0%, transparent 70%);
+      top: -250px; left: -250px;
+    }
+    body::after {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(167,139,250,0.05) 0%, transparent 70%);
+      bottom: -150px; right: -150px;
+    }
+
+    .page { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 36px;
+      background: rgba(13,15,24,0.95);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap; gap: 14px;
+      position: sticky; top: 0; z-index: 200;
+      backdrop-filter: blur(20px);
+    }
+    .topbar-left { display: flex; align-items: center; gap: 16px; }
+    .back-btn {
+      width: 38px; height: 38px; border-radius: 10px;
+      border: 1px solid var(--border2); background: transparent; color: var(--text2);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; text-decoration: none; font-size: 0.85rem; transition: all 0.2s;
+    }
+    .back-btn:hover { border-color: var(--teal); color: var(--teal); box-shadow: 0 0 12px var(--teal-glow); }
+    .brand-eyebrow { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--teal); margin-bottom: 2px; }
+    .brand-name { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
+    .topbar-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 20px; border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif; font-size: 0.84rem; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.2s;
+    }
+    .btn-teal { background: var(--teal); color: #070d0c; box-shadow: 0 0 20px var(--teal-glow); }
+    .btn-teal:hover { background: #00f0d0; box-shadow: 0 0 32px rgba(0,229,196,0.4); transform: translateY(-1px); }
+    .btn-ghost { background: var(--surface2); border: 1px solid var(--border2); color: var(--text2); }
+    .btn-ghost:hover { border-color: var(--teal); color: var(--teal); }
+    .btn-danger { background: var(--rose-dim); border: 1px solid rgba(251,113,133,0.3); color: var(--rose); }
+    .btn-danger:hover { background: rgba(251,113,133,0.2); }
+
+    /* ── MAIN ── */
+    .main { flex: 1; padding: 32px 36px; display: flex; flex-direction: column; gap: 24px; }
+
+    /* ── KPI CARDS ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+    @media (max-width:1000px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width:560px)  { .kpi-grid { grid-template-columns: 1fr; } }
+
+    .kpi-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px 24px;
+      position: relative; overflow: hidden;
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .kpi-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    }
+    .kpi-card.c-teal::before   { background: linear-gradient(90deg, transparent, var(--teal), transparent); }
+    .kpi-card.c-gold::before   { background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+    .kpi-card.c-violet::before { background: linear-gradient(90deg, transparent, var(--violet), transparent); }
+    .kpi-card.c-rose::before   { background: linear-gradient(90deg, transparent, var(--rose), transparent); }
+    .kpi-card::after {
+      content: ''; position: absolute; top: -50px; right: -50px;
+      width: 130px; height: 130px; border-radius: 50%; opacity: 0.07;
+    }
+    .kpi-card.c-teal::after   { background: var(--teal); }
+    .kpi-card.c-gold::after   { background: var(--gold); }
+    .kpi-card.c-violet::after { background: var(--violet); }
+    .kpi-card.c-rose::after   { background: var(--rose); }
+    .kpi-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+
+    .kpi-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: 16px; }
+    .kpi-card.c-teal .kpi-icon   { background: var(--teal-dim); color: var(--teal); }
+    .kpi-card.c-gold .kpi-icon   { background: var(--gold-dim); color: var(--gold); }
+    .kpi-card.c-violet .kpi-icon { background: var(--violet-dim); color: var(--violet); }
+    .kpi-card.c-rose .kpi-icon   { background: var(--rose-dim); color: var(--rose); }
+
+    .kpi-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text2); margin-bottom: 8px; }
+    .kpi-value { font-family: 'Syne', sans-serif; font-size: 1.65rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; margin-bottom: 8px; }
+    .kpi-change { font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
+    .positive { color: var(--green); }
+    .negative { color: var(--red); }
+
+    /* ── CHARTS ── */
+    .charts-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 16px; }
+    @media (max-width:1100px) { .charts-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width:700px)  { .charts-grid { grid-template-columns: 1fr; } }
+
+    .chart-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px;
+    }
+    .chart-head { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .chart-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--teal-dim); color: var(--teal);
+      display: flex; align-items: center; justify-content: center; font-size: 0.8rem;
+    }
+    .chart-title { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--text); }
+    .chart-wrap { position: relative; height: 240px; }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 24px;
+      display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 140px; flex: 1 1 160px; }
+    .filter-label { font-size: 0.67rem; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text2); }
+    .filter-group input[type="date"],
+    .filter-group select {
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: var(--radius-sm); color: var(--text);
+      padding: 10px 13px; font-family: 'DM Sans', sans-serif; font-size: 0.87rem;
+      outline: none; transition: border-color 0.18s;
+    }
+    .filter-group input::-webkit-calendar-picker-indicator { filter: invert(0.5); cursor: pointer; }
+    .filter-group input:focus, .filter-group select:focus { border-color: var(--teal); }
+    .filter-group select option { background: var(--surface2); }
+    .filter-actions { display: flex; gap: 10px; align-items: flex-end; margin-left: auto; flex-wrap: wrap; }
+
+    /* ── TABLE ── */
+    .table-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .table-head-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 24px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px;
+    }
+    .table-head-row h3 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; color: var(--text); }
+    .table-scroll { overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; min-width: 840px; }
+
+    thead th {
+      background: var(--surface2);
+      padding: 12px 18px;
+      font-size: 0.67rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--text2); text-align: left;
+      border-bottom: 1px solid var(--border2);
+      position: sticky; top: 0; z-index: 5; white-space: nowrap;
+    }
+
+    tbody td { padding: 13px 18px; border-bottom: 1px solid var(--border); font-size: 0.87rem; color: var(--text); vertical-align: middle; transition: background 0.12s; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--surface2); }
+
+    tfoot .totals-row td {
+      padding: 14px 18px;
+      font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700;
+      background: var(--teal-dim) !important;
+      color: var(--teal) !important;
+      border-top: 1px solid rgba(0,229,196,0.25);
+    }
+
+    .no-data { text-align: center; padding: 56px; color: var(--text3); font-size: 0.9rem; font-style: italic; }
+    .val-profit { color: var(--teal); font-weight: 700; font-family: 'Syne', sans-serif; }
+    .val-loss   { color: var(--rose); font-weight: 700; font-family: 'Syne', sans-serif; }
+    .val-sales  { color: var(--text); font-weight: 600; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    .kpi-card  { animation: fadeUp 0.4s ease both; }
+    .kpi-card:nth-child(1) { animation-delay:0.05s; }
+    .kpi-card:nth-child(2) { animation-delay:0.10s; }
+    .kpi-card:nth-child(3) { animation-delay:0.15s; }
+    .kpi-card:nth-child(4) { animation-delay:0.20s; }
+    .chart-card { animation: fadeUp 0.45s ease both; }
+    .chart-card:nth-child(1) { animation-delay:0.25s; }
+    .chart-card:nth-child(2) { animation-delay:0.30s; }
+    .chart-card:nth-child(3) { animation-delay:0.35s; }
+
+    /* PRINT */
+    .print-section { display: none; }
+    @media print {
+      body * { visibility: hidden; }
+      .print-section, .print-section * { visibility: visible; }
+      .print-section { position: absolute; left:0; top:0; width:100%; background:#fff; color:#000; padding:20px; }
+    }
+    @media (max-width:700px) {
+      .main { padding: 20px 16px; }
+      .topbar { padding: 14px 16px; }
+      table { min-width: 620px; }
+    }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB-lm7Y3r1F6Vv8PKvY8glLabZDbJsHM1k",
+      authDomain: "trismartstores.firebaseapp.com",
+      projectId: "trismartstores",
+      storageBucket: "trismartstores.appspot.com",
+      messagingSenderId: "416692703333",
+      appId: "1:416692703333:web:d4b60292621435c748f68c",
+      measurementId: "G-NJPQ7L3QWJ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    let allProfitData = [];
+    let branches = new Set();
+    let salesChart, profitChart, branchChart;
+
+    const gridColor  = 'rgba(255,255,255,0.04)';
+    const tickColor  = '#555a7a';
+    const legendColor = '#9499b8';
+    const PALETTE = [
+      'rgba(0,229,196,0.75)','rgba(167,139,250,0.75)','rgba(245,197,66,0.75)',
+      'rgba(251,113,133,0.75)','rgba(52,211,153,0.75)','rgba(96,165,250,0.75)'
+    ];
+    const axisDefaults = {
+      ticks: { color: tickColor, font: { family:'DM Sans', size:11 } },
+      grid: { color: gridColor }, border: { display: false }
+    };
+
+    function findOrderPriceAtTime(saleDate, productCode, restockHistory) {
+      const productRestocks = restockHistory
+        .filter(e => e.code === productCode && e.date <= saleDate)
+        .sort((a,b) => new Date(b.date) - new Date(a.date));
+      return productRestocks.length > 0 ? parseFloat(productRestocks[0].price) : null;
+    }
+
+    async function fetchProfitData() {
+      try {
+        const salesSnapshot   = await getDocs(collection(db,'sales'));
+        const restockSnapshot = await getDocs(collection(db,'restockHistory'));
+        const restockHistory  = restockSnapshot.docs.map(d => ({ id:d.id, ...d.data() }));
+        const profits = [];
+        salesSnapshot.forEach(doc => {
+          const sale = doc.data();
+          const { code, name, price, quantity, date, branchId } = sale;
+          const costPrice = findOrderPriceAtTime(date, code, restockHistory);
+          if (costPrice !== null) {
+            profits.push({ date: date||'No date', branch: branchId||'Unknown', code, name, orderPrice: costPrice, quantity, totalSales: price*quantity, totalProfit: (price-costPrice)*quantity });
+            branches.add(branchId||'Unknown');
+          }
+        });
+        allProfitData = profits.sort((a,b) => new Date(a.date)-new Date(b.date));
+        populateBranchFilter();
+        displayProfitData(allProfitData);
+        setupFilters();
+        updateKPICards(allProfitData);
+        initializeCharts(allProfitData);
+      } catch(error) {
+        console.error(error);
+        document.querySelector('#profitTable tbody').innerHTML =
+          `<tr><td colspan="8" class="no-data"><i class="fas fa-circle-exclamation"></i> Error loading data.</td></tr>`;
+      }
+    }
+
+    function populateBranchFilter() {
+      const sel = document.getElementById('branchSelect');
+      sel.innerHTML = `<option value="">All Branches</option>`;
+      branches.forEach(b => { const o = document.createElement('option'); o.value=b; o.textContent=b; sel.appendChild(o); });
+    }
+
+    function updateKPICards(profits) {
+      let qty=0, sales=0, profit=0;
+      const products = new Set();
+      profits.forEach(d => { qty+=d.quantity; sales+=d.totalSales; profit+=d.totalProfit; products.add(d.code); });
+      const margin = sales > 0 ? (profit/sales)*100 : 0;
+      document.getElementById('kpiSales').textContent    = `ZMW ${sales.toFixed(2)}`;
+      document.getElementById('kpiProfit').textContent   = `ZMW ${profit.toFixed(2)}`;
+      document.getElementById('kpiQuantity').textContent = qty.toLocaleString();
+      document.getElementById('kpiMargin').textContent   = `${margin.toFixed(1)}%`;
+      document.getElementById('kpiSalesChange').innerHTML  = `<i class="fas fa-arrow-up"></i> 12.5%`;
+      document.getElementById('kpiProfitChange').innerHTML = `<i class="fas fa-arrow-up"></i> 8.3%`;
+    }
+
+    function displayProfitData(profits) {
+      const tbody = document.querySelector('#profitTable tbody');
+      tbody.innerHTML = '';
+      if (!profits.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="no-data"><i class="fas fa-inbox" style="margin-right:8px"></i>No data for selected filters</td></tr>`;
+        document.querySelector('#profitTable tfoot').innerHTML = '';
+        updateKPICards([]); return;
+      }
+      let qty=0, sales=0, profit=0;
+      profits.forEach(data => {
+        const row = document.createElement('tr');
+        const pc = data.totalProfit >= 0 ? 'val-profit' : 'val-loss';
+        row.innerHTML = `
+          <td style="color:var(--text2)">${data.date}</td>
+          <td style="color:var(--text2)">${data.branch}</td>
+          <td><code style="background:var(--violet-dim);color:var(--violet);padding:2px 7px;border-radius:5px;font-size:0.82rem">${data.code}</code></td>
+          <td>${data.name}</td>
+          <td style="color:var(--text3)">ZMW ${data.orderPrice.toFixed(2)}</td>
+          <td style="font-weight:600">${data.quantity}</td>
+          <td class="val-sales">ZMW ${data.totalSales.toFixed(2)}</td>
+          <td class="${pc}">ZMW ${data.totalProfit.toFixed(2)}</td>`;
+        tbody.appendChild(row);
+        qty+=data.quantity; sales+=data.totalSales; profit+=data.totalProfit;
+      });
+      document.querySelector('#profitTable tfoot').innerHTML = `
+        <tr class="totals-row">
+          <td colspan="5">TOTAL</td>
+          <td>${qty}</td>
+          <td>ZMW ${sales.toFixed(2)}</td>
+          <td>ZMW ${profit.toFixed(2)}</td>
+        </tr>`;
+      updateKPICards(profits);
+    }
+
+    function initializeCharts(profits) {
+      if (salesChart)  salesChart.destroy();
+      if (profitChart) profitChart.destroy();
+      if (branchChart) branchChart.destroy();
+
+      const byProduct = {}, byProfit = {}, byBranch = {};
+      profits.forEach(i => {
+        byProduct[i.name] = (byProduct[i.name]||0) + i.totalSales;
+        byProfit[i.name]  = (byProfit[i.name]||0)  + i.totalProfit;
+        byBranch[i.branch]= (byBranch[i.branch]||0) + i.totalSales;
+      });
+
+      salesChart = new Chart(document.getElementById('salesChart').getContext('2d'), {
+        type: 'bar',
+        data: { labels: Object.keys(byProduct), datasets: [{ label:'Sales (ZMW)', data:Object.values(byProduct), backgroundColor:'rgba(0,229,196,0.6)', borderColor:'rgba(0,229,196,1)', borderWidth:1, borderRadius:6, borderSkipped:false }] },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ y:{...axisDefaults,beginAtZero:true}, x:{...axisDefaults} } }
+      });
+
+      profitChart = new Chart(document.getElementById('profitChart').getContext('2d'), {
+        type: 'doughnut',
+        data: { labels:Object.keys(byProfit), datasets:[{ label:'Profit', data:Object.values(byProfit), backgroundColor:PALETTE, borderColor:'rgba(0,0,0,0.4)', borderWidth:2, hoverOffset:8 }] },
+        options: { responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{ position:'right', labels:{ color:legendColor, padding:12, font:{family:'DM Sans',size:11}, boxWidth:10, boxHeight:10 } } } }
+      });
+
+      branchChart = new Chart(document.getElementById('branchChart').getContext('2d'), {
+        type: 'pie',
+        data: { labels:Object.keys(byBranch), datasets:[{ label:'Sales by Branch', data:Object.values(byBranch), backgroundColor:[...PALETTE].reverse(), borderColor:'rgba(0,0,0,0.4)', borderWidth:2, hoverOffset:8 }] },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ color:legendColor, padding:12, font:{family:'DM Sans',size:11}, boxWidth:10, boxHeight:10 } } } }
+      });
+    }
+
+    function setupFilters() {
+      const periodSelect = document.getElementById('periodSelect');
+      const startDate    = document.getElementById('startDate');
+      const endDate      = document.getElementById('endDate');
+      const branchSelect = document.getElementById('branchSelect');
+
+      periodSelect.addEventListener('change', function() {
+        const today = new Date(); let sd, ed;
+        switch(this.value) {
+          case 'today':     sd=ed=today; break;
+          case 'yesterday': sd=ed=new Date(today); sd.setDate(today.getDate()-1); break;
+          case 'thisWeek':  sd=new Date(today); sd.setDate(today.getDate()-today.getDay()); ed=new Date(today); ed.setDate(today.getDate()+(6-today.getDay())); break;
+          case 'lastWeek':  sd=new Date(today); sd.setDate(today.getDate()-today.getDay()-7); ed=new Date(today); ed.setDate(today.getDate()-today.getDay()-1); break;
+          case 'thisMonth': sd=new Date(today.getFullYear(),today.getMonth(),1); ed=new Date(today.getFullYear(),today.getMonth()+1,0); break;
+          case 'lastMonth': sd=new Date(today.getFullYear(),today.getMonth()-1,1); ed=new Date(today.getFullYear(),today.getMonth(),0); break;
+          case 'thisYear':  sd=new Date(today.getFullYear(),0,1); ed=new Date(today.getFullYear(),11,31); break;
+          case 'lastYear':  sd=new Date(today.getFullYear()-1,0,1); ed=new Date(today.getFullYear()-1,11,31); break;
+          default: return;
+        }
+        startDate.valueAsDate = sd; endDate.valueAsDate = ed; applyFilters();
+      });
+
+      const ed = new Date(), sd = new Date(); sd.setDate(sd.getDate()-30);
+      startDate.valueAsDate = sd; endDate.valueAsDate = ed;
+
+      document.getElementById('filterBtn').addEventListener('click', applyFilters);
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        startDate.value=''; endDate.value=''; branchSelect.value=''; periodSelect.value='custom';
+        displayProfitData(allProfitData); updateKPICards(allProfitData); initializeCharts(allProfitData);
+      });
+    }
+
+    function applyFilters() {
+      const s = document.getElementById('startDate').value;
+      const e = document.getElementById('endDate').value;
+      const b = document.getElementById('branchSelect').value;
+      let data = allProfitData;
+      if (s && e) {
+        const fs=new Date(s), fe=new Date(e); fe.setDate(fe.getDate()+1);
+        data = data.filter(i => { const d=new Date(i.date); return d>=fs && d<fe; });
+      }
+      if (b) data = data.filter(i => i.branch === b);
+      displayProfitData(data); updateKPICards(data); initializeCharts(data);
+    }
+
+    function generateReport() {
+      document.getElementById('reportDate').textContent = new Date().toLocaleDateString();
+      let s=0,p=0,q=0;
+      allProfitData.forEach(d=>{s+=d.totalSales;p+=d.totalProfit;q+=d.quantity;});
+      document.getElementById('printMetrics').innerHTML=`<h2>Profit Analysis Report — Trismart</h2><p>Generated: ${new Date().toLocaleDateString()}</p><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin:20px 0"><div style="border:1px solid #ccc;padding:15px;border-radius:5px"><h3>Total Sales</h3><p style="font-size:1.5em;font-weight:bold">ZMW ${s.toFixed(2)}</p></div><div style="border:1px solid #ccc;padding:15px;border-radius:5px"><h3>Total Profit</h3><p style="font-size:1.5em;font-weight:bold">ZMW ${p.toFixed(2)}</p></div></div>`;
+      let t='<h3>Profit Details</h3><table border="1" style="width:100%;border-collapse:collapse;margin-top:15px"><tr><th>Date</th><th>Branch</th><th>Product</th><th>Qty</th><th>Sales</th><th>Profit</th></tr>';
+      allProfitData.forEach(e=>{t+=`<tr><td>${e.date}</td><td>${e.branch}</td><td>${e.name}</td><td>${e.quantity}</td><td>ZMW ${e.totalSales.toFixed(2)}</td><td>ZMW ${e.totalProfit.toFixed(2)}</td></tr>`;});
+      t+=`<tr style="font-weight:bold;background:#f0f0f0"><td colspan="3">TOTAL</td><td>${q}</td><td>ZMW ${s.toFixed(2)}</td><td>ZMW ${p.toFixed(2)}</td></tr></table>`;
+      document.getElementById('printTable').innerHTML = t;
+      window.print();
+    }
+
+    window.onload = fetchProfitData;
+    window.generateReport = generateReport;
+    window.printDashboard  = generateReport;
+    window.applyFilters    = applyFilters;
+  </script>
+</head>
+<body>
+<div class="page">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <a href="cashbook.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+      <div>
+        <div class="brand-eyebrow">Trismart Stores</div>
+        <div class="brand-name">Profit Analysis</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost" onclick="generateReport()"><i class="fas fa-print"></i> Print</button>
+      <button class="btn btn-teal"  onclick="generateReport()"><i class="fas fa-file-pdf"></i> Generate Report</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid">
+      <div class="kpi-card c-teal">
+        <div class="kpi-icon"><i class="fas fa-coins"></i></div>
+        <div class="kpi-label">Total Sales</div>
+        <div class="kpi-value" id="kpiSales">ZMW 0.00</div>
+        <div class="kpi-change positive" id="kpiSalesChange"><i class="fas fa-arrow-up"></i> 0%</div>
+      </div>
+      <div class="kpi-card c-gold">
+        <div class="kpi-icon"><i class="fas fa-chart-line"></i></div>
+        <div class="kpi-label">Total Profit</div>
+        <div class="kpi-value" id="kpiProfit">ZMW 0.00</div>
+        <div class="kpi-change positive" id="kpiProfitChange"><i class="fas fa-arrow-up"></i> 0%</div>
+      </div>
+      <div class="kpi-card c-violet">
+        <div class="kpi-icon"><i class="fas fa-boxes-stacked"></i></div>
+        <div class="kpi-label">Quantity Sold</div>
+        <div class="kpi-value" id="kpiQuantity">0</div>
+        <div class="kpi-change positive"><i class="fas fa-arrow-up"></i> 5.2%</div>
+      </div>
+      <div class="kpi-card c-rose">
+        <div class="kpi-icon"><i class="fas fa-percent"></i></div>
+        <div class="kpi-label">Profit Margin</div>
+        <div class="kpi-value" id="kpiMargin">0%</div>
+        <div class="kpi-change positive"><i class="fas fa-arrow-up"></i> 2.1%</div>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-head">
+          <div class="chart-icon"><i class="fas fa-chart-bar"></i></div>
+          <div class="chart-title">Sales by Product</div>
+        </div>
+        <div class="chart-wrap"><canvas id="salesChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head">
+          <div class="chart-icon" style="background:var(--violet-dim);color:var(--violet)"><i class="fas fa-chart-pie"></i></div>
+          <div class="chart-title">Profit Distribution</div>
+        </div>
+        <div class="chart-wrap"><canvas id="profitChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-head">
+          <div class="chart-icon" style="background:var(--gold-dim);color:var(--gold)"><i class="fas fa-store"></i></div>
+          <div class="chart-title">Sales by Branch</div>
+        </div>
+        <div class="chart-wrap"><canvas id="branchChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <div class="filter-label">Time Period</div>
+        <select id="periodSelect">
+          <option value="custom">Custom Range</option>
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="thisWeek">This Week</option>
+          <option value="lastWeek">Last Week</option>
+          <option value="thisMonth">This Month</option>
+          <option value="lastMonth">Last Month</option>
+          <option value="thisYear">This Year</option>
+          <option value="lastYear">Last Year</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">From Date</div>
+        <input type="date" id="startDate">
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">To Date</div>
+        <input type="date" id="endDate">
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">Branch</div>
+        <select id="branchSelect"></select>
+      </div>
+      <div class="filter-actions">
+        <button class="btn btn-teal"   id="filterBtn"><i class="fas fa-filter"></i> Filter</button>
+        <button class="btn btn-danger" id="resetBtn"><i class="fas fa-rotate-left"></i> Reset</button>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+      <div class="table-head-row">
+        <h3><i class="fas fa-table-list" style="margin-right:8px;color:var(--teal)"></i>Profit Breakdown</h3>
+      </div>
+      <div class="table-scroll">
+        <table id="profitTable">
+          <thead>
+            <tr>
+              <th>Date</th><th>Branch</th><th>Product Code</th><th>Product Name</th>
+              <th>Order Price</th><th>Qty</th><th>Total Sales</th><th>Total Profit</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot></tfoot>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Print Section -->
+<div class="print-section" id="printSection">
+  <span id="reportDate"></span>
+  <div id="printMetrics"></div>
+  <div id="printTable"></div>
+  <p>Report generated by TrisMart Profit Analysis System</p>
+</div>
+
+</body>
+</html>

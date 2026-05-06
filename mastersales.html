@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DealerPro · Complete Order & Payment System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #eef2f5;
+            color: #1a2c3e;
+            height: 100vh;
+            overflow: hidden;
+        }
+        :root {
+            --blue: #2c5f8a;
+            --green: #2b7a4b;
+            --orange: #e67e22;
+            --danger: #c0392b;
+            --border: #dce4ec;
+        }
+        .app-container { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .topbar {
+            background: white; border-bottom: 1px solid var(--border); padding: 8px 20px;
+            display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+        }
+        .logo { display: flex; align-items: center; gap: 8px; }
+        .logo-mark { background: var(--blue); width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; }
+        .logo-text { font-weight: 800; font-size: 1rem; }
+        .stats-bar {
+            display: flex; gap: 12px; padding: 10px 20px; background: white;
+            border-bottom: 1px solid var(--border); flex-wrap: wrap; flex-shrink: 0;
+        }
+        .stat-pill {
+            background: #f8fafc; border-radius: 40px; padding: 6px 14px;
+            font-size: 0.7rem; font-weight: 600; border: 1px solid var(--border);
+        }
+        .stat-pill span { font-weight: 800; color: var(--blue); font-size: 1rem; margin-right: 4px; }
+        .action-bar {
+            padding: 10px 20px; display: flex; gap: 10px; flex-wrap: wrap;
+            background: white; border-bottom: 1px solid var(--border); flex-shrink: 0;
+        }
+        .btn {
+            padding: 6px 14px; border-radius: 40px; font-size: 0.7rem; font-weight: 700;
+            border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+            transition: 0.15s;
+        }
+        .btn-primary { background: var(--blue); color: white; }
+        .btn-success { background: var(--green); color: white; }
+        .btn-warning { background: var(--orange); color: white; }
+        .btn-outline { background: white; border: 1px solid var(--border); }
+        .main-grid { display: flex; flex: 1; overflow: hidden; gap: 1px; background: var(--border); }
+        .dealer-panel { width: 320px; background: white; display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0; }
+        .right-panel { flex: 1; background: #f4f7fb; display: flex; flex-direction: column; overflow: hidden; }
+        .panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: 700; background: white; }
+        .dealer-list { overflow-y: auto; flex: 1; }
+        .dealer-item {
+            padding: 10px 16px; border-bottom: 1px solid #edf2f7; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .dealer-item:hover { background: #f8fafc; }
+        .dealer-item.selected { background: #eef2ff; border-left: 3px solid var(--blue); }
+        .dealer-name { font-weight: 700; font-size: 0.8rem; }
+        .dealer-balance { font-size: 0.7rem; font-weight: 800; color: var(--orange); }
+        .search-box { padding: 10px; border-bottom: 1px solid var(--border); }
+        .search-box input { width: 100%; padding: 8px 10px; border-radius: 30px; border: 1px solid var(--border); font-size: 0.7rem; }
+        .tab-nav { display: flex; background: white; border-bottom: 1px solid var(--border); padding: 0 12px; }
+        .tab-btn {
+            padding: 8px 16px; font-size: 0.7rem; font-weight: 700; background: none;
+            border: none; cursor: pointer; color: #5d6e85;
+        }
+        .tab-btn.active { color: var(--blue); border-bottom: 2px solid var(--blue); }
+        .tab-content { display: none; overflow-y: auto; flex: 1; padding: 12px; }
+        .tab-content.active { display: block; }
+        .compact-table { width: 100%; font-size: 0.7rem; border-collapse: collapse; }
+        .compact-table th, .compact-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #e9eef3; }
+        .compact-table th { background: #fafcff; position: sticky; top: 0; }
+        .badge { padding: 2px 8px; border-radius: 30px; font-size: 0.65rem; font-weight: 700; display: inline-block; }
+        .badge-paid { background: #e3f7ec; color: #1e7b48; }
+        .badge-unpaid { background: #fee9e6; color: #c0392b; }
+        .badge-partial { background: #fff3e0; color: #e67e22; }
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px);
+            display: none; align-items: center; justify-content: center; z-index: 2000;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-card {
+            background: white; border-radius: 24px; width: 90%; max-width: 650px;
+            max-height: 85vh; overflow-y: auto; padding: 20px;
+        }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { font-size: 0.7rem; font-weight: 700; display: block; margin-bottom: 4px; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 8px 12px; border-radius: 30px;
+            border: 1px solid var(--border); font-size: 0.75rem;
+        }
+        .cart-item {
+            display: flex; justify-content: space-between; background: #f8fafc;
+            margin-bottom: 6px; padding: 6px 10px; border-radius: 30px; font-size: 0.7rem;
+        }
+        .toast {
+            position: fixed; bottom: 20px; right: 20px; background: #1e2a3a;
+            color: white; padding: 8px 16px; border-radius: 40px; font-size: 0.7rem;
+            z-index: 2100; animation: slideIn 0.2s ease;
+        }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .text-danger { color: var(--danger); font-weight: 700; }
+        @media (max-width: 780px) { .dealer-panel { width: 260px; } }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="topbar">
+        <div class="logo"><div class="logo-mark"><i class="fas fa-chart-line"></i></div><div class="logo-text">Dealer<span style="color:var(--blue)">Pro</span></div></div>
+        <div id="adminBadge" class="stat-pill"><i class="fas fa-user-check"></i> MASTER</div>
+    </div>
+    
+    <div class="stats-bar">
+        <div class="stat-pill"><i class="fas fa-users"></i> <span id="statDealers">0</span> Dealers</div>
+        <div class="stat-pill"><i class="fas fa-boxes"></i> <span id="statItems">0</span> SKU</div>
+        <div class="stat-pill"><i class="fas fa-shopping-cart"></i> <span id="statOrders">0</span> Orders</div>
+        <div class="stat-pill"><i class="fas fa-credit-card"></i> <span id="statOutstanding">K0</span> Due</div>
+    </div>
+    
+    <div class="action-bar">
+        <button class="btn btn-success" id="createDealerBtn"><i class="fas fa-user-plus"></i> Dealer</button>
+        <button class="btn btn-primary" id="placeOrderBtn"><i class="fas fa-cart-shopping"></i> Order</button>
+        <button class="btn btn-warning" id="paymentBtn"><i class="fas fa-coins"></i> Payment</button>
+        <button class="btn btn-outline" id="printAccountBtn"><i class="fas fa-print"></i> Print Statement</button>
+    </div>
+    
+    <div class="main-grid">
+        <div class="dealer-panel">
+            <div class="panel-header"><i class="fas fa-id-card"></i> DEALER ACCOUNTS</div>
+            <div class="search-box"><input type="text" id="dealerSearchInput" placeholder="Search name or phone..."></div>
+            <div class="dealer-list" id="dealerListContainer"><div style="padding:20px;text-align:center;">Loading dealers...</div></div>
+        </div>
+        
+        <div class="right-panel">
+            <div class="panel-header flex-between">
+                <span id="selectedDealerName">Select a dealer</span>
+                <span id="selectedBalanceSpan" style="font-size:0.7rem; background:#f0f2f5; padding:2px 10px; border-radius:30px;"></span>
+            </div>
+            <div class="tab-nav">
+                <button class="tab-btn active" data-tab="orders-tab"><i class="fas fa-receipt"></i> Orders</button>
+                <button class="tab-btn" data-tab="payments-tab"><i class="fas fa-history"></i> Payments</button>
+                <button class="tab-btn" data-tab="performance-tab"><i class="fas fa-chart-simple"></i> Performance</button>
+            </div>
+            
+            <div id="orders-tab" class="tab-content active">
+                <div style="overflow-x:auto;">
+                    <table class="compact-table">
+                        <thead><tr><th>Date</th><th>Ref</th><th>Items</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th><th>PDF</th></tr></thead>
+                        <tbody id="ordersTbody"><tr><td colspan="8">Select dealer</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="payments-tab" class="tab-content">
+                <table class="compact-table">
+                    <thead><tr><th>Date</th><th>Reference</th><th>Amount (K)</th><th>Note</th></tr></thead>
+                    <tbody id="paymentsTbody"><tr><td colspan="4">Select dealer</td></tr></tbody>
+                </table>
+            </div>
+            
+            <div id="performance-tab" class="tab-content">
+                <div style="background:white; border-radius:16px; padding:16px;" id="performanceCard">
+                    <p>📊 Dealer performance summary will appear here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALS -->
+<div id="dealerModal" class="modal-overlay">
+    <div class="modal-card">
+        <h3 style="margin-bottom:12px;">Create Dealer Account</h3>
+        <form id="dealerForm">
+            <div class="form-group"><label>Full Name *</label><input type="text" id="dealerName" required></div>
+            <div class="form-group"><label>Phone</label><input type="text" id="dealerPhone"></div>
+            <div class="form-group"><label>Credit Limit (K)</label><input type="number" id="creditLimit" value="0" step="0.01"></div>
+            <div class="flex-between"><button type="submit" class="btn btn-success">Save</button><button type="button" class="btn btn-outline" onclick="closeModal('dealerModal')">Cancel</button></div>
+        </form>
+    </div>
+</div>
+
+<div id="orderModal" class="modal-overlay">
+    <div class="modal-card" style="max-width:700px;">
+        <h3>📦 Place Order (Warehouse stock ↓)</h3>
+        <form id="orderForm">
+            <div class="form-group">
+                <label>Select Dealer</label>
+                <select id="orderDealerSelect" required></select>
+                <div id="orderDealerBalancePreview" style="font-size:0.7rem; margin-top:4px;"></div>
+            </div>
+            <div style="background:#f7f9fc; border-radius:20px; padding:12px; margin:10px 0;">
+                <label>➕ Add Item</label>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <select id="orderItemSelect" style="flex:2;"></select>
+                    <input type="number" id="orderQty" value="1" min="1" style="width:80px;">
+                    <button type="button" id="addItemBtn" class="btn btn-primary">+ Add</button>
+                </div>
+                <div id="orderCartList" style="margin-top:12px;"></div>
+                <div class="flex-between"><strong>Total: K<span id="orderTotalPreview">0.00</span></strong></div>
+            </div>
+            <div class="form-group"><label>Amount Paid Today (K)</label><input type="number" id="orderPaidNow" value="0" step="0.01" min="0"></div>
+            <div class="flex-between"><button type="submit" class="btn btn-success">✅ Confirm Order</button><button type="button" class="btn btn-outline" onclick="closeModal('orderModal')">Cancel</button></div>
+        </form>
+    </div>
+</div>
+
+<div id="paymentModal" class="modal-overlay">
+    <div class="modal-card">
+        <h3>💰 Record Payment</h3>
+        <form id="paymentForm">
+            <div class="form-group"><label>Dealer</label><select id="paymentDealerSelect" required></select></div>
+            <div class="form-group"><label>Current Balance</label><input id="currentBalDisplay" readonly style="background:#f1f5f9;"></div>
+            <div class="form-group"><label>Payment Amount (K)</label><input type="number" id="paymentAmount" step="0.01" required></div>
+            <div class="form-group"><label>Reference / Note</label><input type="text" id="paymentNote" placeholder="Optional"></div>
+            <div class="flex-between"><button type="submit" class="btn btn-success">Record Payment</button><button type="button" class="btn btn-outline" onclick="closeModal('paymentModal')">Cancel</button></div>
+        </form>
+    </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+    import { getFirestore, collection, query, orderBy, getDocs, addDoc, updateDoc, doc, increment, onSnapshot, writeBatch, where } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+
+    const firebaseConfig = { 
+        apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k", 
+        authDomain: "trismartstores.firebaseapp.com", 
+        projectId: "trismartstores", 
+        storageBucket: "trismartstores.appspot.com", 
+        messagingSenderId: "416692703333", 
+        appId: "1:416692703333:web:d4b60292621435c748f68c" 
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    
+    // Auth check
+    const authUser = (localStorage.getItem('loggedInUser') || localStorage.getItem('userName') || '').toLowerCase();
+    if (authUser !== 'chris') { 
+        document.body.innerHTML = '<div style="padding:40px;text-align:center;">🔒 Access Denied</div>'; 
+        throw new Error('unauth'); 
+    }
+    document.getElementById('adminBadge').innerHTML = `<i class="fas fa-shield-alt"></i> MASTER: ${authUser.toUpperCase()}`;
+
+    let dealers = [];
+    let masterStock = [];
+    let allOrders = [];       // orders for currently selected dealer
+    let allPayments = [];     // payments for currently selected dealer
+    let totalOrdersCount = 0; // FIX: global orders count for stats bar
+    let selectedDealerId = null;
+    let currentOrderCart = [];
+
+    // ─── TOAST ────────────────────────────────────────────────────────────────
+    const toast = (msg, isError = false) => { 
+        const container = document.getElementById('toastContainer'); 
+        const el = document.createElement('div'); 
+        el.className = 'toast'; 
+        el.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${msg}`; 
+        el.style.background = isError ? '#c0392b' : '#2b7a4b'; 
+        container.appendChild(el); 
+        setTimeout(() => el.remove(), 3000); 
+    };
+    
+    window.closeModal = (id) => document.getElementById(id).classList.remove('show');
+
+    // ─── LOAD DEALERS (realtime) ───────────────────────────────────────────────
+    function loadDealers() {
+        const q = query(collection(db, 'dealers'), orderBy('name'));
+        onSnapshot(q, (snap) => {
+            dealers = snap.docs.map(d => ({ 
+                id: d.id, 
+                ...d.data(), 
+                outstandingBalance: Number(d.data().outstandingBalance) || 0, 
+                totalOrders: Number(d.data().totalOrders) || 0 
+            }));
+            renderDealerList();
+            updateStats();
+            updateDropdowns();
+            // If selected dealer was deleted, clear selection
+            if (selectedDealerId && !dealers.find(d => d.id === selectedDealerId)) {
+                selectedDealerId = null;
+            }
+            // Auto-select first dealer if none selected
+            if (!selectedDealerId && dealers.length) {
+                selectedDealerId = dealers[0].id;
+            }
+            refreshDealerPanel();
+        });
+    }
+
+    function renderDealerList() {
+        const container = document.getElementById('dealerListContainer');
+        const search = document.getElementById('dealerSearchInput').value.toLowerCase();
+        let filtered = dealers.filter(d => 
+            d.name.toLowerCase().includes(search) || 
+            (d.phone || '').toLowerCase().includes(search)
+        );
+        if (!filtered.length) { 
+            container.innerHTML = '<div style="padding:16px;text-align:center;color:#666;">No dealers found</div>'; 
+            return; 
+        }
+        container.innerHTML = filtered.map(d => `
+            <div class="dealer-item ${selectedDealerId === d.id ? 'selected' : ''}" data-id="${d.id}">
+                <div>
+                    <div class="dealer-name">${escapeHtml(d.name)}</div>
+                    <div style="font-size:0.6rem;color:#6c7a8e;">${d.phone || '-'}</div>
+                </div>
+                <div class="dealer-balance">K${(d.outstandingBalance || 0).toFixed(2)}</div>
+            </div>
+        `).join('');
+        
+        document.querySelectorAll('.dealer-item').forEach(el => {
+            el.addEventListener('click', () => { 
+                selectedDealerId = el.dataset.id; 
+                renderDealerList(); 
+                refreshDealerPanel(); 
+            });
+        });
+    }
+
+    // ─── REFRESH DEALER PANEL ─────────────────────────────────────────────────
+    async function refreshDealerPanel() {
+        if (!selectedDealerId) { 
+            document.getElementById('selectedDealerName').innerText = 'Select a dealer'; 
+            document.getElementById('selectedBalanceSpan').innerHTML = ''; 
+            document.getElementById('ordersTbody').innerHTML = '<tr><td colspan="8">Select dealer</td></tr>';
+            document.getElementById('paymentsTbody').innerHTML = '<tr><td colspan="4">Select dealer</td></tr>';
+            return; 
+        }
+        const dealer = dealers.find(d => d.id === selectedDealerId);
+        if (dealer) { 
+            document.getElementById('selectedDealerName').innerHTML = `<i class="fas fa-user"></i> ${escapeHtml(dealer.name)}`; 
+            document.getElementById('selectedBalanceSpan').innerHTML = `Outstanding: K${(dealer.outstandingBalance || 0).toFixed(2)}`; 
+        }
+        // Load both in parallel
+        await Promise.all([loadOrdersForDealer(), loadPaymentsForDealer()]);
+        renderPerformance();
+    }
+
+    // ─── FIX 1: LOAD ORDERS — fresh fetch each time ───────────────────────────
+    async function loadOrdersForDealer() {
+        if (!selectedDealerId) return;
+        try {
+            // No orderBy here — avoids needing a composite Firestore index.
+            // We sort in JS after fetching.
+            const q = query(
+                collection(db, 'orders'), 
+                where('dealerId', '==', selectedDealerId)
+            );
+            const snap = await getDocs(q);
+            allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            // Sort newest first in JS
+            allOrders.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+
+            // FIX 2: Also count all orders globally for stats bar
+            // We tally from dealer.totalOrders instead of a separate query
+            totalOrdersCount = dealers.reduce((sum, d) => sum + (d.totalOrders || 0), 0);
+            document.getElementById('statOrders').innerText = totalOrdersCount;
+
+            renderOrdersTable();
+        } catch (err) {
+            console.error('loadOrdersForDealer error:', err);
+            document.getElementById('ordersTbody').innerHTML = `<tr><td colspan="8" style="color:red;">Error loading orders: ${err.message}</td></tr>`;
+        }
+    }
+
+    function renderOrdersTable() {
+        const tbody = document.getElementById('ordersTbody');
+        if (!allOrders.length) { 
+            tbody.innerHTML = '<tr><td colspan="8" style="color:#666;text-align:center;padding:20px;">No orders yet for this dealer</td></tr>'; 
+            return; 
+        }
+        tbody.innerHTML = allOrders.map(o => {
+            const total = Number(o.totalAmount) || 0;
+            const paid  = Number(o.paidAmount)  || 0;
+            const due   = total - paid;
+            let statusBadge, statusText;
+            if (due <= 0.001) {
+                statusBadge = 'badge-paid';    statusText = 'PAID';
+            } else if (paid > 0) {
+                statusBadge = 'badge-partial'; statusText = 'PARTIAL';
+            } else {
+                statusBadge = 'badge-unpaid';  statusText = 'UNPAID';
+            }
+            // FIX 3: Store order ID separately, encode items safely
+            const orderId = o.id;
+            return `
+                <tr>
+                    <td>${o.dateStr || '-'}</td>
+                    <td><span class="badge" style="background:#eef2ff;">${o.ref || o.id.slice(-6)}</span></td>
+                    <td>${o.items?.length || 0}</td>
+                    <td>K${total.toFixed(2)}</td>
+                    <td>K${paid.toFixed(2)}</td>
+                    <td class="${due > 0.001 ? 'text-danger' : ''}">K${Math.max(0, due).toFixed(2)}</td>
+                    <td><span class="badge ${statusBadge}">${statusText}</span></td>
+                    <td><button class="btn btn-outline" style="padding:2px 10px;" onclick="window.printOrderPDF('${orderId}')">🖨️ PDF</button></td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // FIX 3: Look up order from allOrders array by ID — avoids broken data-attribute JSON
+    window.printOrderPDF = (orderId) => { 
+        const order = allOrders.find(o => o.id === orderId);
+        if (order) generateOrderPDF(order);
+        else toast('Order not found', true);
+    };
+
+    function generateOrderPDF(order) {
+        const printWindow = window.open('', '_blank');
+        const itemsRows = (order.items || []).map(i => `
+            <tr>
+                <td>${escapeHtml(i.code)}</td>
+                <td>${escapeHtml(i.name)}</td>
+                <td>${i.qty}</td>
+                <td>K${(i.price * i.qty).toFixed(2)}</td>
+            </tr>
+        `).join('');
+        const dealerName = dealers.find(d => d.id === order.dealerId)?.name || order.dealerName || 'Unknown';
+        const total = Number(order.totalAmount) || 0;
+        const paid  = Number(order.paidAmount)  || 0;
+        const due   = total - paid;
+        printWindow.document.write(`
+            <html><head><title>Order ${order.ref}</title>
+            <style>
+                body{font-family:sans-serif;padding:30px;} 
+                table{width:100%;border-collapse:collapse;} 
+                th,td{border:1px solid #ddd;padding:8px;}
+            </style>
+            </head><body>
+                <h2>🧾 DEALER ORDER INVOICE</h2>
+                <p><strong>Ref:</strong> ${order.ref} | <strong>Date:</strong> ${order.dateStr}</p>
+                <p><strong>Dealer:</strong> ${escapeHtml(dealerName)}</p>
+                <table>
+                    <thead><tr><th>Code</th><th>Product</th><th>Qty</th><th>Subtotal</th></tr></thead>
+                    <tbody>${itemsRows}</tbody>
+                    <tfoot>
+                        <tr><td colspan="3"><strong>Total</strong></td><td><strong>K${total.toFixed(2)}</strong></td></tr>
+                        <tr><td colspan="3">Amount Paid</td><td>K${paid.toFixed(2)}</td></tr>
+                        <tr><td colspan="3">Balance Due</td><td>K${Math.max(0,due).toFixed(2)}</td></tr>
+                    </tfoot>
+                </table>
+                <p>Thank you for your business!</p>
+            </body></html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+    }
+
+    // ─── LOAD PAYMENTS ────────────────────────────────────────────────────────
+    async function loadPaymentsForDealer() {
+        if (!selectedDealerId) return;
+        try {
+            // No orderBy — avoids composite index requirement. Sort in JS below.
+            const q = query(
+                collection(db, 'payments'), 
+                where('dealerId', '==', selectedDealerId)
+            );
+            const snap = await getDocs(q);
+            allPayments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            // Sort newest first in JS
+            allPayments.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+            renderPaymentsTable();
+        } catch (err) {
+            console.error('loadPaymentsForDealer error:', err);
+            document.getElementById('paymentsTbody').innerHTML = `<tr><td colspan="4" style="color:red;">Error loading payments: ${err.message}</td></tr>`;
+        }
+    }
+
+    function renderPaymentsTable() {
+        const tbody = document.getElementById('paymentsTbody');
+        if (!allPayments.length) { 
+            tbody.innerHTML = '<tr><td colspan="4" style="color:#666;text-align:center;padding:20px;">No payment records yet</td></tr>'; 
+            return; 
+        }
+        tbody.innerHTML = allPayments.map(p => `
+            <tr>
+                <td>${p.date || '-'}</td>
+                <td>${p.orderRef || p.id.slice(-6)}</td>
+                <td><strong>K${(Number(p.amount) || 0).toFixed(2)}</strong></td>
+                <td>${escapeHtml(p.note || '-')}</td>
+            </tr>
+        `).join('');
+    }
+
+    // ─── PERFORMANCE TAB ──────────────────────────────────────────────────────
+    function renderPerformance() {
+        if (!selectedDealerId) return;
+        const dealer = dealers.find(d => d.id === selectedDealerId);
+        if (!dealer) return;
+        const totalOrderValue   = allOrders.reduce((s, o) => s + (Number(o.totalAmount) || 0), 0);
+        const totalPaidOnOrders = allOrders.reduce((s, o) => s + (Number(o.paidAmount) || 0), 0);
+        const totalPaymentsRec  = allPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+        const orderCount = allOrders.length;
+        const avgOrder   = orderCount ? totalOrderValue / orderCount : 0;
+        document.getElementById('performanceCard').innerHTML = `
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div style="padding:12px; background:#f8fafc; border-radius:16px;">
+                    <i class="fas fa-chart-line"></i> <strong>Total Ordered</strong><br>
+                    <span style="font-size:1.3rem; font-weight:800;">K${totalOrderValue.toFixed(2)}</span>
+                </div>
+                <div style="padding:12px; background:#f8fafc; border-radius:16px;">
+                    <i class="fas fa-hand-holding-usd"></i> <strong>Total Paid (on orders)</strong><br>
+                    <span style="font-size:1.3rem; font-weight:800;">K${totalPaidOnOrders.toFixed(2)}</span>
+                </div>
+                <div style="padding:12px; background:#f8fafc; border-radius:16px;">
+                    <i class="fas fa-coins"></i> <strong>Payments Recorded</strong><br>
+                    <span style="font-size:1.3rem; font-weight:800;">K${totalPaymentsRec.toFixed(2)}</span>
+                </div>
+                <div style="padding:12px; background:#f8fafc; border-radius:16px;">
+                    <i class="fas fa-receipt"></i> <strong>Orders Count</strong><br>
+                    <span style="font-size:1.3rem; font-weight:800;">${orderCount}</span>
+                </div>
+                <div style="padding:12px; background:#f8fafc; border-radius:16px;">
+                    <i class="fas fa-calculator"></i> <strong>Avg Order Value</strong><br>
+                    <span style="font-size:1.3rem; font-weight:800;">K${avgOrder.toFixed(2)}</span>
+                </div>
+                <div style="padding:12px; background:#fef3c7; border-radius:16px;">
+                    <i class="fas fa-credit-card"></i> <strong>Current Balance</strong><br>
+                    <span style="font-size:1.3rem; font-weight:800; color:#e67e22;">K${(dealer.outstandingBalance || 0).toFixed(2)}</span>
+                </div>
+                <div style="padding:12px; background:#f8fafc; border-radius:16px;">
+                    <i class="fas fa-chart-simple"></i> <strong>Credit Limit</strong><br>
+                    <span style="font-size:1.3rem; font-weight:800;">K${(dealer.creditLimit || 0).toFixed(2)}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    // ─── LOAD STOCK ───────────────────────────────────────────────────────────
+    function loadStock() {
+        const q = query(collection(db, 'inventory'), where('branchId', '==', 'master'));
+        onSnapshot(q, (snap) => {
+            masterStock = snap.docs.map(d => ({ 
+                id: d.id, ...d.data(), 
+                stock: Number(d.data().stock) || 0, 
+                price: Number(d.data().price) || 0 
+            }));
+            document.getElementById('statItems').innerText = masterStock.length;
+            updateProductSelect();
+        });
+    }
+
+    // ─── STATS ────────────────────────────────────────────────────────────────
+    function updateStats() { 
+        document.getElementById('statDealers').innerText = dealers.length;
+        // FIX 4: Derive order count from dealer.totalOrders (sum across all dealers)
+        const totalOrders = dealers.reduce((s, d) => s + (d.totalOrders || 0), 0);
+        document.getElementById('statOrders').innerText = totalOrders;
+        const totalOut = dealers.reduce((s, d) => s + (d.outstandingBalance || 0), 0); 
+        document.getElementById('statOutstanding').innerHTML = `K${totalOut.toFixed(2)}`; 
+    }
+    
+    // ─── DROPDOWNS ────────────────────────────────────────────────────────────
+    function updateDropdowns() { 
+        const orderSelect   = document.getElementById('orderDealerSelect'); 
+        const paymentSelect = document.getElementById('paymentDealerSelect');
+        if (orderSelect) {
+            orderSelect.innerHTML = '<option value="">-- Select Dealer --</option>' + dealers.map(d => 
+                `<option value="${d.id}" data-bal="${d.outstandingBalance || 0}">${escapeHtml(d.name)} (Due: K${(d.outstandingBalance || 0).toFixed(2)})</option>`
+            ).join('');
+            orderSelect.onchange = () => { 
+                const bal = orderSelect.options[orderSelect.selectedIndex]?.getAttribute('data-bal') || 0; 
+                document.getElementById('orderDealerBalancePreview').innerHTML = `💰 Current balance: K${Number(bal).toFixed(2)}`; 
+            };
+        }
+        if (paymentSelect) {
+            paymentSelect.innerHTML = '<option value="">-- Select Dealer --</option>' + dealers.map(d => 
+                `<option value="${d.id}" data-bal="${d.outstandingBalance || 0}">${escapeHtml(d.name)} (Due: K${(d.outstandingBalance || 0).toFixed(2)})</option>`
+            ).join('');
+            paymentSelect.onchange = () => { 
+                const bal = paymentSelect.options[paymentSelect.selectedIndex]?.getAttribute('data-bal') || 0; 
+                document.getElementById('currentBalDisplay').value = `K${Number(bal).toFixed(2)}`; 
+            };
+        }
+    }
+    
+    function updateProductSelect() { 
+        const sel = document.getElementById('orderItemSelect'); 
+        if (sel) {
+            sel.innerHTML = '<option value="">-- Select Product --</option>' + 
+                masterStock.filter(i => i.stock > 0).map(i => 
+                    `<option value="${i.id}" data-price="${i.price}" data-stock="${i.stock}" data-code="${escapeHtml(i.code)}" data-name="${escapeHtml(i.name)}">${i.code} | ${i.name} (${i.stock} left) K${i.price}</option>`
+                ).join('');
+        }
+    }
+
+    // ─── ORDER CART ───────────────────────────────────────────────────────────
+    document.getElementById('addItemBtn')?.addEventListener('click', () => {
+        const id = document.getElementById('orderItemSelect').value;
+        if (!id) { toast('Select a product', true); return; }
+        const item = masterStock.find(i => i.id === id);
+        if (!item) return;
+        let qty = parseInt(document.getElementById('orderQty').value) || 1;
+        if (qty < 1) qty = 1;
+        const exist = currentOrderCart.find(c => c.itemId === id);
+        const newQty = exist ? exist.qty + qty : qty;
+        if (item.stock < newQty) { toast(`Only ${item.stock} in stock`, true); return; }
+        if (exist) exist.qty += qty;
+        else currentOrderCart.push({ itemId: item.id, code: item.code, name: item.name, price: item.price, qty });
+        renderOrderCartPreview();
+        document.getElementById('orderQty').value = 1;
+    });
+    
+    function renderOrderCartPreview() {
+        const div = document.getElementById('orderCartList');
+        if (!div) return;
+        if (currentOrderCart.length === 0) {
+            div.innerHTML = '<div style="color:#999; text-align:center; padding:10px;">No items added yet</div>';
+            document.getElementById('orderTotalPreview').innerText = '0.00';
+            return;
+        }
+        let total = 0;
+        div.innerHTML = currentOrderCart.map((c, i) => { 
+            const subtotal = c.price * c.qty;
+            total += subtotal;
+            return `<div class="cart-item">
+                <span><strong>${escapeHtml(c.code)}</strong> ${escapeHtml(c.name)} x${c.qty}</span>
+                <span>K${subtotal.toFixed(2)} 
+                    <button type="button" onclick="window.removeCartItem(${i})" 
+                        style="background:#c0392b;color:white;border:none;border-radius:20px;padding:2px 8px;cursor:pointer;">✕</button>
+                </span>
+            </div>`; 
+        }).join('');
+        document.getElementById('orderTotalPreview').innerText = total.toFixed(2);
+    }
+    
+    window.removeCartItem = (idx) => { 
+        currentOrderCart.splice(idx, 1); 
+        renderOrderCartPreview(); 
+    };
+    
+    // ─── PLACE ORDER BUTTON ───────────────────────────────────────────────────
+    document.getElementById('placeOrderBtn').onclick = () => { 
+        if (dealers.length === 0) { toast('Create a dealer first', true); return; } 
+        currentOrderCart = []; 
+        renderOrderCartPreview(); 
+        updateDropdowns(); 
+        updateProductSelect(); 
+        document.getElementById('orderPaidNow').value = 0; 
+        // Pre-select the currently viewed dealer
+        if (selectedDealerId) {
+            const sel = document.getElementById('orderDealerSelect');
+            sel.value = selectedDealerId;
+            sel.dispatchEvent(new Event('change'));
+        }
+        document.getElementById('orderModal').classList.add('show'); 
+    };
+    
+    // ─── SUBMIT ORDER ─────────────────────────────────────────────────────────
+    document.getElementById('orderForm').onsubmit = async (e) => { 
+        e.preventDefault(); 
+        const dealerId = document.getElementById('orderDealerSelect').value; 
+        if (!dealerId) { toast('Select dealer', true); return; } 
+        if (currentOrderCart.length === 0) { toast('Add at least one item', true); return; } 
+        const dealer = dealers.find(d => d.id === dealerId); 
+        const paidNow = parseFloat(document.getElementById('orderPaidNow').value || 0); 
+        const total   = currentOrderCart.reduce((s, i) => s + i.price * i.qty, 0); 
+        if (paidNow > total) { toast('Paid amount exceeds total', true); return; } 
+        const newBal = (dealer.outstandingBalance || 0) + (total - paidNow); 
+        if (!confirm(`Confirm order for ${dealer.name}?\nTotal: K${total.toFixed(2)}\nPaid: K${paidNow.toFixed(2)}\nNew balance: K${newBal.toFixed(2)}`)) return; 
+        
+        const btn = document.querySelector('#orderModal .btn-success'); 
+        btn.disabled = true; 
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...'; 
+        try { 
+            const batch = writeBatch(db); 
+            // Reduce stock
+            for (const c of currentOrderCart) { 
+                batch.update(doc(db, 'inventory', c.itemId), { stock: increment(-c.qty) }); 
+            } 
+            // Update dealer balance and order count
+            batch.update(doc(db, 'dealers', dealerId), { 
+                outstandingBalance: newBal, 
+                totalOrders: increment(1),    // FIX: use increment() so count is accurate
+                lastOrderDate: new Date().toLocaleDateString() 
+            }); 
+            // Create order record
+            const now = new Date(); 
+            const refNum = 'ORD-' + now.getTime().toString().slice(-8); 
+            const orderData = { 
+                ref: refNum, 
+                dealerId, 
+                dealerName: dealer.name, 
+                items: currentOrderCart.map(c => ({ 
+                    code: c.code, name: c.name, qty: c.qty, 
+                    price: c.price, total: c.price * c.qty 
+                })), 
+                totalAmount: total, 
+                paidAmount:  paidNow, 
+                dateStr:     now.toLocaleDateString('en-GB'), 
+                timeStr:     now.toLocaleTimeString(), 
+                createdAt:   now.toISOString(),    // ISO string for reliable sort
+                status: paidNow >= total ? 'paid' : (paidNow > 0 ? 'partial' : 'unpaid')
+            }; 
+            batch.set(doc(collection(db, 'orders')), orderData); 
+            // Record initial payment if any
+            if (paidNow > 0) { 
+                batch.set(doc(collection(db, 'payments')), { 
+                    dealerId, 
+                    dealerName: dealer.name, 
+                    amount:   paidNow, 
+                    orderRef: refNum, 
+                    date:     now.toLocaleDateString('en-GB'), 
+                    note:    'Payment on order', 
+                    createdAt: now.toISOString() 
+                }); 
+            } 
+            await batch.commit(); 
+            toast(`✅ Order placed! New balance: K${newBal.toFixed(2)}`); 
+            closeModal('orderModal'); 
+            currentOrderCart = [];
+            // Refresh the panel so new order shows immediately
+            if (selectedDealerId === dealerId) await refreshDealerPanel();
+        } catch (err) { 
+            console.error(err);
+            toast('Error: ' + err.message, true); 
+        } finally { 
+            btn.disabled = false; 
+            btn.innerHTML = '✅ Confirm Order'; 
+        } 
+    };
+    
+    // ─── PAYMENT BUTTON ───────────────────────────────────────────────────────
+    document.getElementById('paymentBtn').onclick = () => { 
+        if (!dealers.length) { toast('No dealers available', true); return; } 
+        updateDropdowns(); 
+        document.getElementById('paymentAmount').value = ''; 
+        document.getElementById('paymentNote').value = '';
+        // Pre-select the currently viewed dealer
+        if (selectedDealerId) {
+            const sel = document.getElementById('paymentDealerSelect');
+            sel.value = selectedDealerId;
+            sel.dispatchEvent(new Event('change'));
+        }
+        document.getElementById('paymentModal').classList.add('show'); 
+    };
+    
+    // ─── SUBMIT PAYMENT ───────────────────────────────────────────────────────
+    document.getElementById('paymentForm').onsubmit = async (e) => { 
+        e.preventDefault(); 
+        const dealerId = document.getElementById('paymentDealerSelect').value; 
+        if (!dealerId) { toast('Select dealer', true); return; } 
+        const amount = parseFloat(document.getElementById('paymentAmount').value); 
+        if (isNaN(amount) || amount <= 0) { toast('Enter valid amount', true); return; } 
+        const dealer = dealers.find(d => d.id === dealerId); 
+        if (!dealer) return; 
+        if (amount > dealer.outstandingBalance + 0.01) { 
+            toast(`Amount (K${amount.toFixed(2)}) exceeds balance (K${dealer.outstandingBalance.toFixed(2)})`, true); 
+            return; 
+        } 
+        const newBal = Math.max(0, dealer.outstandingBalance - amount); 
+        
+        try { 
+            const batch = writeBatch(db); 
+            // Update dealer balance
+            batch.update(doc(db, 'dealers', dealerId), { outstandingBalance: newBal }); 
+            
+            // Record the payment
+            const now = new Date(); 
+            const payRef = 'PAY-' + now.getTime().toString().slice(-6);
+            batch.set(doc(collection(db, 'payments')), { 
+                dealerId, 
+                dealerName: dealer.name, 
+                amount, 
+                date:      now.toLocaleDateString('en-GB'), 
+                note:      document.getElementById('paymentNote').value.trim() || 'Manual payment', 
+                createdAt: now.toISOString(), 
+                orderRef:  payRef
+            }); 
+            
+            // FIX 5: FIFO — apply payment to oldest unpaid orders
+            // Sort using string comparison (ISO dates sort correctly as strings)
+            const unpaidOrders = allOrders
+                .filter(o => (Number(o.totalAmount) - Number(o.paidAmount)) > 0.001)
+                .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+
+            let remaining = amount;
+            for (const order of unpaidOrders) {
+                if (remaining <= 0) break;
+                const due     = Number(order.totalAmount) - Number(order.paidAmount);
+                const apply   = Math.min(remaining, due);
+                const newPaid = Number(order.paidAmount) + apply;
+                batch.update(doc(db, 'orders', order.id), { paidAmount: newPaid });
+                remaining -= apply;
+            }
+            
+            await batch.commit(); 
+            toast(`💰 Payment of K${amount.toFixed(2)} recorded. New balance: K${newBal.toFixed(2)}`); 
+            closeModal('paymentModal'); 
+            // Re-fetch so tables show updated paidAmount values
+            if (selectedDealerId === dealerId) await refreshDealerPanel();
+        } catch (err) { 
+            console.error(err);
+            toast('Error: ' + err.message, true); 
+        } 
+    };
+    
+    // ─── PRINT ACCOUNT STATEMENT ──────────────────────────────────────────────
+    document.getElementById('printAccountBtn').onclick = () => { 
+        if (!selectedDealerId) { toast('Select a dealer first', true); return; } 
+        const dealer = dealers.find(d => d.id === selectedDealerId); 
+        if (!dealer) return; 
+        const ordersHtml = allOrders.map(o => {
+            const total = Number(o.totalAmount) || 0;
+            const paid  = Number(o.paidAmount)  || 0;
+            return `<tr>
+                <td>${o.dateStr || '-'}</td>
+                <td>${o.ref || o.id.slice(-6)}</td>
+                <td>K${total.toFixed(2)}</td>
+                <td>K${paid.toFixed(2)}</td>
+                <td>K${Math.max(0, total - paid).toFixed(2)}</td>
+            </tr>`;
+        }).join('');
+        const paymentsHtml = allPayments.map(p => `
+            <tr>
+                <td>${p.date || '-'}</td>
+                <td>${p.orderRef || '-'}</td>
+                <td>K${(Number(p.amount) || 0).toFixed(2)}</td>
+                <td>${escapeHtml(p.note || '-')}</td>
+            </tr>
+        `).join('');
+        const win = window.open('', '_blank'); 
+        win.document.write(`
+            <html><head><title>${dealer.name} - Statement</title>
+            <style>
+                body{font-family:sans-serif;padding:30px;} 
+                table{width:100%;border-collapse:collapse;margin-bottom:20px;} 
+                th,td{border:1px solid #ddd;padding:8px;} 
+                th{background:#f5f5f5;}
+            </style>
+            </head><body>
+                <h2>📋 DEALER ACCOUNT STATEMENT</h2>
+                <p><strong>Dealer:</strong> ${escapeHtml(dealer.name)}</p>
+                <p><strong>Phone:</strong> ${dealer.phone || '-'}</p>
+                <p><strong>Current Balance:</strong> K${(dealer.outstandingBalance || 0).toFixed(2)}</p>
+                <p><strong>Printed:</strong> ${new Date().toLocaleString()}</p>
+                <h3>Order History</h3>
+                <table>
+                    <thead><tr><th>Date</th><th>Ref</th><th>Total</th><th>Paid</th><th>Due</th></tr></thead>
+                    <tbody>${ordersHtml || '<tr><td colspan="5">No orders</td></tr>'}</tbody>
+                </table>
+                <h3>Payment History</h3>
+                <table>
+                    <thead><tr><th>Date</th><th>Reference</th><th>Amount</th><th>Note</th></tr></thead>
+                    <tbody>${paymentsHtml || '<tr><td colspan="4">No payments</td></tr>'}</tbody>
+                </table>
+            </body></html>
+        `); 
+        win.document.close(); 
+        win.print(); 
+    };
+    
+    // ─── TAB SWITCHING ────────────────────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+    
+    // ─── SEARCH ───────────────────────────────────────────────────────────────
+    document.getElementById('dealerSearchInput').addEventListener('input', () => renderDealerList());
+    
+    // ─── CREATE DEALER ────────────────────────────────────────────────────────
+    document.getElementById('createDealerBtn').onclick = () => { 
+        document.getElementById('dealerForm').reset();
+        document.getElementById('dealerModal').classList.add('show'); 
+    };
+    
+    document.getElementById('dealerForm').onsubmit = async (e) => { 
+        e.preventDefault(); 
+        const name = document.getElementById('dealerName').value.trim(); 
+        if (!name) { toast('Name required', true); return; } 
+        try {
+            await addDoc(collection(db, 'dealers'), { 
+                name, 
+                phone:              document.getElementById('dealerPhone').value.trim(), 
+                creditLimit:        parseFloat(document.getElementById('creditLimit').value || 0), 
+                outstandingBalance: 0, 
+                totalOrders:        0, 
+                createdAt:          new Date().toISOString() 
+            }); 
+            toast('Dealer account created successfully'); 
+            closeModal('dealerModal'); 
+            document.getElementById('dealerForm').reset(); 
+        } catch (err) {
+            toast('Error creating dealer: ' + err.message, true);
+        }
+    };
+    
+    // ─── UTILS ────────────────────────────────────────────────────────────────
+    function escapeHtml(str) { 
+        if (!str) return ''; 
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+    
+    // ─── INIT ─────────────────────────────────────────────────────────────────
+    loadDealers(); 
+    loadStock();
+</script>
+</body>
+</html>

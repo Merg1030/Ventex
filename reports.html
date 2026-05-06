@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reports - TRISMART</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- Firebase v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <style>
+    :root{ --sidebar-width:260px; --primary:#1e3c72; --accent:#2a5298; --muted:#666; --surface:#fff; --shadow: 0 6px 18px rgba(16,24,40,0.05); --success:#28a745; --danger:#dc3545; }
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}
+    body{background:#f5f7fb;color:#222;min-height:100vh}
+
+    /* Sidebar (same look as your other pages) */
+    .sidebar{ position:fixed; left:0; top:0; bottom:0; width:var(--sidebar-width); padding:22px; display:flex; flex-direction:column; gap:20px; background:linear-gradient(180deg,var(--primary),var(--accent)); color:#fff; z-index:60; box-shadow:6px 0 30px rgba(16,24,40,0.12); transition:transform .28s ease,width .28s ease; overflow:auto; }
+    .sidebar.closed{ transform: translateX(-120%); width:0; padding:22px 8px; }
+    .brand{ display:flex; gap:12px; align-items:center; }
+    .brand i{ font-size:1.6rem; background:rgba(255,255,255,0.07); padding:10px; border-radius:8px; }
+    .brand .title{ font-weight:700; font-size:1.05rem; }
+    .nav{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+    .menu-item{ display:flex; gap:12px; align-items:center; padding:11px; border-radius:8px; color:rgba(255,255,255,0.95); text-decoration:none; }
+    .menu-item:hover{ background: rgba(255,255,255,0.06); transform:translateX(4px); }
+    .menu-item.active{ background: rgba(255,255,255,0.10); border-right:4px solid rgba(255,255,255,0.12); }
+    .sidebar .footer{ margin-top:auto; font-size:.9rem; opacity:.95; }
+
+    /* Main */
+    .main{ margin-left:var(--sidebar-width); transition:margin-left .28s ease; padding-bottom:60px; min-height:100vh; }
+    .main.sidebar-closed{ margin-left:0; }
+
+    .container{ padding:22px; max-width:1200px; margin:18px auto; }
+
+    .card{ background:var(--surface); border-radius:10px; box-shadow:var(--shadow); overflow:hidden; margin-bottom:16px; }
+    .card-header{ padding:14px 18px; border-bottom:1px solid #eef2f7; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    .card-body{ padding:16px 18px; overflow:auto; min-height:120px; }
+
+    .small-muted{ font-size:.9rem; color:var(--muted); }
+
+    .controls { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .form-control{ padding:10px 12px; border-radius:8px; border:1px solid #e6edf3; width:220px; font-size:0.95rem; }
+    .btn { padding: 10px 16px; border-radius:8px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; font-size: 0.95rem; }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; }
+    .btn-secondary { background: #f0f2f5; color: #333; border: 1px solid #ddd; }
+    .btn-success { background: linear-gradient(135deg, #28a745, #20c997); color: white; }
+
+    .stats-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-top:16px; }
+    .stat { background:#fff; padding:14px; border-radius:8px; box-shadow: 0 3px 12px rgba(16,24,40,0.04); display:flex; flex-direction:column; gap:6px; }
+    .stat .value { font-weight:800; font-size:1.25rem; color:var(--primary); }
+    .stat .label { font-size:.85rem; color:var(--muted); }
+
+    .perf { margin-top:12px; background:#f1f5f9; height:18px; border-radius:12px; overflow:hidden; position:relative; }
+    .perf .fill { height:100%; background: linear-gradient(90deg,var(--primary),var(--accent)); width:0%; transition:width .6s ease; display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:.85rem; }
+
+    .chart-card { margin-top:18px; padding:12px; border-radius:8px; background:#fff; box-shadow: 0 4px 20px rgba(16,24,40,0.04); height:320px; }
+
+    .overdue-list { margin-top:12px; background:#fff; padding:12px; border-radius:8px; box-shadow: 0 3px 12px rgba(16,24,40,0.04); }
+
+    /* NEW: Performance Report Styles */
+    .performance-section { margin-top:24px; }
+    .performance-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+    .performance-title { font-weight:700; font-size:1.1rem; color:var(--primary); }
+    
+    .performance-grid { display:flex; flex-direction:column; gap:12px; margin-top:12px; }
+    .performance-item { background:#fff; padding:16px; border-radius:10px; box-shadow:0 3px 10px rgba(16,24,40,0.05); display:flex; align-items:center; gap:16px; }
+    .person-info { display:flex; align-items:center; gap:12px; min-width:180px; }
+    .person-avatar { width:42px; height:42px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--accent)); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; }
+    .person-name { font-weight:600; font-size:1rem; }
+    .person-role { font-size:.85rem; color:var(--muted); }
+    
+    .performance-bar-container { flex:1; }
+    .performance-bar { height:28px; background:#f0f4f8; border-radius:14px; overflow:hidden; position:relative; }
+    .performance-fill { height:100%; border-radius:14px; transition:width .8s ease; position:relative; }
+    .performance-value { position:absolute; right:12px; top:50%; transform:translateY(-50%); font-weight:700; font-size:.9rem; color:#333; }
+    
+    .performance-stats { display:flex; gap:20px; min-width:200px; }
+    .stat-item { display:flex; flex-direction:column; align-items:center; }
+    .stat-number { font-weight:800; font-size:1rem; color:var(--primary); }
+    .stat-label { font-size:.75rem; color:var(--muted); }
+
+    .hide-on-small { display:inline-flex; }
+
+    @media(max-width:1000px){
+      .stats-grid { grid-template-columns: repeat(2,1fr); }
+      .form-control { width: 160px; }
+      .controls { gap:8px; }
+      .performance-stats { min-width:150px; }
+    }
+    @media(max-width:600px){
+      .main{ margin-left:0; padding:12px;}
+      .stats-grid { grid-template-columns: 1fr; }
+      .form-control{ width:100%; }
+      .hide-on-small { display:none; }
+      .performance-item { flex-direction:column; align-items:flex-start; gap:12px; }
+      .person-info { min-width:100%; }
+      .performance-bar-container { width:100%; }
+      .performance-stats { width:100%; justify-content:space-between; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <i class="fas fa-hand-holding-usd"></i>
+      <div class="title">TRI<span style="color: rgba(255,255,255,0.95)">SMART</span></div>
+    </div>
+
+    <nav class="nav">
+      <a class="menu-item" href="dashboard.html"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+      <a class="menu-item" href="customers.html"><i class="fas fa-users"></i><span>Customers</span></a>
+      <a class="menu-item" href="loans.html"><i class="fas fa-file-invoice-dollar"></i><span>Loans</span></a>
+      <a class="menu-item" href="accounts.html"><i class="fas fa-book"></i><span>Accounts</span></a>
+      <a class="menu-item active" href="reports.html"><i class="fas fa-chart-line"></i><span>Reports</span></a>
+      <a class="menu-item" id="sidebarLogout" href="#"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+    </nav>
+
+    <div style="margin-top:auto;font-size:.9rem;opacity:.95;">
+      <div style="font-weight:700">Welcome, <span id="sidebarName">Chris</span></div>
+      <div class="muted">Payments & due reports</div>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="container">
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:12px">
+            <button id="sidebarToggle" class="btn-secondary btn" title="Hide/Show sidebar"><i class="fas fa-bars"></i></button>
+            <div style="font-weight:800;font-size:1.2rem;color:var(--primary)">Payments & Loans Report</div>
+            <div class="small-muted hide-on-small" style="margin-left:6px">(Received / Payouts / Due / Overdue)</div>
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:center">
+            <select id="preset" class="form-control">
+              <option value="this_week">This Week</option>
+              <option value="this_month">This Month</option>
+              <option value="last_30">Last 30 Days</option>
+              <option value="custom">Custom Range</option>
+            </select>
+
+            <input id="startDate" class="form-control" type="date" />
+            <input id="endDate" class="form-control" type="date" />
+
+            <select id="personFilter" class="form-control">
+              <option value="__all">All persons</option>
+            </select>
+
+            <select id="groupBy" class="form-control">
+              <option value="auto">Auto</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+
+            <button id="generateBtn" class="btn-primary btn"><i class="fas fa-chart-line"></i> Generate</button>
+            <button id="downloadPdfBtn" class="btn-secondary btn"><i class="fas fa-file-pdf"></i> PDF</button>
+            <!-- NEW: Performance Report Button -->
+            <button id="performanceReportBtn" class="btn-success btn"><i class="fas fa-user-chart"></i> Performance Report</button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="stats-grid" id="statsGrid">
+            <div class="stat">
+              <div class="label">Total Received</div>
+              <div class="value" id="totalReceived">0.00</div>
+              <div class="small-muted">Payments collected</div>
+            </div>
+            <div class="stat">
+              <div class="label">Total Payouts</div>
+              <div class="value" id="totalPayouts">0.00</div>
+              <div class="small-muted">Loans disbursed</div>
+            </div>
+            <div class="stat">
+              <div class="label">Total Due (next payments)</div>
+              <div class="value" id="totalDue">0.00</div>
+              <div class="small-muted">Sum of nextPaymentAmount within range</div>
+            </div>
+            <div class="stat">
+              <div class="label">Overdue loans</div>
+              <div class="value" id="overdueCount">0</div>
+              <div class="small-muted">Past due (next date & remaining &gt;0)</div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center">
+            <div class="small-muted">Performance (received vs activity)</div>
+            <div id="perfPercent" style="font-weight:700;color:var(--primary)">0%</div>
+          </div>
+          <div class="perf" aria-hidden="true">
+            <div class="fill" id="perfFill">0%</div>
+          </div>
+
+          <div class="chart-card">
+            <canvas id="reportChart"></canvas>
+          </div>
+
+          <!-- NEW: Performance Report Section -->
+          <div class="performance-section" id="performanceSection" style="display:none;">
+            <div class="performance-header">
+              <div class="performance-title">Person Performance Report</div>
+              <div class="small-muted">Sorted by performance score</div>
+            </div>
+            <div class="performance-grid" id="performanceGrid">
+              <!-- Performance items will be generated here -->
+            </div>
+          </div>
+
+          <div class="overdue-list" id="overdueList">
+            <strong>Overdue loans</strong>
+            <div id="overdueRows" style="margin-top:8px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Firebase config (same as your other pages)
+    const firebaseConfig = {
+      apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+      authDomain: "trismartstores.firebaseapp.com",
+      projectId: "trismartstores",
+      storageBucket: "trismartstores.appspot.com",
+      messagingSenderId: "416692703333",
+      appId: "1:416692703333:web:d4b60292621435c748f68c",
+      measurementId: "G-NJPQ7L3QWJ"
+    };
+
+    // Init Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const currentUser = localStorage.getItem('username') || 'Chris';
+    document.getElementById('sidebarName').textContent = currentUser;
+
+    // UI refs
+    const sidebar = document.getElementById('sidebar');
+    const main = document.getElementById('main');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+
+    const presetEl = document.getElementById('preset');
+    const startDateEl = document.getElementById('startDate');
+    const endDateEl = document.getElementById('endDate');
+    const personFilterEl = document.getElementById('personFilter');
+    const groupByEl = document.getElementById('groupBy');
+    const generateBtn = document.getElementById('generateBtn');
+    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+    const performanceReportBtn = document.getElementById('performanceReportBtn'); // NEW
+    
+    // Performance section
+    const performanceSection = document.getElementById('performanceSection');
+    const performanceGrid = document.getElementById('performanceGrid');
+
+    const totalReceivedEl = document.getElementById('totalReceived');
+    const totalPayoutsEl = document.getElementById('totalPayouts');
+    const totalDueEl = document.getElementById('totalDue');
+    const overdueCountEl = document.getElementById('overdueCount');
+    const perfFillEl = document.getElementById('perfFill');
+    const perfPercentEl = document.getElementById('perfPercent');
+
+    const overdueRowsEl = document.getElementById('overdueRows');
+    const ctx = document.getElementById('reportChart').getContext('2d');
+
+    let chart = null;
+    let payments = []; // payments collection
+    let loans = [];    // loans collection
+    let personsSet = new Set();
+
+    // helpers
+    function toDateField(d) {
+      if (!d) return null;
+      if (typeof d.toDate === 'function') return d.toDate();
+      if (typeof d === 'string' || typeof d === 'number') {
+        const parsed = new Date(d);
+        return isNaN(parsed) ? null : parsed;
+      }
+      if (d instanceof Date) return d;
+      return null;
+    }
+    function startOfDay(dt){ const d=new Date(dt); d.setHours(0,0,0,0); return d; }
+    function endOfDay(dt){ const d=new Date(dt); d.setHours(23,59,59,999); return d; }
+    function isoDate(dt){ const y=dt.getFullYear(); const m=String(dt.getMonth()+1).padStart(2,'0'); const d=String(dt.getDate()).padStart(2,'0'); return `${y}-${m}-${d}`; }
+    function formatNum(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function getInitials(name){ return name.split(' ').map(n=>n[0]).join('').toUpperCase().substring(0,2); }
+
+    // Load data (payments + loans). Use createdBy or customerName for person filter
+    async function loadData(){
+      try {
+        // payments
+        const paySnap = await db.collection('payments').get();
+        payments = paySnap.docs.map(d => {
+          const data = d.data();
+          return {
+            id: d.id,
+            loanId: data.loanId || null,
+            amount: Number(data.amount || 0),
+            paymentDate: toDateField(data.paymentDate) || toDateField(data.createdAt) || new Date(),
+            createdBy: data.createdBy || '',
+            notes: data.notes || ''
+          };
+        });
+
+        // loans
+        const loanSnap = await db.collection('loans').get();
+        loans = loanSnap.docs.map(d => {
+          const data = d.data();
+          return {
+            id: d.id,
+            loanId: data.loanId || '',
+            customerName: data.customerName || '',
+            totalAmount: Number(data.totalAmount || data.amount || 0),
+            paidAmount: Number(data.paidAmount || 0),
+            remainingAmount: Number(data.remainingAmount != null ? data.remainingAmount : (data.totalAmount || data.amount || 0) - (data.paidAmount || 0)),
+            status: (data.status || 'active').toLowerCase(),
+            createdAt: toDateField(data.createdAt) || toDateField(data.startDate) || new Date(),
+            nextPaymentDate: toDateField(data.nextPaymentDate) || null,
+            nextPaymentAmount: Number(data.nextPaymentAmount || 0),
+            createdBy: data.createdBy || data.createdBy || '',
+            notes: data.notes || ''
+          };
+        });
+
+        // Build person filter from payments.createdBy and loans.createdBy and customerName
+        personsSet.clear();
+        payments.forEach(p => { if (p.createdBy) personsSet.add(p.createdBy); });
+        loans.forEach(l => { if (l.createdBy) personsSet.add(l.createdBy); if (l.customerName) personsSet.add(l.customerName); });
+
+        populatePersonFilter();
+        // apply default preset
+        applyPreset(presetEl.value);
+      } catch (err) {
+        console.error('loadData error', err);
+        // fallback to empty arrays
+        payments = [];
+        loans = [];
+        populatePersonFilter();
+        applyPreset(presetEl.value);
+      }
+    }
+
+    function populatePersonFilter(){
+      const prev = personFilterEl.value;
+      personFilterEl.innerHTML = '<option value="__all">All persons</option>';
+      Array.from(personsSet).sort().forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = p;
+        personFilterEl.appendChild(opt);
+      });
+      if ([...personFilterEl.options].some(o => o.value === prev)) personFilterEl.value = prev;
+    }
+
+    // Presets
+    function applyPreset(preset){
+      const now = new Date();
+      let start,end;
+      if (preset === 'this_week') {
+        const day = now.getDay();
+        const diff = (day + 6) % 7;
+        start = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - diff));
+        end = endOfDay(now);
+        groupByEl.value = 'weekly';
+      } else if (preset === 'this_month') {
+        start = startOfDay(new Date(now.getFullYear(), now.getMonth(), 1));
+        end = endOfDay(now);
+        groupByEl.value = 'monthly';
+      } else if (preset === 'last_30') {
+        start = startOfDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29));
+        end = endOfDay(now);
+        groupByEl.value = 'weekly';
+      } else {
+        start = startOfDay(now);
+        end = endOfDay(now);
+      }
+      startDateEl.value = isoDate(start);
+      endDateEl.value = isoDate(end);
+    }
+    presetEl.addEventListener('change', ()=> applyPreset(presetEl.value));
+
+    // NEW: Calculate Performance Scores for Each Person
+    function calculatePerformance(start, end, personFilter = '__all') {
+      const performanceData = [];
+      
+      // Get list of persons (staff members, not customers)
+      const staffMembers = new Set();
+      payments.forEach(p => { if (p.createdBy) staffMembers.add(p.createdBy); });
+      loans.forEach(l => { if (l.createdBy) staffMembers.add(l.createdBy); });
+      
+      // Remove customers from staff list
+      const customers = new Set();
+      loans.forEach(l => { if (l.customerName) customers.add(l.customerName); });
+      
+      const staffList = Array.from(staffMembers).filter(s => !customers.has(s));
+      
+      if (staffList.length === 0) {
+        // If no staff found, use all persons
+        staffList.push(...Array.from(personsSet));
+      }
+      
+      // Calculate metrics for each person
+      staffList.forEach(person => {
+        if (personFilter !== '__all' && person !== personFilter) return;
+        
+        // Filter payments by this person
+        const personPayments = payments.filter(p => 
+          p.createdBy === person && 
+          p.paymentDate && 
+          p.paymentDate >= start && 
+          p.paymentDate <= end
+        );
+        
+        // Filter loans created by this person
+        const personLoans = loans.filter(l => 
+          l.createdBy === person && 
+          l.createdAt && 
+          l.createdAt >= start && 
+          l.createdAt <= end
+        );
+        
+        // Calculate metrics
+        const totalReceived = personPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        const totalLoansDisbursed = personLoans.reduce((sum, l) => sum + (l.totalAmount || 0), 0);
+        const numberOfLoans = personLoans.length;
+        const numberOfPayments = personPayments.length;
+        
+        // Calculate performance score (0-100)
+        // Score based on: 50% payment collection efficiency, 30% loan disbursement, 20% activity level
+        let score = 0;
+        
+        if (totalLoansDisbursed > 0) {
+          // Payment collection efficiency
+          const collectionEfficiency = Math.min(100, (totalReceived / totalLoansDisbursed) * 100);
+          // Activity score based on number of loans and payments
+          const activityScore = Math.min(100, (numberOfLoans * 10 + numberOfPayments * 5));
+          // Combined score
+          score = Math.round((collectionEfficiency * 0.5) + (Math.min(100, totalLoansDisbursed / 1000) * 0.3) + (activityScore * 0.2));
+        } else {
+          // If no loans disbursed, base score on payments only
+          score = Math.min(100, numberOfPayments * 10);
+        }
+        
+        // Cap at 100
+        score = Math.min(100, score);
+        
+        performanceData.push({
+          name: person,
+          score: score,
+          totalReceived: totalReceived,
+          totalLoansDisbursed: totalLoansDisbursed,
+          numberOfLoans: numberOfLoans,
+          numberOfPayments: numberOfPayments
+        });
+      });
+      
+      // Sort by score (highest first)
+      performanceData.sort((a, b) => b.score - a.score);
+      
+      return performanceData;
+    }
+
+    // NEW: Generate Performance Report
+    function generatePerformanceReport() {
+      const start = startOfDay(new Date(startDateEl.value));
+      const end = endOfDay(new Date(endDateEl.value));
+      const personFilter = personFilterEl.value;
+      
+      const performanceData = calculatePerformance(start, end, personFilter);
+      
+      // Show the performance section
+      performanceSection.style.display = 'block';
+      
+      // Clear previous content
+      performanceGrid.innerHTML = '';
+      
+      if (performanceData.length === 0) {
+        performanceGrid.innerHTML = `
+          <div style="padding:24px;text-align:center;color:#666;">
+            <i class="fas fa-chart-line" style="font-size:2rem;margin-bottom:12px;"></i>
+            <div>No performance data available for the selected period</div>
+          </div>
+        `;
+        return;
+      }
+      
+      // Generate performance items
+      performanceData.forEach((person, index) => {
+        // Determine color based on score
+        let fillColor = '#dc3545'; // red for low
+        if (person.score >= 70) fillColor = '#28a745'; // green for high
+        else if (person.score >= 40) fillColor = '#ffc107'; // yellow for medium
+        
+        const item = document.createElement('div');
+        item.className = 'performance-item';
+        item.innerHTML = `
+          <div class="person-info">
+            <div class="person-avatar">${getInitials(person.name)}</div>
+            <div>
+              <div class="person-name">${escapeHtml(person.name)}</div>
+              <div class="person-role">Staff Member</div>
+            </div>
+          </div>
+          
+          <div class="performance-bar-container">
+            <div class="performance-bar">
+              <div class="performance-fill" style="width:${person.score}%; background:${fillColor};"></div>
+              <div class="performance-value">${person.score}%</div>
+            </div>
+          </div>
+          
+          <div class="performance-stats">
+            <div class="stat-item">
+              <div class="stat-number">${formatNum(person.totalReceived)}</div>
+              <div class="stat-label">Collected</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">${formatNum(person.totalLoansDisbursed)}</div>
+              <div class="stat-label">Disbursed</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number">${person.numberOfLoans}</div>
+              <div class="stat-label">Loans</div>
+            </div>
+          </div>
+        `;
+        
+        performanceGrid.appendChild(item);
+      });
+      
+      // Scroll to performance section
+      performanceSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Bucketing: similar to earlier approach
+    function bucketByPeriod(itemsReceived, itemsPayout, start, end, grouping){
+      const labels = [];
+      const rec = [];
+      const pay = [];
+
+      if (grouping === 'auto') {
+        const diffDays = Math.ceil((end - start) / (1000*60*60*24));
+        grouping = diffDays > 90 ? 'monthly' : 'weekly';
+      }
+
+      if (grouping === 'monthly') {
+        let s = new Date(start.getFullYear(), start.getMonth(), 1);
+        while (s <= end) {
+          const monthStart = startOfDay(new Date(s.getFullYear(), s.getMonth(), 1));
+          const monthEnd = endOfDay(new Date(s.getFullYear(), s.getMonth()+1, 0));
+          labels.push(s.toLocaleString(undefined, { month:'short', year:'numeric' }));
+          const r = itemsReceived.filter(x => x.date >= monthStart && x.date <= monthEnd).reduce((a,b)=>a+(b.amount||0),0);
+          const p = itemsPayout.filter(x => x.date >= monthStart && x.date <= monthEnd).reduce((a,b)=>a+(b.amount||0),0);
+          rec.push(r);
+          pay.push(p);
+          s = new Date(s.getFullYear(), s.getMonth()+1, 1);
+        }
+      } else {
+        // weekly buckets starting Monday
+        let s = startOfDay(start);
+        const day = s.getDay();
+        const offset = (day + 6) % 7;
+        s = startOfDay(new Date(s.getFullYear(), s.getMonth(), s.getDate() - offset));
+        while (s <= end) {
+          const weekStart = new Date(s);
+          const weekEnd = endOfDay(new Date(s.getFullYear(), s.getMonth(), s.getDate() + 6));
+          labels.push(`${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`);
+          const r = itemsReceived.filter(x => x.date >= weekStart && x.date <= weekEnd).reduce((a,b)=>a+(b.amount||0),0);
+          const p = itemsPayout.filter(x => x.date >= weekStart && x.date <= weekEnd).reduce((a,b)=>a+(b.amount||0),0);
+          rec.push(r);
+          pay.push(p);
+          s = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 7);
+        }
+      }
+
+      return { labels, rec, pay, grouping };
+    }
+
+    // Generate report
+    function generateReport(){
+      // Hide performance section when generating regular report
+      performanceSection.style.display = 'none';
+      
+      const start = startOfDay(new Date(startDateEl.value));
+      const end = endOfDay(new Date(endDateEl.value));
+      const person = personFilterEl.value;
+      const grouping = groupByEl.value;
+
+      // Received payments filtered
+      const receivedFiltered = payments.filter(p => {
+        if (!p.paymentDate) return false;
+        if (p.paymentDate < start || p.paymentDate > end) return false;
+        if (person !== '__all' && person) {
+          // check payments.createdBy OR loan.customerName for this payment's loan
+          if ((p.createdBy || '') === person) return true;
+          // also check loan's customer
+          const ln = loans.find(l => l.id === p.loanId);
+          if (ln && ln.customerName === person) return true;
+          return false;
+        }
+        return true;
+      }).map(p => ({ ...p, date: p.paymentDate }));
+
+      // Payouts: consider loans disbursed during period (createdAt)
+      const payoutsFiltered = loans.filter(l => {
+        const d = l.createdAt || l.startDate;
+        if (!d) return false;
+        if (d < start || d > end) return false;
+        if (person !== '__all' && person) {
+          if ((l.createdBy || '') === person) return true;
+          if ((l.customerName || '') === person) return true;
+          return false;
+        }
+        return true;
+      }).map(l => ({ id: l.id, amount: l.totalAmount || 0, date: l.createdAt }));
+
+      // Total due (sum of nextPaymentAmount for loans whose nextPaymentDate in range)
+      const dueFiltered = loans.filter(l => {
+        const np = l.nextPaymentDate;
+        if (!np) return false;
+        if (np < start || np > end) return false;
+        if (person !== '__all' && person) {
+          if ((l.createdBy || '') === person) return true;
+          if ((l.customerName || '') === person) return true;
+          return false;
+        }
+        return true;
+      });
+
+      // Overdue loans: nextPaymentDate < today AND remaining > 0
+      const today = new Date();
+      const overdue = loans.filter(l => {
+        const np = l.nextPaymentDate;
+        if (!np) return false;
+        if (np < startOfDay(today) && (l.remainingAmount || 0) > 0) {
+          if (person !== '__all' && person) {
+            if ((l.createdBy || '') === person) return true;
+            if ((l.customerName || '') === person) return true;
+            return false;
+          }
+          return true;
+        }
+        return false;
+      });
+
+      // Totals
+      const totalReceived = receivedFiltered.reduce((a,b)=>a+(b.amount||0),0);
+      const totalPayouts = payoutsFiltered.reduce((a,b)=>a+(b.amount||0),0);
+      const totalDue = dueFiltered.reduce((a,b)=>a+(b.nextPaymentAmount||0),0);
+
+      totalReceivedEl.textContent = formatNum(totalReceived);
+      totalPayoutsEl.textContent = formatNum(totalPayouts);
+      totalDueEl.textContent = formatNum(totalDue);
+      overdueCountEl.textContent = overdue.length;
+
+      // Performance metric (received / (received + payouts) ) — if both zero show 0
+      const denom = (totalReceived + totalPayouts) || 1;
+      const pct = Math.round((totalReceived / denom) * 100);
+      perfFillEl.style.width = pct + '%';
+      perfFillEl.textContent = pct + '%';
+      perfPercentEl.textContent = pct + '%';
+
+      // Chart: bucket received and payouts
+      const bucketInfo = bucketByPeriod(receivedFiltered, payoutsFiltered, start, end, grouping);
+      drawChart(bucketInfo.labels, bucketInfo.rec, bucketInfo.pay);
+
+      // Overdue list render
+      renderOverdue(overdue);
+    }
+
+    function drawChart(labels, recData, payData){
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Received', data: recData, backgroundColor: 'rgba(40,167,69,0.85)' },
+            { label: 'Payouts', data: payData, backgroundColor: 'rgba(30,60,114,0.85)' }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          scales: { y: { beginAtZero: true } },
+          plugins: { legend: { position: 'top' } }
+        }
+      });
+    }
+
+    function renderOverdue(overdueList){
+      if (!overdueList || overdueList.length === 0) {
+        overdueRowsEl.innerHTML = '<div style="padding:8px;color:#666">No overdue loans for the selected filters.</div>';
+        return;
+      }
+      let html = '<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:8px">Loan</th><th style="text-align:left;padding:8px">Customer</th><th style="text-align:right;padding:8px">Remaining</th><th style="text-align:left;padding:8px">Next Due</th></tr></thead><tbody>';
+      overdueList.forEach(l => {
+        html += `<tr>
+          <td style="padding:8px">${escapeHtml(l.loanId || l.id)}</td>
+          <td style="padding:8px">${escapeHtml(l.customerName || '')}</td>
+          <td style="padding:8px;text-align:right;color:#d32f2f">${formatNum(l.remainingAmount)}</td>
+          <td style="padding:8px">${l.nextPaymentDate ? l.nextPaymentDate.toLocaleDateString() : 'N/A'}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      overdueRowsEl.innerHTML = html;
+    }
+
+    // PDF export: includes summary and list of overdue + detail table
+    function downloadPDF(){
+      const start = startOfDay(new Date(startDateEl.value));
+      const end = endOfDay(new Date(endDateEl.value));
+      const person = personFilterEl.value === '__all' ? 'All' : personFilterEl.value;
+      try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFillColor(30, 60, 114);
+        doc.rect(0, 0, 210, 40, 'F');
+        doc.setTextColor(255,255,255);
+        doc.setFontSize(18);
+        doc.text('TRISMART', 15, 15);
+        doc.setFontSize(11);
+        doc.text(`Payments & Loans Report`, 15, 28);
+        doc.setFontSize(10);
+        doc.setTextColor(0,0,0);
+        doc.text(`Period: ${isoDate(start)} → ${isoDate(end)}`, 15, 38);
+        doc.text(`Person: ${person}`, 15, 44);
+
+        // Summary block
+        doc.setFontSize(11);
+        doc.text(`Total Received: ${totalReceivedEl.textContent}`, 15, 56);
+        doc.text(`Total Payouts: ${totalPayoutsEl.textContent}`, 70, 56);
+        doc.text(`Total Due: ${totalDueEl.textContent}`, 130, 56);
+        doc.text(`Overdues: ${overdueCountEl.textContent}`, 170, 56);
+
+        // Build detail rows: payments within range (limit to 500 rows)
+        const startD = start;
+        const endD = end;
+        const paymentsFiltered = payments.filter(p => p.paymentDate && p.paymentDate >= startD && p.paymentDate <= endD && (person === '__all' || p.createdBy === person || (loans.find(l=>l.id===p.loanId)||{}).customerName === person));
+        const rows = paymentsFiltered.slice(0,500).map(p => [p.paymentDate ? p.paymentDate.toLocaleDateString() : '', (loans.find(l=>l.id===p.loanId)||{}).loanId || '', (loans.find(l=>l.id===p.loanId)||{}).customerName || '', formatNum(p.amount), p.createdBy || '']);
+        doc.autoTable({
+          startY: 68,
+          head: [['Date','Loan','Customer','Amount','Received By']],
+          body: rows,
+          styles: { fontSize: 9 },
+          headStyles: { fillColor: [30,60,114], textColor: 255 }
+        });
+
+        doc.save(`Report_${isoDate(start)}_${isoDate(end)}_${person}.pdf`);
+      } catch (err) {
+        console.error('downloadPDF', err);
+        alert('Error generating PDF. See console.');
+      }
+    }
+
+    // Sidebar hide/unhide toggle (persisted)
+    function initSidebar(){
+      const key = 'trismart_sidebar_open';
+      const saved = localStorage.getItem(key);
+      if (saved === 'false') {
+        sidebar.classList.add('closed');
+        main.classList.add('sidebar-closed');
+      } else {
+        sidebar.classList.remove('closed');
+        main.classList.remove('sidebar-closed');
+      }
+      sidebarToggle.addEventListener('click', () => {
+        const closed = sidebar.classList.toggle('closed');
+        main.classList.toggle('sidebar-closed');
+        localStorage.setItem(key, !closed);
+      });
+    }
+
+    // small helper to escape html in table rows
+    function escapeHtml(s){ if (s === undefined || s === null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+    // Wire UI
+    generateBtn.addEventListener('click', generateReport);
+    downloadPdfBtn.addEventListener('click', downloadPDF);
+    performanceReportBtn.addEventListener('click', generatePerformanceReport); // NEW
+
+    // init
+    (async function init(){
+      initSidebar();
+      applyPreset('this_month');
+      await loadData();
+      generateReport();
+    })();
+
+    // allow quick generate on Enter
+    [startDateEl, endDateEl, personFilterEl].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') generateReport(); }));
+  </script>
+</body>
+</html>

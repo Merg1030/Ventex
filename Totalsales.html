@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Trismart Cashbook</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+      width: 100%;
+      min-height: 100vh;
+    }
+    
+    .container {
+      margin: 0 auto;
+      padding: 20px;
+      width: 100%;
+      max-width: 100%;
+    }
+    
+    /* Header */
+    .header {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      width: 100%;
+    }
+    
+    .company-name h1 {
+      color: #1976d2;
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+    
+    .company-name p {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .header-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+    }
+    
+    .btn-primary {
+      background: #1976d2;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #1565c0;
+    }
+    
+    /* Filters */
+    .filters {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .filter-group label {
+      font-weight: 600;
+      font-size: 14px;
+      min-width: 60px;
+    }
+    
+    select {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: white;
+      font-size: 14px;
+      min-width: 150px;
+    }
+    
+    /* Form */
+    .form-container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      width: 100%;
+    }
+    
+    .form-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #1976d2;
+    }
+    
+    .form-header h2 {
+      color: #1976d2;
+      font-size: 18px;
+    }
+    
+    .close-btn {
+      background: #f44336;
+      color: white;
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .form-row {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    
+    .form-group {
+      flex: 1;
+      min-width: 200px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      font-size: 14px;
+      color: #555;
+    }
+    
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: #1976d2;
+    }
+    
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+    
+    .btn-submit {
+      background: #4CAF50;
+      color: white;
+    }
+    
+    .btn-submit:hover {
+      background: #388E3C;
+    }
+    
+    .btn-reset {
+      background: #9e9e9e;
+      color: white;
+    }
+    
+    .btn-reset:hover {
+      background: #757575;
+    }
+    
+    .hide {
+      display: none;
+    }
+    
+    /* Table */
+    .table-container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+      width: 100%;
+    }
+    
+    .table-responsive {
+      overflow-x: auto;
+      width: 100%;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+    
+    thead {
+      background: #595757;
+    }
+    
+    th {
+      color: white;
+      text-align: left;
+      padding: 15px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    tbody tr {
+      border-bottom: 1px solid #eee;
+      transition: background 0.3s;
+    }
+    
+    tbody tr:hover {
+      background: #f9f9f9;
+    }
+    
+    tbody tr:nth-child(even) {
+      background: #fafafa;
+    }
+    
+    tbody tr:nth-child(even):hover {
+      background: #f5f5f5;
+    }
+    
+    td {
+      padding: 12px 15px;
+      font-size: 14px;
+    }
+    
+    .text-right {
+      text-align: right;
+      font-family: monospace;
+      font-weight: 500;
+    }
+    
+    .cash-out {
+      color: #d32f2f;
+      font-weight: 600;
+    }
+    
+    .cash-in {
+      color: #388E3C;
+      font-weight: 600;
+    }
+    
+    .balance {
+      color: #1976d2;
+      font-weight: 600;
+    }
+    
+    tfoot {
+      background: #f8f9fa;
+    }
+    
+    tfoot td {
+      font-weight: 600;
+      padding: 15px;
+      border-top: 2px solid #1976d2;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 50px;
+      color: #666;
+    }
+    
+    .empty-state i {
+      font-size: 48px;
+      color: #ddd;
+      margin-bottom: 20px;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    
+    /* Action Menu Styles */
+    .action-menu-container {
+      position: relative;
+      width: 40px;
+      text-align: center;
+    }
+    
+    .three-dots-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: #666;
+      padding: 5px 10px;
+      border-radius: 4px;
+      transition: all 0.3s;
+    }
+    
+    .three-dots-btn:hover {
+      background-color: #f0f0f0;
+      color: #1976d2;
+    }
+    
+    .action-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.15);
+      min-width: 160px;
+      z-index: 1000;
+      overflow: hidden;
+      display: none;
+    }
+    
+    .action-menu.show {
+      display: block;
+    }
+    
+    .action-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 15px;
+      text-decoration: none;
+      color: #333;
+      font-size: 14px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: white;
+      border: none;
+      width: 100%;
+      text-align: left;
+    }
+    
+    .action-menu-item:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .action-menu-item:last-child {
+      border-bottom: none;
+    }
+    
+    .action-menu-item i {
+      width: 20px;
+      text-align: center;
+    }
+    
+    .reverse {
+      color: #1976d2;
+    }
+    
+    .edit {
+      color: #4CAF50;
+    }
+    
+    .delete {
+      color: #f44336;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+      
+      .header {
+        flex-direction: column;
+        text-align: center;
+        padding: 15px;
+      }
+      
+      .filters {
+        flex-direction: column;
+        padding: 15px;
+      }
+      
+      .filter-group {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+      }
+      
+      select {
+        width: 100%;
+      }
+      
+      .form-row {
+        flex-direction: column;
+      }
+      
+      .form-group {
+        width: 100%;
+      }
+      
+      .action-menu {
+        position: fixed;
+        top: auto;
+        right: 10px;
+        left: 10px;
+        bottom: 10px;
+        min-width: auto;
+      }
+      
+      table {
+        min-width: 600px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .container {
+        padding: 5px;
+      }
+      
+      .header {
+        padding: 10px;
+      }
+      
+      .btn {
+        padding: 8px 15px;
+        font-size: 13px;
+      }
+      
+      .company-name h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="company-name">
+        <h1>Trismart Cashbook</h1>
+        <p>Cash Flow Management System</p>
+      </div>
+      <div class="header-controls">
+        <button id="show-form-btn" class="btn btn-primary">
+          <i class="fa fa-plus"></i> New Transaction
+        </button>
+      </div>
+    </header>
+    
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filter-group">
+        <label>Period:</label>
+        <select id="period-filter">
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month" selected>This Month</option>
+          <option value="last-month">Last Month</option>
+          <option value="quarter">This Quarter</option>
+          <option value="year">This Year</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label>Type:</label>
+        <select id="type-filter">
+          <option value="all">All Transactions</option>
+          <option value="cash-out">Cash Out Only</option>
+          <option value="cash-in">Cash In Only</option>
+        </select>
+      </div>
+    </div>
+    
+    <!-- Form (Hidden by default) -->
+    <div class="form-container hide" id="form-section">
+      <div class="form-header">
+        <h2><i class="fa fa-plus-circle"></i> Add New Transaction</h2>
+        <button class="close-btn" id="close-form-btn">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+      
+      <form id="cashflow-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="tx-date">Date</label>
+            <input type="date" id="tx-date" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="tx-desc">Description</label>
+            <input type="text" id="tx-desc" placeholder="Enter description" required>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="tx-cash-out">Cash Out Amount</label>
+            <input type="number" id="tx-cash-out" step="0.01" min="0" value="0" placeholder="0.00">
+          </div>
+          
+          <div class="form-group">
+            <label for="tx-cash-in">Cash In Amount</label>
+            <input type="number" id="tx-cash-in" step="0.01" min="0" value="0" placeholder="0.00">
+          </div>
+        </div>
+        
+        <div class="form-actions">
+          <button type="button" class="btn btn-reset" id="reset-form">
+            <i class="fa fa-refresh"></i> Reset
+          </button>
+          <button type="submit" class="btn btn-submit">
+            <i class="fa fa-check"></i> Add Transaction
+          </button>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Table -->
+    <div class="table-container">
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 120px">Date</th>
+              <th>Description</th>
+              <th style="width: 120px">Cash Out</th>
+              <th style="width: 120px">Cash In</th>
+              <th style="width: 140px">Balance</th>
+              <th style="width: 80px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="cashflow-body">
+            <tr>
+              <td colspan="6" class="loading">
+                <i class="fa fa-spinner fa-spin"></i> Loading transactions...
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" style="text-align: right; font-weight: 600;">TOTALS:</td>
+              <td class="text-right" id="total-cash-out">0.00</td>
+              <td class="text-right" id="total-cash-in">0.00</td>
+              <td class="text-right" id="ending-balance">0.00</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      onSnapshot,
+      Timestamp,
+      query,
+      orderBy,
+      serverTimestamp,
+      deleteDoc,
+      doc,
+      updateDoc
+    } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+
+    // Firebase configuration (using Trismart Stores config from your file)
+    const firebaseConfig = {
+      apiKey: "AIzaSyB-lm7Y3r1F6Vv8PKvY8glLabZDbJsHM1k",
+      authDomain: "trismartstores.firebaseapp.com",
+      projectId: "trismartstores",
+      storageBucket: "trismartstores.firebasestorage.app",
+      messagingSenderId: "416692703333",
+      appId: "1:416692703333:web:d4b60292621435c748f68c",
+      measurementId: "G-NJPQ7L3QWJ"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const COLLECTION = "cashflow";
+
+    // DOM elements
+    const showFormBtn = document.getElementById('show-form-btn');
+    const closeFormBtn = document.getElementById('close-form-btn');
+    const formSection = document.getElementById('form-section');
+    const cashflowForm = document.getElementById('cashflow-form');
+    const txDate = document.getElementById('tx-date');
+    const txDesc = document.getElementById('tx-desc');
+    const txCashOut = document.getElementById('tx-cash-out');
+    const txCashIn = document.getElementById('tx-cash-in');
+    const resetFormBtn = document.getElementById('reset-form');
+    const cashflowBody = document.getElementById('cashflow-body');
+    const totalCashOutEl = document.getElementById('total-cash-out');
+    const totalCashInEl = document.getElementById('total-cash-in');
+    const endingBalanceEl = document.getElementById('ending-balance');
+    const periodFilter = document.getElementById('period-filter');
+    const typeFilter = document.getElementById('type-filter');
+
+    // Set today's date by default
+    const today = new Date();
+    txDate.value = today.toISOString().split('T')[0];
+
+    // Filter and sort variables
+    let allTransactions = [];
+    let filteredTransactions = [];
+
+    // Action menu management
+    let activeMenu = null;
+
+    // Close all open menus
+    function closeAllMenus() {
+      if (activeMenu) {
+        activeMenu.classList.remove('show');
+        activeMenu = null;
+      }
+    }
+
+    // Handle clicks outside menus
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.action-menu-container')) {
+        closeAllMenus();
+      }
+    });
+
+    // Form visibility
+    showFormBtn.addEventListener('click', () => {
+      formSection.classList.remove('hide');
+      setTimeout(() => txDesc.focus(), 100);
+    });
+
+    closeFormBtn.addEventListener('click', () => {
+      formSection.classList.add('hide');
+      resetFormToAddMode();
+    });
+
+    // Reset form
+    resetFormBtn.addEventListener('click', () => {
+      resetFormToAddMode();
+    });
+
+    // Reset form to "add new" mode
+    function resetFormToAddMode() {
+      cashflowForm.reset();
+      txDate.value = today.toISOString().split('T')[0];
+      txCashOut.value = '0';
+      txCashIn.value = '0';
+      
+      const formHeader = formSection.querySelector('.form-header h2');
+      formHeader.innerHTML = '<i class="fa fa-plus-circle"></i> Add New Transaction';
+      
+      const submitBtn = cashflowForm.querySelector('.btn-submit');
+      submitBtn.innerHTML = '<i class="fa fa-check"></i> Add Transaction';
+      
+      // Remove any edit mode data
+      if (cashflowForm.dataset.editId) {
+        delete cashflowForm.dataset.editId;
+      }
+    }
+
+    // Form submission
+    cashflowForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Validation
+      if (!txDate.value) {
+        alert('Please select a date.');
+        return;
+      }
+      
+      if (!txDesc.value.trim()) {
+        alert('Please enter a description.');
+        txDesc.focus();
+        return;
+      }
+      
+      const cashOut = parseFloat(txCashOut.value) || 0;
+      const cashIn = parseFloat(txCashIn.value) || 0;
+      
+      if (cashOut === 0 && cashIn === 0) {
+        if (!confirm('Both Cash Out and Cash In are zero. Continue anyway?')) {
+          return;
+        }
+      }
+      
+      if (cashOut > 0 && cashIn > 0) {
+        alert('A transaction cannot have both cash out and cash in amounts. Please enter only one.');
+        return;
+      }
+      
+      // Check if we're in edit mode
+      const isEditMode = cashflowForm.dataset.editId;
+      
+      const transaction = {
+        date: Timestamp.fromDate(new Date(txDate.value)),
+        description: txDesc.value.trim(),
+        cashOut: parseFloat(cashOut.toFixed(2)),
+        cashIn: parseFloat(cashIn.toFixed(2)),
+        createdAt: serverTimestamp()
+      };
+      
+      try {
+        if (isEditMode) {
+          // Update existing transaction
+          await updateDoc(doc(db, COLLECTION, isEditMode), {
+            ...transaction,
+            updatedAt: serverTimestamp()
+          });
+          alert('Transaction updated successfully!');
+        } else {
+          // Add new transaction
+          await addDoc(collection(db, COLLECTION), transaction);
+          alert('Transaction added successfully!');
+        }
+        
+        // Reset and hide form
+        resetFormToAddMode();
+        formSection.classList.add('hide');
+        
+      } catch (error) {
+        console.error('Error saving transaction:', error);
+        alert('Error saving transaction. Please check console.');
+      }
+    });
+
+    // Date filter functions
+    function getDateRange(period) {
+      const now = new Date();
+      const start = new Date();
+      const end = new Date();
+      
+      switch(period) {
+        case 'today':
+          start.setHours(0, 0, 0, 0);
+          end.setHours(23, 59, 59, 999);
+          return { start, end };
+          
+        case 'week':
+          const day = now.getDay();
+          const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+          start.setDate(diff);
+          start.setHours(0, 0, 0, 0);
+          end.setDate(diff + 6);
+          end.setHours(23, 59, 59, 999);
+          return { start, end };
+          
+        case 'month':
+          start.setDate(1);
+          start.setHours(0, 0, 0, 0);
+          end.setMonth(end.getMonth() + 1);
+          end.setDate(0);
+          end.setHours(23, 59, 59, 999);
+          return { start, end };
+          
+        case 'last-month':
+          start.setMonth(start.getMonth() - 1);
+          start.setDate(1);
+          start.setHours(0, 0, 0, 0);
+          end.setMonth(end.getMonth());
+          end.setDate(0);
+          end.setHours(23, 59, 59, 999);
+          return { start, end };
+          
+        case 'quarter':
+          const quarter = Math.floor(now.getMonth() / 3);
+          start.setMonth(quarter * 3);
+          start.setDate(1);
+          start.setHours(0, 0, 0, 0);
+          end.setMonth(quarter * 3 + 3);
+          end.setDate(0);
+          end.setHours(23, 59, 59, 999);
+          return { start, end };
+          
+        case 'year':
+          start.setMonth(0, 1);
+          start.setHours(0, 0, 0, 0);
+          end.setMonth(11, 31);
+          end.setHours(23, 59, 59, 999);
+          return { start, end };
+          
+        default:
+          return { start: null, end: null };
+      }
+    }
+
+    // Filter transactions
+    function filterTransactions() {
+      const period = periodFilter.value;
+      const type = typeFilter.value;
+      
+      let filtered = [...allTransactions];
+      
+      // Apply date filter
+      if (period !== 'all') {
+        const { start, end } = getDateRange(period);
+        filtered = filtered.filter(tx => {
+          const txDate = tx.date;
+          return txDate >= start && txDate <= end;
+        });
+      }
+      
+      // Apply type filter
+      if (type === 'cash-out') {
+        filtered = filtered.filter(tx => tx.cashOut > 0);
+      } else if (type === 'cash-in') {
+        filtered = filtered.filter(tx => tx.cashIn > 0);
+      }
+      
+      // Sort in ASCENDING order (oldest to newest) - recent at the bottom
+      filtered.sort((a, b) => a.date - b.date);
+      
+      filteredTransactions = filtered;
+      renderTransactions();
+    }
+
+    // Event listeners for filters
+    periodFilter.addEventListener('change', filterTransactions);
+    typeFilter.addEventListener('change', filterTransactions);
+
+    // Action handlers
+    async function reverseTransaction(transaction) {
+      if (!confirm('Are you sure you want to reverse this transaction? This will create an opposite entry.')) {
+        return;
+      }
+      
+      try {
+        const reversedTransaction = {
+          date: Timestamp.fromDate(new Date()),
+          description: `Reversal: ${transaction.description}`,
+          cashOut: transaction.cashIn,
+          cashIn: transaction.cashOut,
+          createdAt: serverTimestamp(),
+          reversedFrom: transaction.id
+        };
+        
+        await addDoc(collection(db, COLLECTION), reversedTransaction);
+        alert('Transaction reversed successfully!');
+        closeAllMenus();
+      } catch (error) {
+        console.error('Error reversing transaction:', error);
+        alert('Error reversing transaction.');
+      }
+    }
+
+    async function deleteTransaction(transactionId) {
+      if (!confirm('Are you sure you want to delete this transaction? This action cannot be undone.')) {
+        return;
+      }
+      
+      try {
+        await deleteDoc(doc(db, COLLECTION, transactionId));
+        alert('Transaction deleted successfully!');
+        closeAllMenus();
+      } catch (error) {
+        console.error('Error deleting transaction:', error);
+        alert('Error deleting transaction.');
+      }
+    }
+
+    function editTransaction(transaction) {
+      // Populate form with transaction data
+      txDate.value = transaction.date.toISOString().split('T')[0];
+      txDesc.value = transaction.description;
+      txCashOut.value = transaction.cashOut;
+      txCashIn.value = transaction.cashIn;
+      
+      // Show form
+      formSection.classList.remove('hide');
+      
+      // Change form header to edit mode
+      const formHeader = formSection.querySelector('.form-header h2');
+      formHeader.innerHTML = '<i class="fa fa-edit"></i> Edit Transaction';
+      
+      // Change submit button text
+      const submitBtn = cashflowForm.querySelector('.btn-submit');
+      submitBtn.innerHTML = '<i class="fa fa-check"></i> Update Transaction';
+      
+      // Store the transaction ID for updating
+      cashflowForm.dataset.editId = transaction.id;
+      
+      closeAllMenus();
+    }
+
+    // Real-time data listener - SORT BY DATE ASCENDING
+    const q = query(collection(db, COLLECTION), orderBy("date", "asc"));
+    
+    onSnapshot(q, (snapshot) => {
+      const transactions = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        transactions.push({
+          id: doc.id,
+          date: data.date?.toDate() || new Date(),
+          description: data.description || "",
+          cashOut: parseFloat(data.cashOut || 0),
+          cashIn: parseFloat(data.cashIn || 0),
+          createdAt: data.createdAt?.toDate() || new Date()
+        });
+      });
+      
+      // Store all transactions
+      allTransactions = transactions;
+      
+      // Apply filters and render
+      filterTransactions();
+    }, (error) => {
+      console.error("Firestore error:", error);
+      cashflowBody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 40px; color: #f44336;">
+            <i class="fa fa-exclamation-triangle"></i>
+            <div style="margin-top: 10px;">Error loading data from Firebase</div>
+          </td>
+        </tr>`;
+    });
+
+    // Format currency
+    function formatMoney(amount) {
+      return amount.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    // Format date
+    function formatDate(date) {
+      return date.toISOString().split('T')[0];
+    }
+
+    // Render transactions in ASCENDING order (oldest to newest, recent at bottom)
+    function renderTransactions() {
+      cashflowBody.innerHTML = '';
+      
+      if (filteredTransactions.length === 0) {
+        cashflowBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="empty-state">
+              <i class="fa fa-inbox"></i>
+              <div>No transactions found</div>
+            </td>
+          </tr>`;
+        totalCashOutEl.textContent = '0.00';
+        totalCashInEl.textContent = '0.00';
+        endingBalanceEl.textContent = '0.00';
+        return;
+      }
+      
+      // Calculate totals and running balance
+      let totalCashOut = 0;
+      let totalCashIn = 0;
+      let runningBalance = 0;
+      
+      // First pass to calculate running balances (in chronological order)
+      // Already sorted by date ascending, so we can use filteredTransactions directly
+      const transactionsWithBalance = filteredTransactions.map(tx => {
+        runningBalance = runningBalance + tx.cashIn - tx.cashOut;
+        totalCashOut += tx.cashOut;
+        totalCashIn += tx.cashIn;
+        
+        return {
+          ...tx,
+          balance: runningBalance
+        };
+      });
+      
+      // Render in ASCENDING order (oldest to newest) - recent at the bottom
+      transactionsWithBalance.forEach(tx => {
+        const row = document.createElement('tr');
+        
+        // Date
+        const dateCell = document.createElement('td');
+        dateCell.textContent = formatDate(tx.date);
+        row.appendChild(dateCell);
+        
+        // Description
+        const descCell = document.createElement('td');
+        descCell.textContent = tx.description;
+        row.appendChild(descCell);
+        
+        // Cash Out - blank if zero
+        const cashOutCell = document.createElement('td');
+        cashOutCell.className = 'text-right';
+        if (tx.cashOut > 0) {
+          cashOutCell.innerHTML = `<span class="cash-out">${formatMoney(tx.cashOut)}</span>`;
+        } else {
+          cashOutCell.innerHTML = ''; // Blank instead of '-'
+        }
+        row.appendChild(cashOutCell);
+        
+        // Cash In - blank if zero
+        const cashInCell = document.createElement('td');
+        cashInCell.className = 'text-right';
+        if (tx.cashIn > 0) {
+          cashInCell.innerHTML = `<span class="cash-in">${formatMoney(tx.cashIn)}</span>`;
+        } else {
+          cashInCell.innerHTML = ''; // Blank instead of '-'
+        }
+        row.appendChild(cashInCell);
+        
+        // Balance
+        const balanceCell = document.createElement('td');
+        balanceCell.className = 'text-right';
+        balanceCell.innerHTML = `<span class="balance">${formatMoney(tx.balance)}</span>`;
+        row.appendChild(balanceCell);
+        
+        // Actions cell with 3-dots menu
+        const actionsCell = document.createElement('td');
+        const menuContainer = document.createElement('div');
+        menuContainer.className = 'action-menu-container';
+        
+        // 3-dots button
+        const dotsBtn = document.createElement('button');
+        dotsBtn.className = 'three-dots-btn';
+        dotsBtn.innerHTML = '&#8942;';
+        dotsBtn.title = 'Actions';
+        
+        // Action menu
+        const actionMenu = document.createElement('div');
+        actionMenu.className = 'action-menu';
+        
+        // Reverse option
+        const reverseBtn = document.createElement('button');
+        reverseBtn.className = 'action-menu-item reverse';
+        reverseBtn.innerHTML = '<i class="fa fa-exchange"></i> Reverse';
+        reverseBtn.onclick = () => reverseTransaction(tx);
+        
+        // Edit option
+        const editBtn = document.createElement('button');
+        editBtn.className = 'action-menu-item edit';
+        editBtn.innerHTML = '<i class="fa fa-edit"></i> Edit';
+        editBtn.onclick = () => editTransaction(tx);
+        
+        // Delete option
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'action-menu-item delete';
+        deleteBtn.innerHTML = '<i class="fa fa-trash"></i> Delete';
+        deleteBtn.onclick = () => deleteTransaction(tx.id);
+        
+        // Append menu items
+        actionMenu.appendChild(reverseBtn);
+        actionMenu.appendChild(editBtn);
+        actionMenu.appendChild(deleteBtn);
+        
+        // Toggle menu on button click
+        dotsBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (activeMenu === actionMenu) {
+            actionMenu.classList.remove('show');
+            activeMenu = null;
+          } else {
+            closeAllMenus();
+            actionMenu.classList.add('show');
+            activeMenu = actionMenu;
+          }
+        };
+        
+        menuContainer.appendChild(dotsBtn);
+        menuContainer.appendChild(actionMenu);
+        actionsCell.appendChild(menuContainer);
+        row.appendChild(actionsCell);
+        
+        cashflowBody.appendChild(row);
+      });
+      
+      // Update totals
+      totalCashOutEl.textContent = formatMoney(totalCashOut);
+      totalCashInEl.textContent = formatMoney(totalCashIn);
+      endingBalanceEl.textContent = formatMoney(runningBalance);
+    }
+
+    // Auto-focus description field when form is shown
+    formSection.addEventListener('transitionend', () => {
+      if (!formSection.classList.contains('hide')) {
+        txDesc.focus();
+      }
+    });
+
+    // Add sample data if Firebase collection is empty
+    setTimeout(() => {
+      if (allTransactions.length === 0) {
+        // You can add sample data here if needed
+        console.log('No transactions found in Firebase collection');
+      }
+    }, 2000);
+  </script>
+</body>
+</html>

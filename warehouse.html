@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TriSmart Stores | Inventory Manager + Branch Transfer</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #f4f6fb;
+            color: #1a1e2e;
+            min-height: 100vh;
+            font-size: 13px;
+        }
+        
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 52px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid #e2e6ef;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            z-index: 1100;
+        }
+        
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .menu-btn {
+            width: 32px;
+            height: 32px;
+            background: #f1f3f5;
+            border: 1px solid #cdd3e0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .logo-mark {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #4361ee, #00b4d8);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .logo-text {
+            font-weight: 800;
+            font-size: 0.85rem;
+        }
+        
+        .logo-text span {
+            color: #4361ee;
+        }
+        
+        .branch-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 2px 7px;
+            border-radius: 100px;
+            font-size: 0.55rem;
+            font-weight: 800;
+        }
+        
+        .time-badge {
+            background: #f1f3f5;
+            border: 1px solid #cdd3e0;
+            border-radius: 100px;
+            padding: 3px 9px;
+            font-family: monospace;
+            font-size: 0.6rem;
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 52px;
+            left: 0;
+            width: 220px;
+            height: calc(100vh - 52px);
+            background: rgba(255,255,255,0.98);
+            border-right: 1px solid #e2e6ef;
+            padding: 10px 8px;
+            z-index: 1000;
+            transition: transform 0.28s ease;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar.hidden {
+            transform: translateX(-100%);
+        }
+        
+        .sb-label {
+            font-size: 0.55rem;
+            font-weight: 700;
+            color: #a0a8c0;
+            text-transform: uppercase;
+            padding: 0 8px;
+            margin: 10px 0 4px;
+        }
+        
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            color: #6b7490;
+            text-decoration: none;
+            font-size: 0.76rem;
+            font-weight: 500;
+            border-radius: 10px;
+            margin-bottom: 2px;
+        }
+        
+        .sidebar a:hover {
+            background: rgba(67,97,238,0.08);
+            color: #4361ee;
+        }
+        
+        .sidebar a.active {
+            background: rgba(67,97,238,0.12);
+            color: #4361ee;
+            font-weight: 700;
+        }
+        
+        .logout-link {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            color: #ef4444;
+            font-size: 0.76rem;
+            font-weight: 700;
+            border-radius: 10px;
+            border: 1px solid rgba(239,68,68,0.15);
+            background: rgba(239,68,68,0.04);
+            cursor: pointer;
+        }
+        
+        .logout-link:hover {
+            background: rgba(239,68,68,0.1);
+        }
+        
+        .sb-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 999;
+            backdrop-filter: blur(3px);
+        }
+        
+        .sb-overlay.show {
+            display: block;
+        }
+        
+        main {
+            margin-top: 52px;
+            margin-left: 220px;
+            padding: 12px 10px 28px;
+            transition: margin-left 0.28s ease;
+        }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .stat-card {
+            background: white;
+            border: 1px solid #e2e6ef;
+            border-radius: 16px;
+            padding: 12px 10px;
+        }
+        
+        .stat-label {
+            font-size: 0.58rem;
+            font-weight: 700;
+            color: #6b7490;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+        
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #4361ee;
+            font-family: monospace;
+        }
+        
+        .content-bar {
+            background: white;
+            border: 1px solid #e2e6ef;
+            border-radius: 16px;
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .inv-value-pill {
+            font-family: monospace;
+            font-weight: 800;
+            color: #10b981;
+            font-size: 0.85rem;
+        }
+        
+        .action-flex {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .search-wrap {
+            flex: 1;
+            position: relative;
+        }
+        
+        .search-wrap input {
+            width: 100%;
+            padding: 7px 7px 7px 26px;
+            border: 1px solid #e2e6ef;
+            border-radius: 10px;
+            background: #f1f3f5;
+            font-size: 0.72rem;
+            outline: none;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.65rem;
+            color: #a0a8c0;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.7rem;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: #4361ee;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 4px 10px;
+            background: #f1f3f5;
+            border: 1px solid #e2e6ef;
+        }
+        
+        .table-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e6ef;
+            overflow: hidden;
+        }
+        
+        .table-scroll {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 500px;
+        }
+        
+        th {
+            text-align: left;
+            padding: 10px 8px;
+            background: #fafbff;
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            color: #6b7490;
+            border-bottom: 1px solid #e2e6ef;
+        }
+        
+        td {
+            padding: 9px 8px;
+            font-size: 0.72rem;
+            border-bottom: 1px solid #f0f2f8;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .code-chip {
+            font-family: monospace;
+            background: #eef2ff;
+            padding: 2px 7px;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: #4361ee;
+        }
+        
+        .stock-chip {
+            padding: 2px 8px;
+            border-radius: 40px;
+            font-weight: 800;
+            display: inline-block;
+            font-size: 0.62rem;
+        }
+        
+        .empty-row td {
+            text-align: center;
+            padding: 28px;
+            color: #6b7490;
+        }
+        
+        .dots-wrap {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dots-btn {
+            background: none;
+            border: 1px solid #cdd3e0;
+            border-radius: 7px;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            gap: 2px;
+        }
+        
+        .dots-btn .dot {
+            width: 3px;
+            height: 3px;
+            background: #6b7490;
+            border-radius: 50%;
+        }
+        
+        .dots-menu {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 4px);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.13);
+            min-width: 150px;
+            display: none;
+            z-index: 400;
+            border: 1px solid #e2e6ef;
+            overflow: hidden;
+        }
+        
+        .dots-menu.open {
+            display: block;
+        }
+        
+        .dots-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 9px 13px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.7rem;
+        }
+        
+        .dots-item:hover {
+            background: #f1f3f5;
+        }
+        
+        .dots-item.edit {
+            color: #4361ee;
+        }
+        
+        .dots-item.delete {
+            color: #ef4444;
+            border-top: 1px solid #e2e6ef;
+        }
+        
+        .dots-item.transfer {
+            color: #0f6b3a;
+            border-bottom: 1px solid #eef2f0;
+            background: rgba(16,185,129,0.05);
+        }
+        
+        .modal-bg {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 12px;
+            backdrop-filter: blur(3px);
+        }
+        
+        .modal-box {
+            background: white;
+            border-radius: 18px;
+            padding: 18px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-box h3 {
+            font-size: 0.88rem;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+        
+        .field-group {
+            margin-bottom: 10px;
+        }
+        
+        .field-group label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            font-weight: 800;
+            display: block;
+            margin-bottom: 3px;
+            color: #6b7490;
+        }
+        
+        .field-group input, .field-group select {
+            width: 100%;
+            padding: 7px 8px;
+            border-radius: 10px;
+            border: 1px solid #e2e6ef;
+            font-size: 0.72rem;
+            background: #f1f3f5;
+            outline: none;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+        }
+        
+        .form-actions .btn {
+            flex: 1;
+            justify-content: center;
+        }
+        
+        .toast-wrap {
+            position: fixed;
+            bottom: 14px;
+            right: 10px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .toast {
+            background: #1f2937;
+            color: white;
+            padding: 7px 13px;
+            border-radius: 30px;
+            font-size: 0.67rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+        
+        .toast.error {
+            background: #ef4444;
+        }
+        
+        .toast.success {
+            background: #10b981;
+        }
+        
+        .pw-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            backdrop-filter: blur(6px);
+        }
+        
+        .pw-box {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            width: calc(100% - 32px);
+            max-width: 320px;
+            text-align: center;
+        }
+        
+        .pw-box .lock-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #4361ee;
+        }
+        
+        .pw-box h3 {
+            font-size: 0.95rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        
+        .pw-box p {
+            font-size: 0.68rem;
+            color: #6b7490;
+            margin-bottom: 14px;
+        }
+        
+        .pw-box input {
+            width: 100%;
+            padding: 9px;
+            border: 1px solid #e2e6ef;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 0.85rem;
+            letter-spacing: 0.2em;
+            margin-bottom: 10px;
+            outline: none;
+            font-family: monospace;
+        }
+        
+        .pw-box input:focus {
+            border-color: #4361ee;
+        }
+        
+        .pw-error {
+            color: #ef4444;
+            font-size: 0.65rem;
+            margin-top: -6px;
+            margin-bottom: 8px;
+            display: none;
+        }
+        
+        @media (max-width: 640px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.visible {
+                transform: translateX(0) !important;
+            }
+            main {
+                margin-left: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header class="topbar">
+    <div class="topbar-left">
+        <div class="menu-btn" id="menuBtn"><i class="fas fa-bars"></i></div>
+        <div class="logo-mark"><i class="fas fa-warehouse"></i></div>
+        <div class="logo-text">Tri<span>smart</span></div>
+        <div class="branch-badge" id="branchBadge">BRANCH</div>
+    </div>
+    <div class="time-badge" id="timeBadge">--:--</div>
+</header>
+
+<nav class="sidebar" id="sidebar">
+    <div class="sb-label">Main</div>
+    <a href="Airtel.html"><i class="fas fa-mobile-alt"></i> Airtel Money</a>
+    <a href="warehouse.html" class="active"><i class="fas fa-warehouse"></i> Warehouse</a>
+    <a href="sale.html"><i class="fas fa-chart-line"></i> Sales</a>
+    <div class="sb-label">Tools</div>
+    <a href="Todo.html"><i class="fas fa-tasks"></i> To-Do</a>
+    <a href="lowstock.html"><i class="fas fa-exclamation-triangle"></i> Low Stock</a>
+    <a href="Report.html"><i class="fas fa-file-alt"></i> Daily Report</a>
+    <div class="logout-link" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Sign out</div>
+</nav>
+<div class="sb-overlay" id="sbOverlay"></div>
+
+<main id="mainContent">
+    <div class="stats-row" id="statsRow" style="display:none">
+        <div class="stat-card"><div class="stat-label">Products</div><div class="stat-value" id="statItems">0</div></div>
+        <div class="stat-card"><div class="stat-label">Total Stock</div><div class="stat-value" id="statStock">0</div></div>
+        <div class="stat-card"><div class="stat-label">Inv. Value</div><div class="stat-value" id="statValue">K0</div></div>
+    </div>
+
+    <div class="content-bar">
+        <div><i class="fas fa-archive" style="color:#4361ee"></i> <span id="branchNameDisplay">Warehouse</span></div>
+        <div class="inv-value-pill" id="totalStockPill">K0.00</div>
+    </div>
+
+    <div class="action-flex">
+        <div class="search-wrap">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="searchInput" placeholder="Search by code or name...">
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th id="actionsTh" style="display:none">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTbody">
+                    <tr class="empty-row"><td colspan="5">Loading inventory...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<div class="toast-wrap" id="toastContainer"></div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+    import { getFirestore, collection, query, where, updateDoc, deleteDoc, addDoc, doc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+        authDomain: "trismartstores.firebaseapp.com",
+        projectId: "trismartstores",
+        storageBucket: "trismartstores.appspot.com",
+        messagingSenderId: "416692703333",
+        appId: "1:416692703333:web:d4b60292621435c748f68c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let branchId = localStorage.getItem('branchId');
+    const loggedInUserRaw = (localStorage.getItem('loggedInUser') || localStorage.getItem('userName') || '').toLowerCase().trim();
+    const loggedInUser = loggedInUserRaw;
+    
+    const branchMap = {
+        'kabanana': { id: 'kabanana', name: 'Kabanana Branch', display: '🏪 KABANANA' },
+        'makeni': { id: 'makeni', name: 'Makeni Branch', display: '🏪 MAKENI' }
+    };
+    
+    if (!branchId) {
+        alert("Missing branch. Please login.");
+        window.location.href = "dashboard.html";
+    }
+    if (!branchMap[branchId]) {
+        localStorage.setItem('branchId', 'kabanana');
+        branchId = 'kabanana';
+    }
+    
+    const currentBranch = branchMap[branchId];
+    document.getElementById('branchNameDisplay').innerText = currentBranch.name;
+    document.getElementById('branchBadge').innerHTML = `<i class="fas fa-store"></i> ${currentBranch.display}`;
+    
+    const isAdmin = loggedInUser === 'chris';
+    const canEdit = isAdmin || loggedInUser === 'warehouseman';
+    
+    if (isAdmin) {
+        document.getElementById('statsRow').style.display = 'grid';
+    }
+    if (canEdit) {
+        document.getElementById('actionsTh').style.display = 'table-cell';
+    }
+
+    let editUnlocked = false;
+    const EDIT_PASSWORD = 'Abc12345';
+    
+    function showToast(msg, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> ${msg}`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+    
+    function promptPassword(callback) {
+        const overlay = document.createElement('div');
+        overlay.className = 'pw-overlay';
+        overlay.innerHTML = `
+            <div class="pw-box">
+                <div class="lock-icon"><i class="fas fa-lock"></i></div>
+                <h3>Authentication Required</h3>
+                <p>Enter password to edit, delete or transfer items</p>
+                <input type="password" id="pwInput" placeholder="••••••••" autocomplete="off">
+                <div class="pw-error" id="pwError">Incorrect password</div>
+                <button class="btn btn-primary" id="unlockBtn" style="width:100%;justify-content:center;margin-top:10px"><i class="fas fa-unlock-alt"></i> Unlock</button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        const input = overlay.querySelector('#pwInput');
+        const errorDiv = overlay.querySelector('#pwError');
+        const unlockBtn = overlay.querySelector('#unlockBtn');
+        
+        errorDiv.style.display = 'none';
+        input.focus();
+        
+        const verify = () => {
+            if (input.value === EDIT_PASSWORD) {
+                editUnlocked = true;
+                overlay.remove();
+                showToast("✓ Edit mode unlocked!", "success");
+                if (callback) callback();
+            } else {
+                errorDiv.style.display = 'block';
+                input.value = '';
+                input.focus();
+            }
+        };
+        
+        unlockBtn.onclick = verify;
+        input.addEventListener('keypress', (e) => { if (e.key === 'Enter') verify(); });
+        overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    }
+    
+    function withAuth(action) {
+        if (editUnlocked) {
+            action();
+        } else {
+            promptPassword(action);
+        }
+    }
+    
+    let inventory = [];
+    let unsubscribe = null;
+    
+    // TRANSFER LOGIC (ONLY FOR CHRIS)
+    async function transferItemToBranch(item, targetBranchId, quantityToTransfer) {
+        if (!isAdmin) {
+            showToast("Transfer only available for admin (chris).", "error");
+            return false;
+        }
+        if (quantityToTransfer <= 0 || quantityToTransfer > item.stock) {
+            showToast(`Invalid quantity. Stock available: ${item.stock}`, "error");
+            return false;
+        }
+        if (targetBranchId === branchId) {
+            showToast("Cannot transfer to the same branch", "error");
+            return false;
+        }
+        try {
+            // 1. decrement source
+            const newSourceStock = item.stock - quantityToTransfer;
+            await updateDoc(doc(db, 'inventory', item.id), { stock: newSourceStock });
+            
+            // 2. Check if product exists in target branch (same code)
+            const targetQuery = query(collection(db, 'inventory'), where('branchId', '==', targetBranchId), where('code', '==', item.code));
+            const targetSnap = await new Promise((resolve) => {
+                const unsub = onSnapshot(targetQuery, (snap) => { unsub(); resolve(snap); }, (err) => resolve(null));
+            });
+            
+            let targetItem = null;
+            if (targetSnap && !targetSnap.empty) {
+                targetItem = targetSnap.docs[0];
+                const existingData = targetItem.data();
+                const newStock = (existingData.stock || 0) + quantityToTransfer;
+                await updateDoc(doc(db, 'inventory', targetItem.id), { stock: newStock });
+            } else {
+                // Create new product in target branch
+                const newProduct = {
+                    code: item.code,
+                    name: item.name,
+                    price: item.price,
+                    stock: quantityToTransfer,
+                    branchId: targetBranchId,
+                    createdAt: new Date().toISOString()
+                };
+                await addDoc(collection(db, 'inventory'), newProduct);
+            }
+            showToast(`✅ Transferred ${quantityToTransfer} x ${item.code} to ${branchMap[targetBranchId]?.name || targetBranchId}`, "success");
+            return true;
+        } catch (err) {
+            showToast(`Transfer failed: ${err.message}`, "error");
+            return false;
+        }
+    }
+    
+    window.transferItem = function(itemId) {
+        const item = inventory.find(i => i.id === itemId);
+        if (!item) {
+            showToast("Item not found", "error");
+            return;
+        }
+        
+        // Only Chris gets the transfer option; but we double-check inside.
+        if (!isAdmin) {
+            showToast("Transfer option only available for Chris (admin)", "error");
+            return;
+        }
+        
+        withAuth(async () => {
+            // Build modal with quantity + target branch selector
+            const modalDiv = document.createElement('div');
+            modalDiv.className = 'modal-bg';
+            modalDiv.innerHTML = `
+                <div class="modal-box">
+                    <h3><i class="fas fa-exchange-alt" style="color:#0f6b3a"></i> Transfer Stock</h3>
+                    <p style="font-size:0.7rem; margin-bottom:12px;">Product: <strong>${escapeHtml(item.name)} (${escapeHtml(item.code)})</strong><br>Current stock: ${item.stock}</p>
+                    <div class="field-group">
+                        <label>Target Branch</label>
+                        <select id="targetBranchSelect">
+                            ${Object.entries(branchMap).map(([key, val]) => `<option value="${key}" ${key === branchId ? 'disabled' : ''}>${val.name} ${key === branchId ? '(current)' : ''}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label>Quantity to Transfer</label>
+                        <input type="number" id="transferQty" min="1" max="${item.stock}" value="${Math.min(1, item.stock)}" step="1">
+                    </div>
+                    <div class="form-actions">
+                        <button id="confirmTransferBtn" class="btn btn-primary" style="background:#0f6b3a;">Confirm Transfer</button>
+                        <button id="cancelTransferBtn" class="btn btn-sm">Cancel</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modalDiv);
+            
+            const qtyInput = modalDiv.querySelector('#transferQty');
+            const targetSelect = modalDiv.querySelector('#targetBranchSelect');
+            const confirmBtn = modalDiv.querySelector('#confirmTransferBtn');
+            const cancelBtn = modalDiv.querySelector('#cancelTransferBtn');
+            
+            const runTransfer = async () => {
+                let qty = parseInt(qtyInput.value);
+                if (isNaN(qty) || qty <= 0) qty = 1;
+                if (qty > item.stock) {
+                    showToast(`Max quantity is ${item.stock}`, "error");
+                    return;
+                }
+                const targetBranchId = targetSelect.value;
+                if (targetBranchId === branchId) {
+                    showToast("Select different branch", "error");
+                    return;
+                }
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Transferring...';
+                await transferItemToBranch(item, targetBranchId, qty);
+                modalDiv.remove();
+            };
+            
+            confirmBtn.onclick = runTransfer;
+            cancelBtn.onclick = () => modalDiv.remove();
+            modalDiv.onclick = (e) => { if (e.target === modalDiv) modalDiv.remove(); };
+        });
+    };
+    
+    // Edit & Delete functions with auth
+    window.editItem = function(itemId) {
+        withAuth(async () => {
+            const item = inventory.find(i => i.id === itemId);
+            if (!item) { showToast("Item not found", "error"); return; }
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal-bg';
+            modal.innerHTML = `
+                <div class="modal-box">
+                    <h3><i class="fas fa-edit"></i> Edit Product</h3>
+                    <form id="editForm">
+                        <div class="field-group"><label>Product Code</label><input type="text" name="code" value="${escapeHtml(item.code)}" required></div>
+                        <div class="field-group"><label>Product Name</label><input type="text" name="name" value="${escapeHtml(item.name)}" required></div>
+                        <div class="field-group"><label>Price (K)</label><input type="number" name="price" step="0.01" value="${item.price}" required></div>
+                        <div class="field-group"><label>Stock Quantity</label><input type="number" name="stock" value="${item.stock}" required></div>
+                        <div class="form-actions"><button type="submit" class="btn btn-primary">Save Changes</button><button type="button" class="btn btn-sm" id="cancelBtn">Cancel</button></div>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            const form = modal.querySelector('#editForm');
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const code = form.code.value.trim().toUpperCase();
+                const name = form.name.value.trim();
+                const price = parseFloat(form.price.value);
+                const stock = parseInt(form.stock.value);
+                if (!code || !name || isNaN(price) || price < 0 || isNaN(stock) || stock < 0) {
+                    showToast("Invalid fields", "error");
+                    return;
+                }
+                if (code !== item.code && inventory.some(i => i.code === code && i.id !== item.id)) {
+                    showToast("Duplicate product code", "error");
+                    return;
+                }
+                const submitBtn = form.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                try {
+                    await updateDoc(doc(db, 'inventory', item.id), { code, name, price, stock });
+                    modal.remove();
+                    showToast(`${item.code} updated!`, "success");
+                } catch (err) { showToast("Update failed", "error"); submitBtn.disabled = false; submitBtn.innerHTML = 'Save Changes'; }
+            };
+            modal.querySelector('#cancelBtn').onclick = () => modal.remove();
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        });
+    };
+    
+    window.deleteItem = function(itemId) {
+        withAuth(async () => {
+            const item = inventory.find(i => i.id === itemId);
+            if (!item) return;
+            const confirmModal = document.createElement('div');
+            confirmModal.className = 'modal-bg';
+            confirmModal.innerHTML = `<div class="modal-box"><h3 style="color:#ef4444;"><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h3><p style="margin:15px 0;">Delete <strong>${escapeHtml(item.name)}</strong> (${escapeHtml(item.code)})?</p><div class="form-actions"><button id="confirmDelete" class="btn btn-danger">Delete</button><button id="cancelDelete" class="btn btn-sm">Cancel</button></div></div>`;
+            document.body.appendChild(confirmModal);
+            const confirmBtn = confirmModal.querySelector('#confirmDelete');
+            confirmBtn.onclick = async () => {
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                try {
+                    await deleteDoc(doc(db, 'inventory', item.id));
+                    confirmModal.remove();
+                    showToast(`${item.code} deleted`, "success");
+                } catch (err) { showToast("Delete failed", "error"); confirmBtn.disabled = false; confirmBtn.innerHTML = 'Delete'; }
+            };
+            confirmModal.querySelector('#cancelDelete').onclick = () => confirmModal.remove();
+            confirmModal.onclick = (e) => { if (e.target === confirmModal) confirmModal.remove(); };
+        });
+    };
+    
+    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
+    
+    function closeAllMenus() { document.querySelectorAll('.dots-menu.open').forEach(m => m.classList.remove('open')); }
+    window.toggleMenu = function(e, id) { e.stopPropagation(); closeAllMenus(); const menu = document.getElementById(`menu-${id}`); if (menu) menu.classList.add('open'); };
+    window.closeAllMenus = closeAllMenus;
+    document.addEventListener('click', closeAllMenus);
+    
+    function renderTable() {
+        const tbody = document.getElementById('inventoryTbody');
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        let filtered = inventory.filter(i => i.name?.toLowerCase().includes(search) || i.code?.toLowerCase().includes(search));
+        if (!filtered.length) {
+            const cols = canEdit ? 5 : 4;
+            tbody.innerHTML = `<tr class="empty-row"><td colspan="${cols}">📦 No products found</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = '';
+        filtered.forEach(item => {
+            const bg = item.stock === 0 ? '#fee2e2' : item.stock < 5 ? '#fff3e0' : '#d1fae5';
+            const color = item.stock === 0 ? '#b91c1c' : item.stock < 5 ? '#b45309' : '#065f46';
+            const row = tbody.insertRow();
+            let actionsHtml = '';
+            if (canEdit) {
+                actionsHtml = `
+                    <td>
+                        <div class="dots-wrap">
+                            <button class="dots-btn" onclick="toggleMenu(event, '${item.id}')"><span class="dot"></span><span class="dot"></span><span class="dot"></span></button>
+                            <div class="dots-menu" id="menu-${item.id}">
+                                <button class="dots-item edit" onclick="closeAllMenus(); editItem('${item.id}')"><i class="fas fa-edit"></i> Edit Product</button>
+                                ${isAdmin ? `<button class="dots-item transfer" onclick="closeAllMenus(); transferItem('${item.id}')"><i class="fas fa-exchange-alt"></i> Transfer to Branch</button>` : ''}
+                                <button class="dots-item delete" onclick="closeAllMenus(); deleteItem('${item.id}')"><i class="fas fa-trash-alt"></i> Delete Product</button>
+                            </div>
+                        </div>
+                    </td>
+                `;
+            }
+            row.innerHTML = `
+                <td><span class="code-chip">${escapeHtml(item.code)}</span></td>
+                <td><strong>${escapeHtml(item.name)}</strong></td>
+                <td>K${item.price.toFixed(2)}</td>
+                <td><span class="stock-chip" style="background:${bg};color:${color}">${item.stock}</span></td>
+                ${actionsHtml}
+            `;
+        });
+    }
+    
+    function updateStats() {
+        const totalStock = inventory.reduce((s, i) => s + i.stock, 0);
+        const totalValue = inventory.reduce((s, i) => s + (i.price * i.stock), 0);
+        if (isAdmin) {
+            document.getElementById('statItems').innerText = inventory.length;
+            document.getElementById('statStock').innerText = totalStock;
+            document.getElementById('statValue').innerHTML = `K${totalValue.toFixed(0)}`;
+        }
+        document.getElementById('totalStockPill').innerHTML = `K${totalValue.toFixed(2)}`;
+    }
+    
+    function startListener() {
+        if (unsubscribe) unsubscribe();
+        const q = query(collection(db, 'inventory'), where('branchId', '==', branchId));
+        unsubscribe = onSnapshot(q, (snap) => {
+            inventory = snap.docs.map(d => ({ id: d.id, ...d.data(), stock: Number(d.data().stock) || 0, price: Number(d.data().price) || 0 }));
+            inventory.sort((a, b) => (a.code || '').localeCompare(b.code || ''));
+            updateStats();
+            renderTable();
+        }, (error) => { showToast('Firestore error: ' + error.message, 'error'); });
+    }
+    
+    document.getElementById('searchInput').addEventListener('input', renderTable);
+    
+    const sidebar = document.getElementById('sidebar'); const overlay = document.getElementById('sbOverlay'); const menuBtn = document.getElementById('menuBtn'); const mainEl = document.getElementById('mainContent');
+    function isMobile() { return window.innerWidth <= 640; }
+    function initSidebar() { if (!isMobile()) { sidebar.classList.remove('hidden'); mainEl.style.marginLeft = '220px'; } else { sidebar.classList.remove('visible'); mainEl.style.marginLeft = '0'; } }
+    menuBtn.addEventListener('click', () => { if (isMobile()) { sidebar.classList.toggle('visible'); overlay.classList.toggle('show'); } else { sidebar.classList.toggle('hidden'); mainEl.style.marginLeft = sidebar.classList.contains('hidden') ? '0' : '220px'; } });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('visible'); overlay.classList.remove('show'); });
+    window.addEventListener('resize', initSidebar); initSidebar();
+    function updateClock() { document.getElementById('timeBadge').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+    setInterval(updateClock, 1000); updateClock();
+    document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.clear(); window.location.href = 'index.html'; });
+    startListener();
+    showToast(`Welcome ${loggedInUser === 'chris' ? 'Chris (Admin)' : loggedInUser} | ${currentBranch.name}`, 'success');
+    if (isAdmin) showToast("🔁 Transfer button active: Use 3-dot menu → Transfer to Branch", "success");
+</script>
+</body>
+</html>

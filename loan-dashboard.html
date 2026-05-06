@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Trismart Loans - Dashboard</title>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Firebase (v8) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <style>
+    :root{
+      --sidebar-width:260px;
+      --primary:#1e3c72;
+      --accent:#2a5298;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0;font-family:Inter, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif}
+    body{background:#f5f7fb;color:#222;min-height:100vh}
+    /* Sidebar */
+    .sidebar{
+      position:fixed; top:0; left:0; bottom:0;
+      width:var(--sidebar-width);
+      background:linear-gradient(180deg,var(--primary),var(--accent));
+      color:#fff; padding:20px; display:flex; flex-direction:column; gap:18px;
+      box-shadow:6px 0 30px rgba(16,24,40,0.12); transition:transform .28s ease; z-index:60; overflow:auto;
+    }
+    .sidebar.hidden{ transform: translateX(-120%); }
+    .brand{ display:flex; gap:12px; align-items:center }
+    .logo-icon{ font-size:1.4rem; padding:8px; background:rgba(255,255,255,0.06); border-radius:8px }
+    .title{ font-weight:700; letter-spacing:.4px; font-size:1.05rem }
+
+    .nav{ display:flex; flex-direction:column; gap:8px; margin-top:6px }
+    .nav a{ display:flex; gap:12px; align-items:center; padding:10px; color:rgba(255,255,255,0.95); text-decoration:none; border-radius:8px; transition:background .12s }
+    .nav a:hover{ background: rgba(255,255,255,0.06); transform:translateX(4px); }
+    .nav a.active{ background: rgba(255,255,255,0.10); border-right:4px solid rgba(255,255,255,0.12); }
+
+    .footer{ margin-top:auto; font-size:.9rem; opacity:.95 }
+
+    /* Main */
+    .main{
+      margin-left: var(--sidebar-width); transition: margin-left .28s ease; padding-bottom:60px; min-height:100vh;
+    }
+    .main.sidebar-hidden{ margin-left: 0; }
+
+    .header{
+      background:#fff; padding:14px 20px; box-shadow:0 2px 10px rgba(0,0,0,0.06);
+      display:flex; align-items:center; justify-content:space-between; gap:12px; position:sticky; top:0; z-index:40;
+    }
+    .header-left{ display:flex; align-items:center; gap:12px; }
+    .sidebar-toggle{ width:40px;height:40px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center; }
+
+    .avatar{ width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;font-weight:700 }
+
+    .container{ padding:22px; max-width:1200px; margin:18px auto; }
+
+    /* Stats */
+    .stats{ display:grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-bottom:18px }
+    .stat{ background:#fff;padding:14px;border-radius:10px; box-shadow:0 6px 18px rgba(16,24,40,0.05) }
+    .stat .label{ color:#666; font-size:.88rem }
+    .stat .value{ font-weight:800;color:var(--primary); font-size:1.25rem; margin-top:6px }
+
+    /* Active loans table */
+    .card{ background:#fff;border-radius:10px; box-shadow:0 6px 18px rgba(16,24,40,0.05); overflow:visible }
+    .card-header{ padding:14px;border-bottom:1px solid #eef2f7; display:flex; justify-content:space-between; align-items:center }
+    .card-body{ padding:12px; overflow:visible }
+    .table-wrap{ max-height:58vh; overflow:auto; border-radius:6px; padding-right:6px }
+
+    table{ width:100%; border-collapse:collapse; min-width:520px }
+    th{ padding:12px; text-align:left; background:#fafbfc; color:var(--primary); font-weight:700; border-bottom:1px solid #eef2f7 }
+    td{ padding:12px; border-bottom:1px solid #f1f5f9; vertical-align:middle }
+    tr:hover{ background:#fbfdff }
+
+    /* Next payment states */
+    .next-normal{ color:#111 }
+    .next-soon{ color:#b45f04; font-weight:700; background: rgba(185,115,15,0.06) }
+    .next-due{ color:#c0392b; font-weight:800; background: rgba(192,57,43,0.06) }
+
+    .muted{ color:#666; font-size:.92rem }
+
+    @media (max-width:900px){
+      .sidebar{ transform:translateX(-120%); position:fixed }
+      .sidebar.open{ transform:translateX(0) }
+      .main{ margin-left:0; padding:16px }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo-icon"><i class="fas fa-hand-holding-usd"></i></div>
+      <div class="title">TRI<span style="color:rgba(255,255,255,0.95)">SMART</span></div>
+    </div>
+
+    <nav class="nav" aria-label="Main navigation">
+      <a href="loan-dashboard.html" class="active"><i class="fas fa-chart-pie"></i><span style="margin-left:6px">Dashboard</span></a>
+      <a href="customers.html"><i class="fas fa-users"></i><span style="margin-left:6px">Customers</span></a>
+      <a href="loans.html"><i class="fas fa-file-invoice-dollar"></i><span style="margin-left:6px">Loans</span></a>
+      <a href="accounts.html"><i class="fas fa-wallet"></i><span style="margin-left:6px">Accounts</span></a>
+      <a href="#"><i class="fas fa-chart-line"></i><span style="margin-left:6px">Reports</span></a>
+      <a href="#" id="sidebarLogout"><i class="fas fa-sign-out-alt"></i><span style="margin-left:6px">Logout</span></a>
+    </nav>
+
+    <div class="footer">
+      <div style="font-weight:700">Welcome, <span id="sidebarName">Chris</span></div>
+      <div class="muted">Loan management</div>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <header class="header">
+      <div class="header-left">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+        <div style="font-weight:700;color:var(--primary)">TRI SMART LOANS</div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="avatar" id="userAvatar">C</div>
+      </div>
+    </header>
+
+    <div class="container">
+      <div id="errorBox"></div>
+
+      <div class="stats">
+        <div class="stat"><div class="label">TOTAL OWED (outstanding)</div><div class="value" id="totalOwed">ZMW 0.00</div></div>
+        <div class="stat"><div class="label">AMOUNT PAID</div><div class="value" id="amountPaid">ZMW 0.00</div></div>
+        <div class="stat"><div class="label">ACTIVE LOANS</div><div class="value" id="activeCount">0</div></div>
+        <div class="stat"><div class="label">TOTAL PEOPLE</div><div class="value" id="totalPeople">0</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <strong>Active Loans</strong>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="search" placeholder="Search loan ID or customer..." style="padding:8px;border-radius:8px;border:1px solid #e6edf3;width:220px">
+            <label style="display:flex;align-items:center;gap:6px;font-weight:600">
+              <input type="checkbox" id="filterOverdue"> Only overdue
+            </label>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="table-wrap" id="cardBody">
+            <div id="loadingState" style="text-align:center;padding:18px;color:#666">Loading active loans...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+      authDomain: "trismartstores.firebaseapp.com",
+      projectId: "trismartstores",
+      storageBucket: "trismartstores.appspot.com",
+      messagingSenderId: "416692703333",
+      appId: "1:416692703333:web:d4b60292621435c748f68c",
+      measurementId: "G-NJPQ7L3QWJ"
+    };
+
+    // Init Firebase
+    let app, db;
+    try {
+      app = firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+    } catch (e) {
+      console.warn('Firebase init warning', e);
+      if (firebase.apps && firebase.apps.length) { app = firebase.app(); db = firebase.firestore(); }
+    }
+
+    const currentUser = localStorage.getItem('username') || 'Chris';
+    document.getElementById('sidebarName').textContent = currentUser;
+    document.getElementById('userAvatar').textContent = currentUser.charAt(0).toUpperCase();
+
+    // DOM
+    const errorBox = document.getElementById('errorBox');
+    const cardBody = document.getElementById('cardBody');
+    const loadingState = document.getElementById('loadingState');
+    const totalOwedEl = document.getElementById('totalOwed');
+    const amountPaidEl = document.getElementById('amountPaid');
+    const activeCountEl = document.getElementById('activeCount');
+    const totalPeopleEl = document.getElementById('totalPeople');
+    const searchInput = document.getElementById('search');
+    const filterOverdue = document.getElementById('filterOverdue');
+
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const main = document.getElementById('main');
+
+    let loans = [], customers = [];
+
+    // Sidebar hide/unhide
+    function setSidebarHidden(hidden) {
+      if (hidden) {
+        sidebar.classList.add('hidden');
+        main.classList.add('sidebar-hidden');
+      } else {
+        sidebar.classList.remove('hidden');
+        main.classList.remove('sidebar-hidden');
+      }
+    }
+
+    sidebarToggle.addEventListener('click', () => {
+      if (window.innerWidth < 900) {
+        sidebar.classList.toggle('open');
+      } else {
+        const hidden = sidebar.classList.contains('hidden');
+        setSidebarHidden(!hidden);
+      }
+    });
+
+    document.querySelectorAll('.nav a').forEach(a=>{
+      a.addEventListener('click', ()=> { if (window.innerWidth < 900) sidebar.classList.remove('open'); });
+    });
+
+    document.getElementById('sidebarLogout').addEventListener('click', ()=>{
+      localStorage.removeItem('isLoggedIn'); localStorage.removeItem('username'); window.location.href='index.html';
+    });
+
+    // Utils
+    function showError(msg, details) {
+      console.error(msg, details || '');
+      errorBox.innerHTML = `<div class="error-box"><strong>Error:</strong> ${escapeHtml(msg)}${details ? `<div style="margin-top:8px;font-size:.9rem;color:#333">${escapeHtml(details)}</div>` : ''}</div>`;
+    }
+    function clearError(){ errorBox.innerHTML = ''; }
+    function escapeHtml(s){ if(s===undefined||s===null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+    function toDate(v){ if(!v) return null; if(v && typeof v.toDate==='function') return v.toDate(); if(typeof v==='string'){ const d=new Date(v); return isNaN(d)?null:d } if(typeof v==='number') return new Date(v); return null; }
+    function formatZ(n){ return 'ZMW ' + Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadActiveLoans();
+      searchInput.addEventListener('input', applyFilters);
+      filterOverdue.addEventListener('change', applyFilters);
+    });
+
+    async function loadActiveLoans() {
+      clearError();
+      loadingState.style.display = 'block';
+      cardBody.innerHTML = '';
+      loans = []; customers = [];
+      try {
+        // customers
+        let custSnap;
+        try { custSnap = await db.collection('customers').where('createdBy','==',currentUser).get(); }
+        catch(e1){
+          try { custSnap = await db.collection('customers').where('userId','==',currentUser).get(); }
+          catch(e2){
+            try { custSnap = await db.collection('customers').get(); }
+            catch(eAll){ throw { message: 'Unable to read customers. Check Firestore rules or field names.', original: eAll }; }
+          }
+        }
+        customers = custSnap.docs.map(d => ({ id:d.id, ...d.data() }));
+
+        // loans
+        let loanDocs;
+        try {
+          loanDocs = (await db.collection('loans').where('createdBy','==',currentUser).orderBy('createdAt','desc').get()).docs;
+        } catch (err1) {
+          try {
+            loanDocs = (await db.collection('loans').where('userId','==',currentUser).orderBy('createdAt','desc').get()).docs;
+          } catch (err2) {
+            try {
+              const all = await db.collection('loans').get();
+              loanDocs = all.docs.filter(doc => {
+                const d = doc.data();
+                if (d.createdBy && d.createdBy === currentUser) return true;
+                if (d.userId && d.userId === currentUser) return true;
+                return false;
+              });
+            } catch(errAll){
+              throw { message: 'Unable to read loans. Check Firestore rules or field names.', original: errAll };
+            }
+          }
+        }
+
+        loans = loanDocs.map(d => {
+          const data = d.data();
+          return {
+            id: d.id,
+            loanId: data.loanId || '',
+            customerName: data.customerName || (customers.find(c=>c.id===data.customerId) ? `${customers.find(c=>c.id===data.customerId).firstName||''} ${customers.find(c=>c.id===data.customerId).lastName||''}`.trim() : ''),
+            totalAmount: Number(data.totalAmount || data.amount || 0),
+            paidAmount: Number(data.paidAmount || 0),
+            remainingAmount: Number(data.remainingAmount != null ? data.remainingAmount : ((data.totalAmount || data.amount || 0) - (data.paidAmount || 0))),
+            status: (data.status || 'active').toLowerCase(),
+            nextPaymentDate: toDate(data.nextPaymentDate || null),
+            nextPaymentAmount: Number(data.nextPaymentAmount || 0)
+          };
+        }).filter(l => l.status === 'active');
+
+        // compute totals
+        const totalOwed = loans.reduce((s,l)=> s + (Number(l.remainingAmount)||0), 0);
+        const amountPaid = loans.reduce((s,l)=> s + (Number(l.paidAmount)||0), 0);
+        totalOwedEl.textContent = formatZ(totalOwed);
+        amountPaidEl.textContent = formatZ(amountPaid);
+        activeCountEl.textContent = loans.length;
+        totalPeopleEl.textContent = customers.length;
+
+        // sort by nextPaymentDate (nulls last)
+        loans.sort((a,b)=>{
+          if(!a.nextPaymentDate && !b.nextPaymentDate) return 0;
+          if(!a.nextPaymentDate) return 1;
+          if(!b.nextPaymentDate) return -1;
+          return new Date(a.nextPaymentDate) - new Date(b.nextPaymentDate);
+        });
+
+        renderTable(loans);
+      } catch (err) {
+        const msg = err && err.message ? err.message : 'Error loading data';
+        const details = err && err.original ? (err.original.message || err.original.toString()) : (err && err.stack ? err.stack : '');
+        showError(msg, details);
+        cardBody.innerHTML = '<div style="padding:18px;color:#b00020">Error loading active loans — see message above.</div>';
+      } finally {
+        loadingState.style.display = 'none';
+      }
+    }
+
+    function renderTable(list) {
+      if(!list || list.length===0){ cardBody.innerHTML = '<div style="padding:18px;color:#666">No active loans found.</div>'; return; }
+      const now = new Date();
+      let html = `<table><thead><tr><th>Loan ID</th><th>Customer Name</th><th>Payment Due</th></tr></thead><tbody>`;
+      list.forEach(l=>{
+        let label = 'Not set', cls = 'next-normal', days = null;
+        if (l.nextPaymentDate) {
+          const dt = new Date(l.nextPaymentDate);
+          days = Math.ceil((dt - now) / (1000*60*60*24));
+          if (days <= 0) {
+            label = `OVERDUE by ${Math.abs(days)} day${Math.abs(days)===1?'':'s'}`;
+            cls = 'next-due';
+          } else {
+            label = `Due in ${days} day${days===1?'':'s'}`;
+            if (days <= 3) cls = 'next-soon';
+          }
+        }
+        html += `<tr>
+          <td>${escapeHtml(l.loanId || l.id.slice(0,8))}</td>
+          <td>${escapeHtml(l.customerName || 'Unknown')}</td>
+          <td class="${cls}" data-days="${days!==null?days:''}">${escapeHtml(label)}</td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+      cardBody.innerHTML = html;
+    }
+
+    function applyFilters(){
+      const term = (searchInput.value || '').toLowerCase().trim();
+      const onlyOverdue = filterOverdue.checked;
+      let filtered = loans.slice();
+
+      if (term) filtered = filtered.filter(l => (l.customerName||'').toLowerCase().includes(term) || (l.loanId||'').toLowerCase().includes(term) || (l.id||'').toLowerCase().includes(term));
+      if (onlyOverdue) filtered = filtered.filter(l => l.nextPaymentDate && new Date(l.nextPaymentDate) <= new Date());
+
+      renderTable(filtered);
+    }
+  </script>
+</body>
+</html>

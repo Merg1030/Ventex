@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trismart · Total Sales</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary:   #4361ee;
+      --accent:    #4cc9f0;
+      --danger:    #f72585;
+      --warning:   #f8961e;
+      --success:   #2ecc71;
+      --bg:        #f4f6fb;
+      --surface:   #ffffff;
+      --bg-lighter:#f1f3f5;
+      --border:    #dee2e6;
+      --text:      #212529;
+      --text-fade: #6c757d;
+      --radius:    10px;
+      --radius-lg: 16px;
+      --shadow:    0 2px 12px rgba(67,97,238,0.08);
+      --shadow-lg: 0 8px 32px rgba(67,97,238,0.13);
+    }
+    * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+    *::-webkit-scrollbar { width: 5px; height: 5px; }
+    *::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+    html, body { height: 100%; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 18px; min-height: 60px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100;
+      flex-wrap: wrap; gap: 10px;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .back-btn {
+      width: 34px; height: 34px; border-radius: var(--radius);
+      border: 1px solid var(--border); background: var(--bg-lighter);
+      color: var(--text-fade); display: flex; align-items: center;
+      justify-content: center; cursor: pointer; text-decoration: none; font-size: .82rem;
+      transition: all .15s;
+    }
+    .back-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+    .page-title { font-size: 1rem; font-weight: 700; color: var(--primary); font-family: 'DM Sans', sans-serif; }
+    .topbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .month-pick {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--bg-lighter); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 7px 12px; font-size: .82rem; color: var(--text-fade);
+    }
+    .month-pick input[type="month"] {
+      background: transparent; border: none; font-family: 'DM Sans', sans-serif;
+      font-size: .82rem; font-weight: 600; color: var(--text); outline: none; cursor: pointer;
+    }
+    .month-pick input[type="month"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .6; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif; font-size: .8rem; font-weight: 600;
+      cursor: pointer; border: none; transition: all .15s; white-space: nowrap;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), #3a56d4); color: white; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(67,97,238,.3); }
+    .btn-ghost { background: var(--bg-lighter); color: var(--text-fade); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* Filter Bar */
+    .filter-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface); padding: 12px 18px;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px;
+    }
+    .filter-group {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .filter-item {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg-lighter); padding: 6px 14px;
+      border-radius: var(--radius); border: 1px solid var(--border);
+    }
+    .filter-item i {
+      color: var(--primary); font-size: .75rem;
+    }
+    .filter-item label {
+      font-size: .7rem; font-weight: 700; color: var(--text-fade);
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+    .filter-item select, .filter-item input {
+      background: transparent; border: none; padding: 6px 0;
+      font-size: .8rem; font-weight: 500; color: var(--text);
+      outline: none; cursor: pointer;
+    }
+    .filter-item input {
+      width: 140px;
+    }
+    .filter-item input::placeholder {
+      color: var(--text-fade);
+    }
+    .clear-filter {
+      background: var(--bg-lighter); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 6px 16px;
+      font-size: .75rem; font-weight: 600; color: var(--text-fade);
+      cursor: pointer; transition: all .15s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .clear-filter:hover {
+      background: var(--danger); color: white; border-color: var(--danger);
+    }
+    .filter-stats {
+      font-size: .7rem; color: var(--text-fade); padding: 0 8px;
+    }
+
+    .main { flex: 1; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+
+    .table-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); box-shadow: var(--shadow);
+      overflow: hidden; flex: 1; display: flex; flex-direction: column;
+    }
+    .table-scroll { overflow-x: auto; flex: 1; }
+    table { width: 100%; border-collapse: collapse; font-size: .84rem; min-width: 580px; }
+    thead th {
+      background: var(--bg-lighter); color: var(--text-fade);
+      font-size: .64rem; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; padding: 11px 14px; text-align: left;
+      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10;
+      white-space: nowrap;
+    }
+    th.num, td.num { text-align: right; }
+    th:last-child, td:last-child { text-align: center; width: 60px; }
+    td {
+      padding: 11px 14px; border-bottom: 1px solid #f0f2f8;
+      color: var(--text); vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background .1s; }
+    tbody tr:hover td { background: #f8f9ff; }
+    .empty-row td { text-align: center; padding: 52px 20px; color: var(--text-fade); font-size: .88rem; }
+    .amount-neutral { color: var(--text); font-weight: 500; }
+    .amount-bal { color: var(--primary); font-weight: 700; }
+
+    /* Action Menu */
+    .action-btn {
+      background: none; border: none; color: var(--text-fade);
+      cursor: pointer; padding: 6px; border-radius: 6px;
+      transition: all .15s; font-size: .9rem;
+    }
+    .action-btn:hover { background: var(--bg-lighter); color: var(--text); }
+    .menu-container { position: relative; display: inline-block; }
+    .dropdown-menu {
+      position: absolute; right: 0; top: 100%; z-index: 1000;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 5px; min-width: 120px;
+      box-shadow: var(--shadow-lg); display: none;
+    }
+    .dropdown-menu.show { display: block; }
+    .menu-item {
+      display: flex; align-items: center; gap: 8px; padding: 9px 12px;
+      color: var(--text); font-size: .82rem; border-radius: 7px;
+      transition: all .15s; cursor: pointer; border: none;
+      background: transparent; width: 100%; text-align: left;
+    }
+    .menu-item:hover { background: var(--bg-lighter); }
+    .menu-item.delete:hover { color: var(--danger); }
+    .menu-item i { width: 14px; font-size: .8rem; }
+
+    /* Modal */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.45); backdrop-filter: blur(4px);
+      z-index: 900; align-items: center; justify-content: center;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 26px;
+      width: 90%; max-width: 460px; box-shadow: var(--shadow-lg);
+      animation: mIn .2s ease; max-height: 92vh; overflow-y: auto;
+    }
+    @keyframes mIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-head h2 { font-size: 1rem; font-weight: 700; color: var(--text); font-family: 'DM Sans', sans-serif; }
+    .close-btn {
+      width: 28px; height: 28px; border-radius: 7px;
+      border: 1px solid var(--border); background: var(--bg-lighter);
+      color: var(--text-fade); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; transition: all .15s;
+    }
+    .close-btn:hover { background: var(--danger); color: white; border-color: var(--danger); }
+    .field { margin-bottom: 13px; }
+    .field label {
+      display: block; font-size: .64rem; font-weight: 700;
+      letter-spacing: .09em; text-transform: uppercase;
+      color: var(--text-fade); margin-bottom: 5px;
+    }
+    .field input, .field select {
+      width: 100%; padding: 9px 12px;
+      background: var(--bg-lighter); border: 1.5px solid var(--border);
+      border-radius: var(--radius); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: .88rem; outline: none;
+      transition: border-color .15s;
+    }
+    .field input::placeholder { color: var(--text-fade); }
+    .field input:focus, .field select:focus { border-color: var(--primary); background: white; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-error { color: var(--danger); font-size: .78rem; margin-bottom: 10px; min-height: 14px; }
+    .save-btn {
+      width: 100%; padding: 12px;
+      background: linear-gradient(135deg, var(--primary), #3a56d4);
+      color: white; border: none; border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif; font-size: .9rem; font-weight: 700;
+      cursor: pointer; transition: all .15s;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      margin-top: 4px;
+    }
+    .save-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(67,97,238,.3); }
+    .save-btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+    .delete-btn {
+      width: 100%; padding: 12px;
+      background: linear-gradient(135deg, var(--danger), #c82333);
+      color: white; border: none; border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif; font-size: .9rem; font-weight: 700;
+      cursor: pointer; transition: all .15s;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    .delete-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(247,37,133,.3); }
+
+    .toast-wrap {
+      position: fixed; bottom: 20px; right: 16px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 6px; pointer-events: none;
+      max-width: calc(100vw - 32px);
+    }
+    .toast {
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); border-radius: var(--radius);
+      padding: 10px 15px; font-size: .82rem; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+      box-shadow: var(--shadow-lg); animation: tIn .2s ease;
+    }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.success i { color: var(--success); }
+    .toast.error { border-left: 4px solid var(--danger); }
+    .toast.error i { color: var(--danger); }
+    .toast.info { border-left: 4px solid var(--warning); }
+    .toast.info i { color: var(--warning); }
+    @keyframes tIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+    @media(max-width: 640px) {
+      .topbar { padding: 0 12px; }
+      .main { padding: 12px; }
+      .filter-bar { flex-direction: column; align-items: stretch; }
+      .filter-group { flex-direction: column; align-items: stretch; }
+      .filter-item { justify-content: space-between; }
+      .field-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="cashbook.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    <span class="page-title">Total Sales</span>
+  </div>
+  <div class="topbar-right">
+    <div class="month-pick">
+      <i class="fas fa-calendar-alt" style="font-size:.72rem"></i>
+      <input type="month" id="monthPicker" value="">
+    </div>
+    <button class="btn btn-ghost" id="pdfBtn"><i class="fas fa-file-pdf"></i> PDF</button>
+    <button class="btn btn-primary" onclick="openModal('add')"><i class="fas fa-plus"></i> Add Transaction</button>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <div class="filter-group">
+    <div class="filter-item">
+      <i class="fas fa-tag"></i>
+      <label>Reference:</label>
+      <select id="filterReference">
+        <option value="">All References</option>
+        <option value="TS-1">TS-1</option>
+        <option value="TS-2">TS-2</option>
+      </select>
+    </div>
+    <div class="filter-item">
+      <i class="fas fa-search"></i>
+      <label>Search:</label>
+      <input type="text" id="filterSearch" placeholder="Description or ref...">
+    </div>
+    <button class="clear-filter" onclick="clearFilters()">
+      <i class="fas fa-times-circle"></i> Clear All
+    </button>
+  </div>
+  <div class="filter-stats" id="filterStats"></div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Reference</th>
+            <th class="num">Amount</th>
+            <th class="num">Balance</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="salesTbody">
+          <tr class="empty-row"><td colspan="6"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- Add/Edit Transaction Modal -->
+<div class="overlay" id="overlay" onclick="bgClick(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">Add Transaction</h2>
+      <button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="form-error" id="formErr"></div>
+    <form onsubmit="saveTxn(event)" autocomplete="off">
+      <input type="hidden" id="fId">
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="fDate" required>
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <input type="text" id="fDesc" placeholder="e.g. Sales receipt" required>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Reference</label>
+          <select id="fReference">
+            <option value="">— Select Reference —</option>
+            <option value="TS-1">TS-1</option>
+            <option value="TS-2">TS-2</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <input type="text" id="fRefCustom" placeholder="Or custom reference">
+        </div>
+      </div>
+      <div class="field">
+        <label>Amount (ZMW)</label>
+        <input type="number" id="fAmount" min="0.01" step="0.01" placeholder="0.00" required>
+      </div>
+      <button type="submit" class="save-btn" id="saveBtn">
+        <i class="fas fa-check"></i> Save Transaction
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="overlay" id="deleteOverlay" onclick="if(event.target===this) closeDeleteModal()">
+  <div class="modal" style="max-width: 380px;">
+    <div class="modal-head">
+      <h2>Delete Transaction</h2>
+      <button class="close-btn" onclick="closeDeleteModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <p style="margin: 20px 0; color: var(--text-fade);">Are you sure you want to delete this transaction? This action cannot be undone.</p>
+    <input type="hidden" id="deleteId">
+    <button class="delete-btn" onclick="confirmDelete()">
+      <i class="fas fa-trash"></i> Delete Permanently
+    </button>
+  </div>
+</div>
+
+<script>
+  // ==================== FIREBASE INIT ====================
+  firebase.initializeApp({
+    apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+    authDomain: "trismartstores.firebaseapp.com",
+    projectId: "trismartstores",
+    storageBucket: "trismartstores.firebasestorage.app",
+    messagingSenderId: "416692703333",
+    appId: "1:416692703333:web:d4b60292621435c748f68c"
+  });
+
+  const db = firebase.firestore();
+  
+  // Enable persistence
+  db.enablePersistence().catch(err => {
+    if (err.code == 'failed-precondition') {
+      console.log('Multiple tabs open - persistence disabled');
+    }
+  });
+
+  // ==================== GLOBAL VARIABLES ====================
+  let allTransactions = [];
+  let unsubscribeListener = null;
+  let filteredTransactions = [];
+  
+  // Month picker setup
+  const monthPicker = document.getElementById('monthPicker');
+  const today = new Date();
+  const currentMonth = today.toISOString().substring(0,7);
+  monthPicker.value = localStorage.getItem('sales_month_filter') || currentMonth;
+  
+  // Filter elements
+  const filterReference = document.getElementById('filterReference');
+  const filterSearch = document.getElementById('filterSearch');
+  const filterStats = document.getElementById('filterStats');
+  
+  // ==================== HELPER FUNCTIONS ====================
+  function toast(message, type = 'success') {
+    const wrap = document.getElementById('toastWrap');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    
+    let icon = 'check-circle';
+    if (type === 'error') icon = 'times-circle';
+    if (type === 'info') icon = 'info-circle';
+    
+    el.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
+    wrap.appendChild(el);
+    
+    setTimeout(() => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(16px)';
+      setTimeout(() => el.remove(), 300);
+    }, 3500);
+  }
+
+  function formatNumber(num) {
+    return Number(num).toLocaleString(undefined, { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    });
+  }
+
+  // Get reference from form
+  function getReferenceFromForm() {
+    const refSelect = document.getElementById('fReference').value;
+    const refCustom = document.getElementById('fRefCustom').value.trim();
+    if (refCustom) return refCustom;
+    if (refSelect) return refSelect;
+    return '—';
+  }
+
+  // Close all dropdowns when clicking outside
+  document.addEventListener('click', function() {
+    document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+      menu.classList.remove('show');
+    });
+  });
+
+  // ==================== FILTER FUNCTIONS ====================
+  function applyFilters() {
+    const selectedMonth = monthPicker.value;
+    
+    let filtered = allTransactions;
+    if (selectedMonth) {
+      filtered = allTransactions.filter(t => 
+        t.date && t.date.substring(0,7) === selectedMonth
+      );
+    }
+    
+    // Filter by reference (TS-1 or TS-2 only)
+    const refFilter = filterReference.value;
+    if (refFilter) {
+      filtered = filtered.filter(t => (t.reference || '') === refFilter);
+    }
+    
+    // Filter by search term
+    const searchTerm = filterSearch.value.toLowerCase().trim();
+    if (searchTerm) {
+      filtered = filtered.filter(t => 
+        (t.description || '').toLowerCase().includes(searchTerm) || 
+        (t.reference || '').toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    // Sort by date (oldest first for running balance)
+    filtered.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    
+    filteredTransactions = filtered;
+    
+    // Update filter stats
+    const totalCount = filtered.length;
+    filterStats.textContent = `${totalCount} transaction${totalCount !== 1 ? 's' : ''} found`;
+    
+    renderTable();
+  }
+
+  function clearFilters() {
+    filterReference.value = '';
+    filterSearch.value = '';
+    applyFilters();
+    toast('All filters cleared!', 'info');
+  }
+
+  // Add event listeners for filters
+  filterReference.addEventListener('change', applyFilters);
+  filterSearch.addEventListener('input', applyFilters);
+  monthPicker.addEventListener('change', () => {
+    localStorage.setItem('sales_month_filter', monthPicker.value);
+    applyFilters();
+  });
+
+  // ==================== MODAL CONTROLS ====================
+  window.openModal = function(mode, id = null) {
+    const modal = document.getElementById('overlay');
+    const title = document.getElementById('modalTitle');
+    
+    if (mode === 'add') {
+      title.textContent = 'Add Transaction';
+      document.getElementById('fId').value = '';
+      document.getElementById('fDate').value = new Date().toISOString().substring(0,10);
+      document.getElementById('fDesc').value = '';
+      document.getElementById('fReference').value = '';
+      document.getElementById('fRefCustom').value = '';
+      document.getElementById('fAmount').value = '';
+    } else if (mode === 'edit' && id) {
+      title.textContent = 'Edit Transaction';
+      const transaction = allTransactions.find(t => t.id === id);
+      if (transaction) {
+        document.getElementById('fId').value = transaction.id;
+        document.getElementById('fDate').value = transaction.date || '';
+        document.getElementById('fDesc').value = transaction.description || '';
+        
+        // Set reference - check if it's TS-1, TS-2, or custom
+        const ref = transaction.reference || '';
+        if (ref === 'TS-1' || ref === 'TS-2') {
+          document.getElementById('fReference').value = ref;
+          document.getElementById('fRefCustom').value = '';
+        } else {
+          document.getElementById('fReference').value = '';
+          document.getElementById('fRefCustom').value = ref === '—' ? '' : ref;
+        }
+        document.getElementById('fAmount').value = transaction.amount || '';
+      }
+    }
+    
+    document.getElementById('formErr').textContent = '';
+    modal.classList.add('open');
+  }
+  
+  window.closeModal = function() {
+    document.getElementById('overlay').classList.remove('open');
+  }
+  
+  window.bgClick = function(e) {
+    if (e.target === document.getElementById('overlay')) closeModal();
+  }
+
+  // ==================== DELETE CONTROLS ====================
+  window.openDeleteModal = function(id) {
+    document.getElementById('deleteId').value = id;
+    document.getElementById('deleteOverlay').classList.add('open');
+  }
+  
+  window.closeDeleteModal = function() {
+    document.getElementById('deleteOverlay').classList.remove('open');
+    document.getElementById('deleteId').value = '';
+  }
+  
+  window.confirmDelete = async function() {
+    const id = document.getElementById('deleteId').value;
+    if (!id) return;
+    
+    try {
+      await db.collection('Sales transactions').doc(id).delete();
+      toast('Transaction deleted successfully', 'success');
+      closeDeleteModal();
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast('Error: ' + error.message, 'error');
+    }
+  }
+
+  // ==================== SAVE TRANSACTION ====================
+  window.saveTxn = async function(e) {
+    e.preventDefault();
+    
+    const errEl = document.getElementById('formErr');
+    const btn = document.getElementById('saveBtn');
+    errEl.textContent = '';
+
+    const id = document.getElementById('fId').value;
+    const date = document.getElementById('fDate').value;
+    const desc = document.getElementById('fDesc').value.trim();
+    const reference = getReferenceFromForm();
+    const amount = parseFloat(document.getElementById('fAmount').value);
+
+    // Validation
+    if (!date) { errEl.textContent = 'Please select a date.'; return; }
+    if (!desc) { errEl.textContent = 'Please enter a description.'; return; }
+    if (isNaN(amount) || amount <= 0) { errEl.textContent = 'Please enter a valid positive amount.'; return; }
+
+    // Disable button
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+
+    try {
+      const transactionData = {
+        date: date,
+        type: 'credit',
+        description: desc,
+        reference: reference,
+        amount: amount,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      if (id) {
+        // Update existing
+        await db.collection('Sales transactions').doc(id).update(transactionData);
+        toast('Transaction updated successfully!', 'success');
+      } else {
+        // Add new
+        transactionData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        await db.collection('Sales transactions').add(transactionData);
+        toast('Transaction saved successfully!', 'success');
+      }
+      
+      closeModal();
+      
+    } catch (error) {
+      console.error('Save error:', error);
+      toast('Error: ' + error.message, 'error');
+      errEl.textContent = error.message;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-check"></i> Save Transaction';
+    }
+  }
+
+  // ==================== TOGGLE DROPDOWN ====================
+  window.toggleMenu = function(event, id) {
+    event.stopPropagation();
+    
+    // Close all other menus
+    document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+      if (menu !== event.currentTarget.nextElementSibling) {
+        menu.classList.remove('show');
+      }
+    });
+    
+    // Toggle this menu
+    const menu = event.currentTarget.nextElementSibling;
+    menu.classList.toggle('show');
+  }
+
+  // ==================== RENDER TABLE ====================
+  function renderTable() {
+    const tbody = document.getElementById('salesTbody');
+
+    if (filteredTransactions.length === 0) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">
+        <i class="fas fa-inbox"></i> No transactions match your filters
+      </td></tr>`;
+      return;
+    }
+
+    // Calculate running balance
+    let balance = 0;
+    const rows = [];
+
+    filteredTransactions.forEach(t => {
+      // Calculate balance (all credits add)
+      if (t.type === 'credit') balance += (t.amount || 0);
+      else balance -= (t.amount || 0);
+
+      rows.push(`
+        <tr>
+          <td>${t.date || '—'}</td>
+          <td>${t.description || '—'}</td>
+          <td style="color:var(--text-fade)">${t.reference || '—'}</td>
+          <td class="num amount-neutral">${formatNumber(t.amount || 0)}</td>
+          <td class="num amount-bal">${formatNumber(balance)}</td>
+          <td style="text-align: center;">
+            <div class="menu-container" onclick="event.stopPropagation()">
+              <button class="action-btn" onclick="toggleMenu(event, '${t.id}')">
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+              <div class="dropdown-menu">
+                <button class="menu-item" onclick="openModal('edit', '${t.id}'); event.stopPropagation();">
+                  <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="menu-item delete" onclick="openDeleteModal('${t.id}'); event.stopPropagation();">
+                  <i class="fas fa-trash"></i> Delete
+                </button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      `);
+    });
+
+    tbody.innerHTML = rows.join('');
+  }
+
+  // ==================== SETUP FIREBASE LISTENER ====================
+  function setupListener() {
+    // Show loading
+    document.getElementById('salesTbody').innerHTML = 
+      '<tr class="empty-row"><td colspan="6"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+    
+    // Clear existing listener
+    if (unsubscribeListener) {
+      unsubscribeListener();
+    }
+    
+    // Set up real-time listener
+    unsubscribeListener = db.collection('Sales transactions')
+      .orderBy('date', 'desc')
+      .onSnapshot(snapshot => {
+        
+        // Clear and rebuild transactions array
+        allTransactions = [];
+        
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          
+          // Handle timestamps
+          let createdAt = Date.now();
+          if (data.createdAt && data.createdAt.seconds) {
+            createdAt = data.createdAt.seconds * 1000;
+          }
+          
+          allTransactions.push({
+            id: doc.id,
+            ...data,
+            createdAt: createdAt
+          });
+        });
+        
+        // Update UI with filters
+        applyFilters();
+        
+      }, error => {
+        console.error('Listener error:', error);
+        document.getElementById('salesTbody').innerHTML = 
+          `<tr class="empty-row"><td colspan="6">
+            <i class="fas fa-exclamation-triangle" style="color:#ef4444"></i> 
+            Error: ${error.message}
+          </td></tr>`;
+        toast('Sync error: ' + error.message, 'error');
+      });
+  }
+
+  // ==================== PDF EXPORT ====================
+  document.getElementById('pdfBtn').addEventListener('click', () => {
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'pt',
+        format: 'a4'
+      });
+      
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(67, 97, 238);
+      doc.text('TRISMART STORES', pageWidth/2, 40, { align: 'center' });
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(33, 37, 41);
+      doc.text('Total Sales Statement', pageWidth/2, 60, { align: 'center' });
+      
+      // Month info
+      doc.setFontSize(10);
+      doc.setTextColor(108, 117, 125);
+      doc.text(`Month: ${monthPicker.value || 'All Time'}`, pageWidth/2, 80, { align: 'center' });
+      doc.text(`Generated: ${new Date().toLocaleDateString('en-GB')}`, pageWidth/2, 92, { align: 'center' });
+      
+      // Table headers
+      const headers = ['Date', 'Description', 'Reference', 'Amount', 'Balance'];
+      const colWidths = [90, 200, 130, 90, 90];
+      let y = 120;
+      let x = 20;
+      
+      // Draw headers
+      doc.setFillColor(67, 97, 238);
+      doc.rect(x, y-10, colWidths.reduce((a,b) => a+b, 0), 22, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      
+      headers.forEach((header, i) => {
+        doc.text(header, x + 5, y);
+        x += colWidths[i];
+      });
+      
+      // Reset for data
+      y += 20;
+      doc.setTextColor(33, 37, 41);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      
+      // Get current filtered data
+      let balance = 0;
+      
+      // Draw data rows
+      filteredTransactions.forEach(t => {
+        if (t.type === 'credit') balance += (t.amount || 0);
+        else balance -= (t.amount || 0);
+        
+        x = 20;
+        const rowData = [
+          t.date || '—',
+          (t.description || '—').substring(0, 35),
+          (t.reference || '—').substring(0, 25),
+          formatNumber(t.amount || 0),
+          formatNumber(balance)
+        ];
+        
+        rowData.forEach((text, i) => {
+          doc.text(text.toString(), x + 5, y);
+          x += colWidths[i];
+        });
+        
+        y += 20;
+        
+        // Add new page if needed
+        if (y > 550) {
+          doc.addPage();
+          y = 50;
+          
+          // Redraw headers on new page
+          x = 20;
+          doc.setFillColor(67, 97, 238);
+          doc.rect(x, y-10, colWidths.reduce((a,b) => a+b, 0), 22, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFont('helvetica', 'bold');
+          
+          headers.forEach((header, i) => {
+            doc.text(header, x + 5, y);
+            x += colWidths[i];
+          });
+          
+          y += 20;
+          doc.setTextColor(33, 37, 41);
+          doc.setFont('helvetica', 'normal');
+        }
+      });
+      
+      // Footer
+      doc.setDrawColor(67, 97, 238);
+      doc.setLineWidth(0.5);
+      doc.line(20, doc.internal.pageSize.getHeight() - 30, pageWidth - 20, doc.internal.pageSize.getHeight() - 30);
+      doc.setFontSize(8);
+      doc.setTextColor(108, 117, 125);
+      doc.text('Trismart Stores · Total Sales', 20, doc.internal.pageSize.getHeight() - 15);
+      doc.text(`Page ${doc.internal.getNumberOfPages()}`, pageWidth - 20, doc.internal.pageSize.getHeight() - 15, { align: 'right' });
+      
+      // Save PDF
+      doc.save(`Trismart_Sales_${monthPicker.value || 'all'}.pdf`);
+      toast('PDF generated successfully!', 'success');
+      
+    } catch (error) {
+      console.error('PDF error:', error);
+      toast('Error generating PDF: ' + error.message, 'error');
+    }
+  });
+
+  // ==================== INITIAL SETUP ====================
+  document.addEventListener('DOMContentLoaded', () => {
+    setupListener();
+  });
+
+  // ==================== CLEANUP ====================
+  window.addEventListener('beforeunload', () => {
+    if (unsubscribeListener) {
+      unsubscribeListener();
+    }
+  });
+</script>
+</body>
+</html>

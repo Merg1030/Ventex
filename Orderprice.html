@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Prices - Trismart</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-hover: #3a56d4;
+            --accent: #4cc9f0;
+            --danger: #f72585;
+            --danger-hover: #e5177b;
+            --warning: #f8961e;
+            --warning-hover: #e68a00;
+            --success: #4cc9f0;
+            --success-hover: #3ab7de;
+            --bg-dark: #141726;
+            --bg-medium: #1a1d35;
+            --bg-light: #232447;
+            --bg-lighter: #2d2f5a;
+            --border: #35377a;
+            --text-light: #e0e0e0;
+            --text-fade: #b0b0b0;
+            --radius: 12px;
+            --shadow: 0 8px 32px #0004;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            background: var(--bg-dark);
+            color: var(--text-light);
+        }
+
+        body {
+            min-height: 100vh;
+            min-width: 100vw;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            background: linear-gradient(135deg, #4361ee10 0%, #4cc9f005 100%), var(--bg-dark);
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--accent);
+            margin: 15px 0;
+            padding: 20px 0;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            width: 100%;
+            background: linear-gradient(90deg, transparent 0%, #232447aa 50%, transparent 100%);
+        }
+
+        .header-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            width: 100%;
+            padding: 0 15px;
+            justify-content: center;
+        }
+
+        .search-bar {
+            flex: 1;
+            min-width: 250px;
+            max-width: 400px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: var(--bg-lighter);
+            color: var(--text-light);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px #4361ee40;
+        }
+
+        button {
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            border-radius: var(--radius);
+            transition: all 0.2s;
+            font-weight: 600;
+            font-size: 1rem;
+            min-width: 180px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary) 60%, var(--accent) 100%);
+            box-shadow: 0 2px 8px #4361ee30;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(90deg, var(--accent) 0%, var(--primary) 100%);
+            transform: translateY(-1px);
+        }
+        .btn-warning {
+            background: linear-gradient(90deg, var(--warning) 0%, #f9c74f 100%);
+            box-shadow: 0 2px 8px #f8961e30;
+        }
+        .btn-warning:hover {
+            background: linear-gradient(90deg, #f9c74f 0%, var(--warning) 100%);
+            transform: translateY(-1px);
+        }
+        .btn-danger {
+            background: linear-gradient(90deg, var(--danger) 0%, #f7258570 100%);
+            box-shadow: 0 2px 8px #f7258530;
+        }
+        .btn-danger:hover {
+            background: linear-gradient(90deg, #f7258570 0%, var(--danger) 100%);
+            transform: translateY(-1px);
+        }
+
+        .action-button {
+            background: linear-gradient(90deg, var(--primary) 60%, var(--accent) 100%);
+            color: #fff;
+        }
+        .action-button:hover {
+            background: linear-gradient(90deg, var(--accent) 0%, var(--primary) 100%);
+            transform: translateY(-1px);
+        }
+
+        .scroll-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            width: 100%;
+            padding: 0 15px 15px 15px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 700px;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: var(--bg-light);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 1rem;
+        }
+
+        th {
+            background-color: var(--bg-lighter);
+            color: var(--accent);
+            position: sticky;
+            top: 0;
+            font-weight: 600;
+        }
+
+        tbody tr {
+            background-color: var(--bg-light);
+            transition: all 0.2s;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: var(--bg-lighter);
+        }
+
+        tbody tr:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .edit-btn {
+            background: var(--success);
+            color: #fff;
+            border: none;
+            padding: 8px 14px;
+            font-size: 0.97rem;
+            border-radius: 7px;
+            margin-left: 5px;
+            cursor: pointer;
+        }
+        .edit-btn:hover {
+            background: var(--success-hover);
+        }
+
+        /* Modal styles */
+        .modal-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        .modal {
+            background: var(--bg-light);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 32px 24px 24px 24px;
+            min-width: 320px;
+            max-width: 95vw;
+            color: var(--text-light);
+            border: 1px solid var(--border);
+        }
+        .modal h3 {
+            margin-bottom: 20px;
+            color: var(--accent);
+            text-align: center;
+        }
+        .modal label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--text-fade);
+        }
+        .modal input {
+            margin-bottom: 16px;
+        }
+        .modal .form-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 1200px) {
+            h2 { font-size: 1.8rem; }
+        }
+        @media (max-width: 900px) {
+            .scroll-container { padding: 0 10px 10px 10px; }
+            table { min-width: 600px; }
+            h2 { font-size: 1.6rem; }
+            th, td { padding: 12px; }
+        }
+        @media (max-width: 700px) {
+            .header-actions { flex-direction: column; align-items: stretch; }
+            .search-bar { max-width: 100%; }
+            table { min-width: 500px; }
+            th, td { padding: 10px; font-size: 0.95rem; }
+            h2 { font-size: 1.4rem; }
+        }
+        @media (max-width: 540px) {
+            .container, .scroll-container { width: 100vw; }
+            table { min-width: 400px; }
+            h2 { font-size: 1.2rem; padding: 15px 0; }
+        }
+        @media (max-width: 440px) {
+            table { min-width: 320px; }
+            th, td { padding: 8px; font-size: 0.9rem; }
+            button { min-width: 140px; padding: 10px 15px; }
+            h2 { font-size: 1.1rem; }
+        }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            getDocs, 
+            doc, 
+            updateDoc,
+            setDoc,
+            query,
+            where
+        } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB-lm7Y3r1F6Vv8PKvY8glLabZDbJsHM1k",
+            authDomain: "trismartstores.firebaseapp.com",
+            projectId: "trismartstores",
+            storageBucket: "trismartstores.firebasestorage.app",
+            messagingSenderId: "416692703333",
+            appId: "1:416692703333:web:d4b60292621435c748f68c",
+            measurementId: "G-NJPQ7L3QWJ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let inventory = [];
+        let orderPrices = {};
+        let editLock = true; // Lock for password
+
+        async function fetchInventory() {
+            try {
+                // Fetch all inventory items from all branches
+                const inventorySnapshot = await getDocs(collection(db, 'inventory'));
+                
+                // Create a map of unique products (by code)
+                const uniqueProducts = {};
+                inventorySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.code && !uniqueProducts[data.code]) {
+                        uniqueProducts[data.code] = {
+                            code: data.code,
+                            name: data.name || 'Unknown Product'
+                        };
+                    }
+                });
+                
+                // Convert to array
+                inventory = Object.values(uniqueProducts);
+                
+                // Fetch order prices from our independent collection
+                await fetchOrderPrices();
+                
+                // Display the combined data
+                displayOrderPrices();
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                alert("Error loading data. Please refresh the page.");
+            }
+        }
+
+        async function fetchOrderPrices() {
+            try {
+                // Use a separate collection for order prices (not restockHistory)
+                const orderPricesSnapshot = await getDocs(collection(db, 'orderPrices'));
+                orderPrices = {};
+                
+                orderPricesSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.code && data.price !== undefined) {
+                        orderPrices[data.code] = {
+                            id: doc.id,
+                            price: parseFloat(data.price)
+                        };
+                    }
+                });
+            } catch (error) {
+                console.error("Error fetching order prices:", error);
+                // If collection doesn't exist yet, it's okay - we'll create it
+            }
+        }
+
+        function displayOrderPrices() {
+            const tableBody = document.querySelector('#orderPriceTable tbody');
+            tableBody.innerHTML = '';
+
+            if (inventory.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = `<td colspan="4" style="text-align:center;">No products found</td>`;
+                tableBody.appendChild(emptyRow);
+                return;
+            }
+
+            inventory.forEach(product => {
+                const orderPrice = orderPrices[product.code]?.price || 0;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.code}</td>
+                    <td>${product.name}</td>
+                    <td>ZMW ${orderPrice.toFixed(2)}</td>
+                    <td>
+                        <button class="edit-btn${editLock ? ' edit-locked' : ''}" 
+                                onclick="openEditModal('${product.code}', '${product.name}', ${orderPrice})">
+                            Edit
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function searchProducts() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const filteredProducts = inventory.filter(product => 
+                product.name.toLowerCase().includes(searchInput) || 
+                product.code.toLowerCase().includes(searchInput)
+            );
+            
+            const tableBody = document.querySelector('#orderPriceTable tbody');
+            tableBody.innerHTML = '';
+
+            if (filteredProducts.length === 0) {
+                const emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = `<td colspan="4" style="text-align:center;">No matching products found</td>`;
+                tableBody.appendChild(emptyRow);
+                return;
+            }
+
+            filteredProducts.forEach(product => {
+                const orderPrice = orderPrices[product.code]?.price || 0;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.code}</td>
+                    <td>${product.name}</td>
+                    <td>ZMW ${orderPrice.toFixed(2)}</td>
+                    <td>
+                        <button class="edit-btn${editLock ? ' edit-locked' : ''}" 
+                                onclick="openEditModal('${product.code}', '${product.name}', ${orderPrice})">
+                            Edit
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Edit modal functions
+        window.openEditModal = function(code, name, currentPrice) {
+            if (editLock) {
+                const userPass = prompt("Enter password to edit order price:");
+                if (userPass !== "1030") {
+                    alert("Incorrect password. Editing not allowed.");
+                    return;
+                }
+                editLock = false;
+                displayOrderPrices(); // unlock all edit buttons visually
+            }
+            
+            showModal(code, name, currentPrice);
+        };
+
+        function closeModal() {
+            const modalBg = document.getElementById('modal-bg');
+            if (modalBg) modalBg.remove();
+        }
+
+        async function saveOrderPrice(event, code, name) {
+            event.preventDefault();
+            const form = event.target;
+            const price = parseFloat(form.price.value);
+            
+            if (isNaN(price) || price < 0) {
+                alert('Please enter a valid price.');
+                return;
+            }
+
+            try {
+                // Check if this product already has an order price entry
+                if (orderPrices[code]) {
+                    // Update existing order price in our independent collection
+                    await updateDoc(doc(db, 'orderPrices', orderPrices[code].id), {
+                        price: price,
+                        code: code,
+                        name: name,
+                        lastUpdated: new Date()
+                    });
+                } else {
+                    // Create new order price entry in our independent collection
+                    await setDoc(doc(collection(db, 'orderPrices')), {
+                        price: price,
+                        code: code,
+                        name: name,
+                        created: new Date(),
+                        lastUpdated: new Date()
+                    });
+                }
+                
+                // Update local data
+                orderPrices[code] = { price: price };
+                
+                closeModal();
+                displayOrderPrices();
+                alert("Order price updated successfully!");
+            } catch (error) {
+                console.error("Error saving order price:", error);
+                alert("Failed to update order price: " + error.message);
+            }
+        }
+
+        function showModal(code, name, currentPrice) {
+            closeModal(); // Remove any open modals
+            
+            const modalBg = document.createElement('div');
+            modalBg.className = 'modal-bg';
+            modalBg.id = 'modal-bg';
+            modalBg.innerHTML = `
+                <div class="modal">
+                    <h3>Edit Order Price</h3>
+                    <form id="editOrderPriceForm">
+                        <label>Product Code</label>
+                        <input type="text" value="${code}" disabled />
+                        
+                        <label>Product Name</label>
+                        <input type="text" value="${name}" disabled />
+                        
+                        <label>Order Price (ZMW)</label>
+                        <input type="number" name="price" min="0" step="0.01" required value="${currentPrice}" />
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Save</button>
+                            <button type="button" class="btn-danger" id="cancelModalBtn">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modalBg);
+            document.getElementById('editOrderPriceForm').onsubmit = (e) => saveOrderPrice(e, code, name);
+            document.getElementById('cancelModalBtn').onclick = closeModal;
+            modalBg.onclick = function(e){ if(e.target === modalBg) closeModal(); };
+        }
+
+        window.onload = fetchInventory;
+        window.searchProducts = searchProducts;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Order Prices</h2>
+        
+        <div class="header-actions">
+            <input type="text" id="searchInput" class="search-bar" onkeyup="searchProducts()" placeholder="Search for products...">
+        </div>
+        
+        <div class="scroll-container">
+            <table id="orderPriceTable">
+                <thead>
+                    <tr>
+                        <th>Product Code</th>
+                        <th>Product Name</th>
+                        <th>Order Price</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be dynamically populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mergsignature - Product Details</title>
+    <style>
+        :root {
+            --primary: #1a1a1a;
+            --secondary: #2d2d2d;
+            --accent: #ff5e14;
+            --text: #e0e0e0;
+            --text-light: #b0b0b0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--primary);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background-color: var(--secondary);
+            color: var(--text);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 30px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+
+        .back-btn:hover {
+            background-color: #3a3a3a;
+        }
+
+        .product-detail {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .product-gallery {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .main-image {
+            width: 100%;
+            height: 500px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .thumbnail-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .thumbnail {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 5px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .thumbnail:hover, .thumbnail.active {
+            border-color: var(--accent);
+        }
+
+        .product-info {
+            padding: 20px 0;
+        }
+
+        .product-code {
+            font-size: 0.9rem;
+            color: var(--accent);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .product-title {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .product-price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--accent);
+        }
+
+        .product-description {
+            color: var(--text-light);
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .product-meta {
+            margin-bottom: 30px;
+        }
+
+        .meta-item {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .meta-label {
+            width: 120px;
+            color: var(--text-light);
+        }
+
+        .meta-value {
+            font-weight: 500;
+        }
+
+        .in-stock {
+            color: #4CAF50;
+        }
+
+        .low-stock {
+            color: #FFC107;
+        }
+
+        .out-of-stock {
+            color: #F44336;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #e05512;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--text);
+            border: 1px solid #444;
+        }
+
+        .btn-secondary:hover {
+            background-color: #2d2d2d;
+        }
+
+        .related-products {
+            margin-top: 80px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background-color: var(--accent);
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .related-item {
+            background-color: var(--secondary);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+
+        .related-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .related-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .related-info {
+            padding: 15px;
+        }
+
+        .related-name {
+            font-size: 1rem;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .related-price {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        @media (max-width: 992px) {
+            .product-detail {
+                grid-template-columns: 1fr;
+            }
+
+            .main-image {
+                height: 400px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .main-image {
+                height: 300px;
+            }
+
+            .action-btns {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Catalog
+        </a>
+
+        <div class="product-detail" id="productDetail">
+            <!-- Product details will be loaded here by JavaScript -->
+        </div>
+
+        <div class="related-products">
+            <h2 class="section-title">You May Also Like</h2>
+            <div class="related-grid" id="relatedGrid">
+                <!-- Related products will be loaded here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample product database
+        const productDatabase = [
+            {
+                id: 1,
+                code: "MS-JW-001",
+                name: "Signature Gold Necklace",
+                price: "K 850.00",
+                category: "jewelry",
+                description: "Premium 18K gold plated necklace with unique Mergsignature pendant. Handcrafted with attention to detail, this statement piece is perfect for elevating any outfit.",
+                images: [
+                    "https://images.unsplash.com/photo-1605100804763-247f67b3557e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    "https://images.unsplash.com/photo-1603974372036-a5c34cee1e2e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    "https://images.unsplash.com/photo-1602173574767-37ac01994b2a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+                ],
+                stock: 15,
+                material: "18K Gold Plated",
+                dimensions: "18-22 inch chain",
+                badge: "Bestseller"
+            },
+            {
+                id: 2,
+                code: "MS-CL-001",
+                name: "Urban Graphic Tee",
+                price: "K 250.00",
+                category: "clothing",
+                description: "High-quality 100% cotton t-shirt with exclusive Mergsignature urban graphic print. Premium fit with reinforced stitching for durability. Machine wash cold, tumble dry low.",
+                images: [
+                    "https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    "https://images.unsplash.com/photo-1576566588028-4147f3842f27?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    "https://images.unsplash.com/photo-1527719327859-c6ce80353573?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+                ],
+                stock: 25,
+                sizes: "S, M, L, XL",
+                color: "Black",
+                badge: "New"
+            },
+            {
+                id: 3,
+                code: "MS-SH-001",
+                name: "Streetwear Sneakers",
+                price: "K 650.00",
+                category: "shoes",
+                description: "Premium streetwear sneakers with custom Mergsignature detailing. Comfortable cushioned insole, durable rubber outsole, and breathable fabric upper. True to size.",
+                images: [
+                    "https://images.unsplash.com/photo-1600269452121-4f2416e55c28?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    "https://images.unsplash.com/photo-1549298916-b41d501d3772?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+                ],
+                stock: 8,
+                sizes: "EU 38-45",
+                color: "White/Black"
+            },
+            {
+                id: 4,
+                code: "MS-AC-001",
+                name: "Designer Sunglasses",
+                price: "K 350.00",
+                category: "accessories",
+                description: "Luxury designer sunglasses with UV400 protection and polarized lenses. Lightweight frame with Mergsignature engraving on the temple. Includes protective case and microfiber cloth.",
+                images: [
+                    "https://images.unsplash.com/photo-1511499767150-a48a237f0083?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    "https://images.unsplash.com/photo-1556306535-0f09a537f0a3?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+                    "https://images.unsplash.com/photo-1556306535-38febf678080?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+                ],
+                stock: 12,
+                material: "Acetate frame",
+                lensColor: "Smoke gradient"
+            }
+        ];
+
+        // Get product ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = parseInt(urlParams.get('id'));
+
+        // DOM elements
+        const productDetail = document.getElementById('productDetail');
+        const relatedGrid = document.getElementById('relatedGrid');
+
+        // Load product details
+        function loadProductDetails() {
+            const product = productDatabase.find(p => p.id === productId);
+            
+            if (!product) {
+                productDetail.innerHTML = '<p>Product not found</p>';
+                return;
+            }
+
+            // Determine stock status
+            let stockStatus = '';
+            let stockClass = '';
+            if (product.stock > 10) {
+                stockStatus = 'In Stock';
+                stockClass = 'in-stock';
+            } else if (product.stock > 0) {
+                stockStatus = `Low Stock (${product.stock} left)`;
+                stockClass = 'low-stock';
+            } else {
+                stockStatus = 'Out of Stock';
+                stockClass = 'out-of-stock';
+            }
+
+            // Generate thumbnails HTML
+            const thumbnailsHTML = product.images.map((img, index) => `
+                <img src="${img}" alt="${product.name}" class="thumbnail ${index === 0 ? 'active' : ''}" 
+                     onclick="changeMainImage('${img}', this)">
+            `).join('');
+
+            // Generate meta details HTML
+            let metaHTML = '';
+            if (product.category === 'jewelry') {
+                metaHTML = `
+                    <div class="meta-item">
+                        <span class="meta-label">Material:</span>
+                        <span class="meta-value">${product.material}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Dimensions:</span>
+                        <span class="meta-value">${product.dimensions}</span>
+                    </div>
+                `;
+            } else if (product.category === 'clothing') {
+                metaHTML = `
+                    <div class="meta-item">
+                        <span class="meta-label">Sizes:</span>
+                        <span class="meta-value">${product.sizes}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Color:</span>
+                        <span class="meta-value">${product.color}</span>
+                    </div>
+                `;
+            } else if (product.category === 'shoes') {
+                metaHTML = `
+                    <div class="meta-item">
+                        <span class="meta-label">Sizes:</span>
+                        <span class="meta-value">${product.sizes}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Color:</span>
+                        <span class="meta-value">${product.color}</span>
+                    </div>
+                `;
+            } else if (product.category === 'accessories') {
+                metaHTML = `
+                    <div class="meta-item">
+                        <span class="meta-label">Material:</span>
+                        <span class="meta-value">${product.material}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Lens Color:</span>
+                        <span class="meta-value">${product.lensColor}</span>
+                    </div>
+                `;
+            }
+
+            // Set product details HTML
+            productDetail.innerHTML = `
+                <div class="product-gallery">
+                    <img src="${product.images[0]}" alt="${product.name}" class="main-image" id="mainImage">
+                    <div class="thumbnail-container">
+                        ${thumbnailsHTML}
+                    </div>
+                </div>
+                <div class="product-info">
+                    <div class="product-code">${product.code}</div>
+                    <h1 class="product-title">${product.name}</h1>
+                    <div class="product-price">${product.price}</div>
+                    <p class="product-description">${product.description}</p>
+                    
+                    <div class="product-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">Availability:</span>
+                            <span class="meta-value ${stockClass}">${stockStatus}</span>
+                        </div>
+                        ${metaHTML}
+                    </div>
+                    
+                    <div class="action-btns">
+                        <button class="btn btn-primary">Add to Cart</button>
+                        <button class="btn btn-secondary">Add to Wishlist</button>
+                    </div>
+                </div>
+            `;
+
+            // Load related products
+            loadRelatedProducts(product.category, product.id);
+        }
+
+        // Change main image when thumbnail is clicked
+        function changeMainImage(src, thumbnail) {
+            document.getElementById('mainImage').src = src;
+            document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+            thumbnail.classList.add('active');
+        }
+
+        // Load related products from same category
+        function loadRelatedProducts(category, currentProductId) {
+            const relatedProducts = productDatabase.filter(
+                p => p.category === category && p.id !== currentProductId
+            ).slice(0, 4);
+
+            if (relatedProducts.length === 0) {
+                relatedGrid.innerHTML = '<p>No related products found</p>';
+                return;
+            }
+
+            relatedGrid.innerHTML = relatedProducts.map(product => `
+                <div class="related-item" onclick="window.location.href='product.html?id=${product.id}'">
+                    <img src="${product.images[0]}" alt="${product.name}" class="related-image">
+                    <div class="related-info">
+                        <h3 class="related-name">${product.name}</h3>
+                        <div class="related-price">${product.price}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize the page
+        loadProductDetails();
+    </script>
+</body>
+</html>

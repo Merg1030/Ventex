@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Low Stock Items</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #ffffff;
+            --sidebar-bg: #1e1e2d;
+            --orange: #FFA500;
+            --light-orange: #FFD580;
+            --red: #ff3333;
+        }
+
+        body {
+            min-height: 100vh;
+            min-width: 100vw;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .container {
+            margin-top: 30px;
+            background-color: var(--sidebar-bg);
+            border-radius: 12px;
+            padding: 22px 12px 30px 12px;
+            width: 95vw;
+        
+            box-shadow: 0 3px 12px #0003;
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--orange);
+            margin-bottom: 18px;
+            font-size: 2rem;
+        }
+
+        .search-bar-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 8px;
+        }
+
+        .search-bar {
+            max-width: 340px;
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border-radius: 4px;
+            border: 1px solid var(--orange);
+            background-color: var(--sidebar-bg);
+            color: var(--text-color);
+        }
+
+        .search-btn {
+            padding: 10px 18px;
+            border-radius: 4px;
+            border: none;
+            background-color: var(--orange);
+            color: #222;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .search-btn:hover {
+            background-color: #ffc04d;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0 auto;
+            background: var(--sidebar-bg);
+            color: var(--text-color);
+        }
+
+        th, td {
+            padding: 10px 8px;
+            text-align: left;
+            font-size: 1rem;
+        }
+
+        th {
+            background-color: var(--orange);
+            color: var(--text-color);
+            position: sticky;
+            top: 0;
+        }
+
+        /* Text color only for stock */
+        .stock-3 {
+            color: var(--orange) !important;
+            font-weight: bold;
+        }
+        .stock-2 {
+            color: var(--light-orange) !important;
+            font-weight: bold;
+        }
+        .stock-1 {
+            color: var(--orange) !important;
+            font-style: italic;
+            font-weight: bold;
+        }
+        .stock-0 {
+            color: var(--red) !important;
+            font-weight: bold;
+        }
+
+        @media (max-width: 700px) {
+            .container { padding: 12px 2px 18px 2px; }
+            h2 { font-size: 1.2rem; }
+            table { font-size: 0.88rem; }
+            th, td { padding: 6px 2px; }
+            .search-bar { max-width: 100vw; }
+        }
+    </style>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            query, 
+            where, 
+            onSnapshot
+        } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+            authDomain: "trismartstores.firebaseapp.com",
+            projectId: "trismartstores",
+            storageBucket: "trismartstores.appspot.com",
+            messagingSenderId: "416692703333",
+            appId: "1:416692703333:web:d4b60292621435c748f68c",
+            measurementId: "G-NJPQ7L3QWJ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let allLowStockItems = [];
+
+        const branchId = localStorage.getItem('branchId');
+        if (!branchId) {
+            alert('Branch ID not found. Please select a branch from the dashboard.');
+            window.location.href = 'dashboard.html';
+        }
+
+        function setupLowStockListener() {
+            const q = query(collection(db, 'inventory'), where('branchId', '==', branchId));
+            onSnapshot(q, (snapshot) => {
+                const items = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        code: data.code,
+                        name: data.name,
+                        price: Number(data.price) || 0,
+                        stock: Number(data.stock) || 0
+                    }
+                });
+                let lowStockItems = items.filter(item => item.stock <= 3);
+                // Sort: 3 at top, then 2, then 1, then 0
+                lowStockItems = lowStockItems.sort((a, b) => b.stock - a.stock);
+                allLowStockItems = lowStockItems; // store for search
+                displayLowStockItems(lowStockItems);
+            }, (error) => {
+                console.error("Low stock listener error:", error);
+                alert("Error loading low stock items. Please refresh the page.");
+            });
+        }
+
+        function displayLowStockItems(items) {
+            const tbody = document.querySelector('#lowStockTable tbody');
+            tbody.innerHTML = '';
+            if (items.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="4" style="text-align:center;">All items well stocked!</td>`;
+                tbody.appendChild(row);
+                return;
+            }
+            items.forEach(item => {
+                let stockClass = '';
+                if (item.stock === 3) stockClass = 'stock-3';
+                else if (item.stock === 2) stockClass = 'stock-2';
+                else if (item.stock === 1) stockClass = 'stock-1';
+                else if (item.stock === 0) stockClass = 'stock-0';
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.code}</td>
+                    <td>${item.name}</td>
+                    <td>${item.price.toFixed(2)}</td>
+                    <td><span class="${stockClass}">${item.stock}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function searchLowStock() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allLowStockItems.filter(item =>
+                item.name.toLowerCase().includes(searchInput) ||
+                item.code.toLowerCase().includes(searchInput)
+            );
+            displayLowStockItems(filtered);
+        }
+
+        window.onload = function() {
+            setupLowStockListener();
+            document.getElementById('searchBtn').onclick = searchLowStock;
+            document.getElementById('searchInput').addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') searchLowStock();
+            });
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h2>Low Stock Items (Stock ≤ 3)</h2>
+        <div class="search-bar-container">
+            <input type="text" id="searchInput" class="search-bar" placeholder="Search product code or name...">
+            <button id="searchBtn" class="search-btn">Search</button>
+        </div>
+        <table id="lowStockTable">
+            <thead>
+                <tr>
+                    <th>Product Code</th>
+                    <th>Product Name</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Items will be populated here -->
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

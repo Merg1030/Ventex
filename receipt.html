@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Trismart · Professional Receipt System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #f0f2f5;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --purple: #8b5cf6;
+      --radius: 1rem;
+      --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+      --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.1);
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 2rem; height: 64px; display: flex; align-items: center;
+      justify-content: space-between; position: sticky; top: 0; z-index: 100;
+      box-shadow: var(--shadow);
+    }
+    .logo-area { display: flex; align-items: center; gap: 0.75rem; }
+    .logo-icon {
+      background: linear-gradient(135deg, var(--primary), var(--purple));
+      width: 38px; height: 38px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 1.1rem;
+    }
+    .company-name { font-weight: 700; font-size: 1.2rem; letter-spacing: -0.3px; }
+    .company-name span { color: var(--primary); }
+    .nav-buttons { display: flex; gap: 12px; }
+    .nav-btn {
+      background: transparent; border: 1px solid var(--border);
+      padding: 8px 18px; border-radius: 32px; font-size: 0.75rem;
+      font-weight: 600; cursor: pointer; display: flex; align-items: center;
+      gap: 8px; color: var(--text-muted); transition: 0.2s;
+    }
+    .nav-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+    .nav-btn:hover { background: var(--bg); }
+    .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem 2rem; }
+    .form-card {
+      background: var(--surface); border-radius: var(--radius); padding: 1.75rem;
+      margin-bottom: 1.5rem; box-shadow: var(--shadow); border: 1px solid var(--border);
+    }
+    .form-title {
+      font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem;
+      display: flex; align-items: center; gap: 10px;
+      padding-bottom: 0.75rem; border-bottom: 2px solid var(--border);
+    }
+    .form-title i { color: var(--primary); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.2rem; }
+    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    .input-group label {
+      font-size: 0.7rem; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .input-group input, .input-group select {
+      padding: 10px 14px; border: 1.5px solid var(--border);
+      border-radius: 12px; font-size: 0.85rem; font-family: inherit;
+      transition: 0.2s; background: var(--surface);
+    }
+    .input-group input:focus, .input-group select:focus {
+      outline: none; border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+    .company-info {
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      border-radius: 14px; padding: 1rem 1.5rem;
+      display: flex; flex-wrap: wrap; gap: 1.5rem;
+      justify-content: space-between; align-items: center;
+      margin-bottom: 1.5rem; border: 1px solid var(--border);
+    }
+    .company-detail { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; color: var(--text-muted); }
+    .company-detail i { width: 24px; color: var(--primary); }
+    .receipt-preview {
+      background: var(--surface); border-radius: var(--radius);
+      padding: 1.75rem; box-shadow: var(--shadow); border: 1px solid var(--border);
+    }
+    .preview-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px dashed var(--border);
+    }
+    .receipt-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .receipt-total {
+      font-size: 1.2rem; font-weight: 800; color: var(--primary);
+      margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--border);
+    }
+    .balance-info { background: #fef3c7; padding: 10px; border-radius: 10px; margin-top: 10px; text-align: center; font-weight: 600; }
+    .action-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 1.5rem; }
+    .btn-primary {
+      background: var(--primary); color: white; border: none;
+      padding: 10px 28px; border-radius: 40px; font-weight: 600;
+      font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-secondary {
+      background: transparent; border: 1.5px solid var(--border);
+      padding: 10px 28px; border-radius: 40px; font-weight: 500; cursor: pointer;
+    }
+    .receipts-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.2rem; margin-top: 1rem;
+    }
+    .receipt-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.2rem; transition: 0.2s; cursor: pointer;
+    }
+    .receipt-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .receipt-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .receipt-id {
+      font-weight: 700; font-family: monospace; font-size: 0.7rem;
+      background: #eef2ff; padding: 3px 10px; border-radius: 20px;
+    }
+    .receipt-date { font-size: 0.65rem; color: var(--text-muted); }
+    .customer-name { font-weight: 700; margin: 8px 0 4px; }
+    .receipt-amount { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-top: 8px; }
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px); z-index: 1000; display: none;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-content {
+      background: white; border-radius: 24px; max-width: 550px;
+      width: 90%; max-height: 85vh; overflow: auto; padding: 1.8rem;
+    }
+    .toast-stack {
+      position: fixed; bottom: 20px; right: 20px; z-index: 1100;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .toast-item {
+      background: #1e293b; color: white; padding: 10px 22px;
+      border-radius: 40px; font-size: 0.75rem; animation: fadeIn 0.2s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .error-box {
+      background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px;
+      padding: 1.5rem; text-align: center; color: #b91c1c;
+    }
+    .error-box i { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
+    .error-box .error-detail { font-size: 0.75rem; color: #ef4444; margin-top: 0.5rem; font-family: monospace; }
+    .loading-box { text-align: center; padding: 3rem; color: var(--text-muted); }
+    .empty-box { text-align: center; padding: 3rem; color: var(--text-muted); }
+    @media (max-width: 768px) {
+      .container { padding: 1rem; }
+      .header { padding: 0 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-area">
+    <div class="logo-icon"><i class="fas fa-receipt"></i></div>
+    <div class="company-name">Tri<span>smart</span> Receipts</div>
+  </div>
+  <div class="nav-buttons">
+    <button class="nav-btn active" id="newReceiptTab"><i class="fas fa-plus-circle"></i> New Receipt</button>
+    <button class="nav-btn" id="historyTab"><i class="fas fa-clock"></i> Receipt History</button>
+  </div>
+</div>
+
+<div class="container">
+  <div id="newReceiptPanel">
+    <div class="company-info">
+      <div class="company-detail"><i class="fas fa-store"></i> Trismart Enterprises</div>
+      <div class="company-detail"><i class="fas fa-envelope"></i> trismart.zm@gmail.com</div>
+      <div class="company-detail"><i class="fas fa-phone"></i> +260 775 390905</div>
+      <div class="company-detail"><i class="fas fa-university"></i> FNB Bank · 63042080133</div>
+      <div class="company-detail"><i class="fas fa-map-marker-alt"></i> Industrial Area, Lusaka</div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-title"><i class="fas fa-file-invoice-dollar"></i> Payment Receipt</div>
+      <div class="form-grid">
+        <div class="input-group">
+          <label>Receipt Number</label>
+          <input type="text" id="receiptNumber" readonly style="background:#f8fafc; font-weight:600;">
+        </div>
+        <div class="input-group">
+          <label>Date</label>
+          <input type="date" id="receiptDate">
+        </div>
+        <div class="input-group">
+          <label>Customer Name</label>
+          <input type="text" id="customerName" placeholder="Full name">
+        </div>
+        <div class="input-group">
+          <label>Customer Phone</label>
+          <input type="tel" id="customerPhone" placeholder="0975XXXXXX">
+        </div>
+        <div class="input-group">
+          <label>Payment Method</label>
+          <select id="paymentMethod">
+            <option value="Cash">💵 Cash</option>
+            <option value="Airtel Money">📱 Airtel Money</option>
+            <option value="FNB Transfer">🏦 FNB Transfer</option>
+            <option value="Card">💳 Card</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Transaction Reference</label>
+          <input type="text" id="transactionRef" placeholder="Airtel TXN ID / Cheque #">
+        </div>
+        <div class="input-group">
+          <label>Amount Paid (K)</label>
+          <input type="number" id="amountPaid" step="0.01" placeholder="0.00">
+        </div>
+        <div class="input-group">
+          <label>Previous Balance (K)</label>
+          <input type="number" id="previousBalance" step="0.01" value="0">
+        </div>
+      </div>
+      <div class="input-group" style="margin-top: 0.5rem;">
+        <label>Notes / Description</label>
+        <input type="text" id="notes" placeholder="Payment for invoice, deposit, etc.">
+      </div>
+      <div class="action-buttons">
+        <button class="btn-secondary" id="resetBtn"><i class="fas fa-undo-alt"></i> Reset</button>
+        <button class="btn-primary" id="saveReceiptBtn"><i class="fas fa-save"></i> Issue Receipt</button>
+      </div>
+    </div>
+
+    <div class="receipt-preview">
+      <div class="preview-header">
+        <span><i class="fas fa-print"></i> RECEIPT PREVIEW</span>
+        <span>OFFICIAL RECEIPT</span>
+      </div>
+      <div id="receiptPreview"></div>
+    </div>
+  </div>
+
+  <div id="historyPanel" style="display: none;">
+    <div class="form-card">
+      <div class="form-title"><i class="fas fa-archive"></i> All Receipts</div>
+      <div class="receipts-grid" id="receiptsGrid">
+        <div class="loading-box"><i class="fas fa-spinner fa-pulse"></i> Loading receipts...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="receiptModal" class="modal-overlay">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+      <h3><i class="fas fa-receipt"></i> Receipt Details</h3>
+      <span style="cursor:pointer; font-size:1.3rem;" onclick="closeModal()">&times;</span>
+    </div>
+    <div id="receiptDetails"></div>
+    <div style="display: flex; gap: 10px; margin-top: 1rem;">
+      <button class="btn-primary" id="printPdfBtn" style="flex:1;"><i class="fas fa-print"></i> Print Receipt</button>
+      <button class="btn-secondary" onclick="closeModal()" style="flex:1;">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js",
+      "firebase/firestore": "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js"
+    }
+  }
+</script>
+
+<script type="module">
+  import { initializeApp } from "firebase/app";
+  import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBlm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+    authDomain: "trismartstores.firebaseapp.com",
+    projectId: "trismartstores",
+    storageBucket: "trismartstores.appspot.com",
+    messagingSenderId: "416692703333",
+    appId: "1:416692703333:web:d4b60292621435c748f68c"
+  };
+
+  // ─── Auth check ───────────────────────────────────────────────────────────
+  // Checks localStorage first. If not set, prompts with a simple password.
+  function checkAuth() {
+    const stored = localStorage.getItem('loggedInUser') || localStorage.getItem('userName') || '';
+    if (stored.toLowerCase().trim() === 'chris') return true;
+
+    // Not found in storage — ask
+    const entered = window.prompt('Enter access name to continue:');
+    if (!entered || entered.toLowerCase().trim() !== 'chris') {
+      document.body.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;height:100vh;">
+          <div style="background:white;padding:30px;border-radius:24px;text-align:center;">
+            <i class="fas fa-lock" style="font-size:2rem;color:#ef4444;margin-bottom:1rem;display:block;"></i>
+            Authorized access only.
+          </div>
+        </div>`;
+      return false;
+    }
+    localStorage.setItem('loggedInUser', entered.toLowerCase().trim());
+    return true;
+  }
+
+  if (!checkAuth()) throw new Error('unauth');
+  // ──────────────────────────────────────────────────────────────────────────
+
+  let db;
+  try {
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+  } catch (err) {
+    showFirebaseError('Firebase failed to initialise', err.message);
+    throw err;
+  }
+
+  let receipts = [];
+  let currentReceiptForPdf = null;
+
+  // ─── Toast ────────────────────────────────────────────────────────────────
+  function showToast(msg, isError = false) {
+    const stack = document.getElementById('toastStack');
+    const toast = document.createElement('div');
+    toast.className = 'toast-item';
+    toast.style.background = isError ? '#b91c1c' : '#0f172a';
+    toast.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${msg}`;
+    stack.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+
+  function showFirebaseError(title, detail) {
+    const grid = document.getElementById('receiptsGrid');
+    if (grid) {
+      grid.innerHTML = `
+        <div class="error-box" style="grid-column:1/-1;">
+          <i class="fas fa-exclamation-triangle"></i>
+          <strong>${title}</strong>
+          <p style="margin-top:6px;font-size:0.8rem;">Check your internet connection and Firebase API key.</p>
+          <p class="error-detail">${escapeHtml(detail)}</p>
+          <button onclick="window._retryLoad()" style="margin-top:12px;padding:8px 20px;border-radius:20px;border:1px solid #fca5a5;background:white;cursor:pointer;font-size:0.8rem;">
+            <i class="fas fa-redo"></i> Retry
+          </button>
+        </div>`;
+    }
+  }
+
+  // ─── Receipt number generator ─────────────────────────────────────────────
+  function generateReceiptNumber() {
+    const date = new Date();
+    const yymm = date.getFullYear().toString().slice(-2) + (date.getMonth() + 1).toString().padStart(2, '0');
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    return `TRS-${yymm}-${random}`;
+  }
+
+  // ─── Preview update ───────────────────────────────────────────────────────
+  function updatePreview() {
+    const customer = document.getElementById('customerName').value || '___________';
+    const phone = document.getElementById('customerPhone').value || 'N/A';
+    const amount = parseFloat(document.getElementById('amountPaid').value) || 0;
+    const prevBalance = parseFloat(document.getElementById('previousBalance').value) || 0;
+    const newBalance = prevBalance - amount;
+    const paymentMethod = document.getElementById('paymentMethod').value;
+    const ref = document.getElementById('transactionRef').value || '—';
+    const notes = document.getElementById('notes').value || '—';
+    const date = document.getElementById('receiptDate').value || new Date().toISOString().split('T')[0];
+    const receiptNum = document.getElementById('receiptNumber').value;
+
+    const balanceStatus = newBalance > 0
+      ? `<span style="color:#f59e0b;">Remaining Balance: K ${newBalance.toFixed(2)}</span>`
+      : newBalance < 0
+        ? `<span style="color:#ef4444;">Overpayment / Credit: K ${Math.abs(newBalance).toFixed(2)}</span>`
+        : `<span style="color:#10b981;">FULLY SETTLED ✓</span>`;
+
+    document.getElementById('receiptPreview').innerHTML = `
+      <div style="text-align:center; margin-bottom:15px;">
+        <h2 style="color:#2563eb;">TRISMART ENTERPRISES</h2>
+        <p style="font-size:0.65rem;">trismart.zm@gmail.com | +260 775 390905</p>
+        <p style="font-size:0.6rem;">FNB Bank: 63042080133 | Industrial Area, Lusaka</p>
+        <hr style="margin:8px 0;">
+      </div>
+      <div class="receipt-row"><strong>Receipt #:</strong> <span>${receiptNum}</span></div>
+      <div class="receipt-row"><strong>Date:</strong> <span>${date}</span></div>
+      <div class="receipt-row"><strong>Customer:</strong> <span>${escapeHtml(customer)}</span></div>
+      <div class="receipt-row"><strong>Phone:</strong> <span>${escapeHtml(phone)}</span></div>
+      <div class="receipt-row"><strong>Payment Method:</strong> <span>${paymentMethod}</span></div>
+      ${ref !== '—' ? `<div class="receipt-row"><strong>Transaction Ref:</strong> <span>${escapeHtml(ref)}</span></div>` : ''}
+      <div class="receipt-row"><strong>Description:</strong> <span>${escapeHtml(notes)}</span></div>
+      <div class="receipt-row"><strong>Previous Balance:</strong> <span>K ${prevBalance.toFixed(2)}</span></div>
+      <div class="receipt-row receipt-total"><strong>Amount Paid:</strong> <strong>K ${amount.toFixed(2)}</strong></div>
+      <div class="balance-info">${balanceStatus}</div>
+      <div style="text-align:center; margin-top:15px; font-size:0.6rem; color:#94a3b8;">
+        <i class="fas fa-check-circle"></i> Thank you for your payment
+      </div>`;
+  }
+
+  // ─── Save receipt ─────────────────────────────────────────────────────────
+  async function saveReceipt() {
+    const customerName = document.getElementById('customerName').value.trim();
+    if (!customerName) { showToast('Please enter customer name', true); return; }
+    const amountPaid = parseFloat(document.getElementById('amountPaid').value);
+    if (isNaN(amountPaid) || amountPaid <= 0) { showToast('Please enter a valid amount', true); return; }
+
+    const prevBalance = parseFloat(document.getElementById('previousBalance').value) || 0;
+    const receiptData = {
+      receiptNumber: document.getElementById('receiptNumber').value,
+      date: document.getElementById('receiptDate').value,
+      customerName,
+      customerPhone: document.getElementById('customerPhone').value,
+      paymentMethod: document.getElementById('paymentMethod').value,
+      transactionRef: document.getElementById('transactionRef').value,
+      amountPaid,
+      previousBalance: prevBalance,
+      newBalance: prevBalance - amountPaid,
+      notes: document.getElementById('notes').value,
+      createdAt: new Date().toISOString(),
+      companyDetails: {
+        name: 'Trismart Enterprises',
+        email: 'trismart.zm@gmail.com',
+        phone: '+260 775 390905',
+        bank: 'FNB Bank',
+        account: '63042080133',
+        branch: 'Industrial'
+      }
+    };
+
+    const btn = document.getElementById('saveReceiptBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    try {
+      await addDoc(collection(db, 'receipts'), receiptData);
+      showToast(`Receipt ${receiptData.receiptNumber} saved!`);
+      resetForm();
+      document.getElementById('historyTab').click();
+    } catch (err) {
+      console.error('Save error:', err);
+      showToast('Save failed: ' + err.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Issue Receipt';
+    }
+  }
+
+  // ─── Reset form ───────────────────────────────────────────────────────────
+  function resetForm() {
+    document.getElementById('receiptNumber').value = generateReceiptNumber();
+    document.getElementById('receiptDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('customerName').value = '';
+    document.getElementById('customerPhone').value = '';
+    document.getElementById('paymentMethod').value = 'Cash';
+    document.getElementById('transactionRef').value = '';
+    document.getElementById('amountPaid').value = '';
+    document.getElementById('previousBalance').value = '0';
+    document.getElementById('notes').value = '';
+    updatePreview();
+  }
+
+  // ─── Load receipts ────────────────────────────────────────────────────────
+  async function loadReceipts() {
+    const grid = document.getElementById('receiptsGrid');
+    grid.innerHTML = '<div class="loading-box" style="grid-column:1/-1;"><i class="fas fa-spinner fa-pulse"></i><br>Connecting to Firebase...</div>';
+
+    try {
+      // Step 1: try without ordering first (avoids missing-index errors)
+      let snap;
+      try {
+        const q = query(collection(db, 'receipts'), orderBy('createdAt', 'desc'));
+        snap = await getDocs(q);
+      } catch (orderErr) {
+        // If ordering fails (e.g. index not built), fall back to unordered
+        console.warn('Ordered query failed, trying unordered:', orderErr.message);
+        snap = await getDocs(collection(db, 'receipts'));
+      }
+
+      receipts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Sort client-side as fallback
+      receipts.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+
+      if (receipts.length === 0) {
+        grid.innerHTML = '<div class="empty-box" style="grid-column:1/-1;"><i class="fas fa-receipt" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>No receipts yet. Create your first receipt!</div>';
+        return;
+      }
+
+      grid.innerHTML = receipts.map(rec => `
+        <div class="receipt-card" onclick="window.viewReceipt('${rec.id}')">
+          <div class="receipt-header">
+            <span class="receipt-id">${escapeHtml(rec.receiptNumber || rec.id.slice(0, 8))}</span>
+            <span class="receipt-date">${rec.date || ''}</span>
+          </div>
+          <div class="customer-name"><i class="fas fa-user"></i> ${escapeHtml(rec.customerName)}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">
+            <i class="fas fa-money-bill-wave"></i> ${escapeHtml(rec.paymentMethod || '')}
+          </div>
+          <div class="receipt-amount">Paid: K ${Number(rec.amountPaid).toFixed(2)}</div>
+          <div style="font-size:0.7rem; margin-top:4px; color:${rec.newBalance > 0 ? '#f59e0b' : '#10b981'};">
+            Balance: K ${Number(rec.newBalance || 0).toFixed(2)}
+          </div>
+        </div>`).join('');
+
+    } catch (err) {
+      console.error('Load error full:', err);
+
+      // Friendly diagnosis based on error code
+      let diagnosis = err.message;
+      let hint = '';
+      if (err.code === 'permission-denied' || err.message.includes('permission')) {
+        diagnosis = 'Permission denied — Firestore security rules are blocking reads.';
+        hint = 'Go to Firebase Console → Firestore → Rules and set:<br><code style="font-size:11px;">allow read, write: if true;</code><br>for development, then tighten later.';
+      } else if (err.code === 'unavailable' || err.message.includes('network') || err.message.includes('offline')) {
+        diagnosis = 'Network unavailable — cannot reach Firebase servers.';
+        hint = 'Check your internet connection.';
+      } else if (err.message.includes('400') || err.message.includes('API key')) {
+        diagnosis = 'Invalid API key — Firebase rejected the request.';
+        hint = 'Double-check the apiKey in the script matches exactly what Firebase Console shows.';
+      } else if (err.message.includes('project') || err.message.includes('not found')) {
+        diagnosis = 'Project not found — the projectId may be wrong.';
+        hint = 'Confirm the projectId is <strong>trismartstores</strong> in Firebase Console.';
+      }
+
+      grid.innerHTML = `
+        <div class="error-box" style="grid-column:1/-1;">
+          <i class="fas fa-exclamation-triangle"></i>
+          <strong>Could not load receipts</strong>
+          <p style="margin-top:8px; font-size:0.8rem;">${diagnosis}</p>
+          ${hint ? `<p style="margin-top:6px; font-size:0.75rem; color:#b91c1c;">${hint}</p>` : ''}
+          <p class="error-detail" style="margin-top:8px;">Code: ${err.code || 'unknown'}<br>${err.message}</p>
+          <button onclick="window._retryLoad()" style="margin-top:14px;padding:8px 20px;border-radius:20px;border:1px solid #fca5a5;background:white;cursor:pointer;font-size:0.8rem;">
+            <i class="fas fa-redo"></i> Retry
+          </button>
+        </div>`;
+      showToast('Error: ' + (err.code || err.message), true);
+    }
+  }
+
+  // Make retryable from the error button
+  window._retryLoad = loadReceipts;
+
+  // ─── View receipt modal ───────────────────────────────────────────────────
+  window.viewReceipt = (id) => {
+    const rec = receipts.find(r => r.id === id);
+    if (!rec) return;
+    currentReceiptForPdf = rec;
+
+    const balanceLabel = rec.newBalance > 0
+      ? `Remaining: K ${Number(rec.newBalance).toFixed(2)}`
+      : rec.newBalance < 0
+        ? `Credit: K ${Math.abs(Number(rec.newBalance)).toFixed(2)}`
+        : 'Fully Settled ✓';
+
+    document.getElementById('receiptDetails').innerHTML = `
+      <div style="text-align:center; border-bottom:2px solid #e2e8f0; padding-bottom:12px; margin-bottom:12px;">
+        <h3 style="color:#2563eb;">TRISMART ENTERPRISES</h3>
+        <p style="font-size:0.7rem;">${rec.companyDetails?.email || 'trismart.zm@gmail.com'} | ${rec.companyDetails?.phone || '+260 775 390905'}</p>
+      </div>
+      <div class="receipt-row"><strong>Receipt #:</strong> ${escapeHtml(rec.receiptNumber)}</div>
+      <div class="receipt-row"><strong>Date:</strong> ${rec.date}</div>
+      <div class="receipt-row"><strong>Customer:</strong> ${escapeHtml(rec.customerName)}</div>
+      <div class="receipt-row"><strong>Phone:</strong> ${escapeHtml(rec.customerPhone || 'N/A')}</div>
+      <div class="receipt-row"><strong>Payment:</strong> ${escapeHtml(rec.paymentMethod)} ${rec.transactionRef ? `(${escapeHtml(rec.transactionRef)})` : ''}</div>
+      <div class="receipt-row"><strong>Notes:</strong> ${escapeHtml(rec.notes || '—')}</div>
+      <div class="receipt-row"><strong>Previous Balance:</strong> K ${Number(rec.previousBalance || 0).toFixed(2)}</div>
+      <div class="receipt-row receipt-total"><strong>Amount Paid:</strong> K ${Number(rec.amountPaid).toFixed(2)}</div>
+      <div class="balance-info"><strong>${balanceLabel}</strong></div>
+      <div style="margin-top:12px; text-align:center; font-size:0.65rem; color:#94a3b8;">Thank you for your business!</div>`;
+
+    document.getElementById('receiptModal').classList.add('show');
+  };
+
+  // ─── Print receipt ────────────────────────────────────────────────────────
+  document.getElementById('printPdfBtn')?.addEventListener('click', () => {
+    if (!currentReceiptForPdf) return;
+    const rec = currentReceiptForPdf;
+    const balanceStatus = rec.newBalance > 0
+      ? `Remaining Balance: K ${Number(rec.newBalance).toFixed(2)}`
+      : rec.newBalance < 0
+        ? `Credit: K ${Math.abs(Number(rec.newBalance)).toFixed(2)}`
+        : 'FULLY SETTLED ✓';
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Receipt ${rec.receiptNumber}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+          <style>
+            * { margin:0; padding:0; box-sizing:border-box; }
+            body { font-family:'Inter',sans-serif; padding:30px; background:white; color:#1e293b; }
+            .row { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid #e2e8f0; font-size:13px; }
+            .total { display:flex; justify-content:space-between; padding:12px 0; font-size:1.1rem; font-weight:800; color:#2563eb; border-top:2px solid #e2e8f0; margin-top:8px; }
+            .balance { background:#fef3c7; padding:10px; border-radius:8px; text-align:center; margin-top:10px; font-weight:600; font-size:13px; }
+            @media print { body { padding:0; } }
+          </style>
+        </head>
+        <body>
+          <div style="text-align:center; margin-bottom:20px;">
+            <h2 style="color:#2563eb; margin-bottom:4px;">TRISMART ENTERPRISES</h2>
+            <p style="font-size:12px;">${rec.companyDetails?.email || 'trismart.zm@gmail.com'} | ${rec.companyDetails?.phone || '+260 775 390905'}</p>
+            <p style="font-size:11px;">FNB Bank: ${rec.companyDetails?.account || '63042080133'} | Industrial Area, Lusaka</p>
+            <hr style="margin:10px 0;">
+          </div>
+          <div class="row"><strong>Receipt #:</strong> <span>${escapeHtml(rec.receiptNumber)}</span></div>
+          <div class="row"><strong>Date:</strong> <span>${rec.date}</span></div>
+          <div class="row"><strong>Customer:</strong> <span>${escapeHtml(rec.customerName)}</span></div>
+          <div class="row"><strong>Phone:</strong> <span>${escapeHtml(rec.customerPhone || 'N/A')}</span></div>
+          <div class="row"><strong>Payment Method:</strong> <span>${escapeHtml(rec.paymentMethod)}</span></div>
+          ${rec.transactionRef ? `<div class="row"><strong>Transaction Ref:</strong> <span>${escapeHtml(rec.transactionRef)}</span></div>` : ''}
+          <div class="row"><strong>Description:</strong> <span>${escapeHtml(rec.notes || '—')}</span></div>
+          <div class="row"><strong>Previous Balance:</strong> <span>K ${Number(rec.previousBalance || 0).toFixed(2)}</span></div>
+          <div class="total"><strong>Amount Paid:</strong> <strong>K ${Number(rec.amountPaid).toFixed(2)}</strong></div>
+          <div class="balance">${balanceStatus}</div>
+          <div style="text-align:center; margin-top:20px; font-size:11px; color:#64748b;">Thank you for your business!</div>
+          <script>window.onload = () => { window.print(); }<\/script>
+        </body>
+      </html>`);
+    printWindow.document.close();
+    showToast('Print window opened');
+  });
+
+  // ─── Modal close ──────────────────────────────────────────────────────────
+  window.closeModal = () => document.getElementById('receiptModal').classList.remove('show');
+  document.getElementById('receiptModal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('receiptModal')) closeModal();
+  });
+
+  // ─── Utility ──────────────────────────────────────────────────────────────
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+  }
+
+  // ─── Tab switching ────────────────────────────────────────────────────────
+  document.getElementById('newReceiptTab').addEventListener('click', () => {
+    document.getElementById('newReceiptPanel').style.display = 'block';
+    document.getElementById('historyPanel').style.display = 'none';
+    document.getElementById('newReceiptTab').classList.add('active');
+    document.getElementById('historyTab').classList.remove('active');
+    resetForm();
+  });
+
+  document.getElementById('historyTab').addEventListener('click', async () => {
+    document.getElementById('newReceiptPanel').style.display = 'none';
+    document.getElementById('historyPanel').style.display = 'block';
+    document.getElementById('historyTab').classList.add('active');
+    document.getElementById('newReceiptTab').classList.remove('active');
+    await loadReceipts();
+  });
+
+  // ─── Form listeners ───────────────────────────────────────────────────────
+  document.getElementById('saveReceiptBtn').addEventListener('click', saveReceipt);
+  document.getElementById('resetBtn').addEventListener('click', resetForm);
+  ['amountPaid', 'previousBalance', 'customerName', 'notes', 'transactionRef', 'customerPhone'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updatePreview);
+  });
+  document.getElementById('paymentMethod').addEventListener('change', updatePreview);
+
+  // ─── Init ─────────────────────────────────────────────────────────────────
+  document.getElementById('receiptNumber').value = generateReceiptNumber();
+  document.getElementById('receiptDate').value = new Date().toISOString().split('T')[0];
+  updatePreview();
+</script>
+</body>
+</html>
