@@ -16,7 +16,6 @@
     :root {
       --primary: #1e3a8a;
       --primary-light: #3b82f6;
-      --accent: #0f172a;
       --success: #059669;
       --danger: #dc2626;
       --bg: #f8fafc;
@@ -25,16 +24,13 @@
       --text-main: #0f172a;
       --text-muted: #475569;
       --radius: 16px;
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     }
 
     body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-family: 'Inter', system-ui, sans-serif;
       background: var(--bg);
       height: 100vh;
       overflow: hidden;
-      color: var(--text-main);
     }
 
     .app {
@@ -43,7 +39,6 @@
       height: 100%;
     }
 
-    /* Topbar */
     .topbar {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
@@ -53,7 +48,6 @@
       align-items: center;
       justify-content: space-between;
       flex-shrink: 0;
-      backdrop-filter: blur(4px);
     }
 
     .logo {
@@ -61,7 +55,6 @@
       align-items: center;
       gap: 10px;
       font-weight: 700;
-      font-size: 1.1rem;
     }
 
     .logo-icon {
@@ -83,29 +76,24 @@
       font-size: 0.75rem;
       font-weight: 600;
       cursor: pointer;
-      transition: 0.2s;
     }
 
-    /* Main scroll */
     .main-content {
       flex: 1;
       overflow-y: auto;
       padding: 1.5rem;
     }
 
-    /* Account card */
     .account-card {
       background: var(--surface);
       border-radius: var(--radius);
       border: 1px solid var(--border);
       padding: 1.25rem;
       margin-bottom: 1.5rem;
-      box-shadow: var(--shadow-sm);
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 1rem;
     }
 
     .account-details h1 {
@@ -116,11 +104,9 @@
     .balance-big {
       font-size: 1.8rem;
       font-weight: 800;
-      letter-spacing: -0.02em;
       color: var(--primary);
     }
 
-    /* action row */
     .action-row {
       display: flex;
       justify-content: space-between;
@@ -142,7 +128,6 @@
       font-size: 0.75rem;
       border: none;
       cursor: pointer;
-      transition: all 0.2s;
       background: var(--primary);
       color: white;
       display: inline-flex;
@@ -156,17 +141,10 @@
       color: var(--text-main);
     }
 
-    .btn-outline:hover {
-      border-color: var(--primary);
-      color: var(--primary);
-    }
-
-    /* month filter row */
     .filter-bar {
       display: flex;
       align-items: center;
       gap: 12px;
-      flex-wrap: wrap;
       background: var(--surface);
       padding: 0.5rem 1rem;
       border-radius: 60px;
@@ -211,14 +189,12 @@
       color: var(--primary);
     }
 
-    /* table */
     .ledger-table-container {
       background: var(--surface);
       border-radius: var(--radius);
       border: 1px solid var(--border);
       overflow: auto;
       max-height: calc(100vh - 340px);
-      box-shadow: var(--shadow-sm);
     }
 
     .ledger-table {
@@ -231,16 +207,14 @@
     .ledger-table th {
       text-align: left;
       padding: 0.9rem 0.8rem;
-      background: #fefefe;
-      border-bottom: 1px solid var(--border);
+      background: white;
+      border-bottom: 2px solid var(--border);
       font-weight: 700;
       font-size: 0.65rem;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
       color: var(--text-muted);
       position: sticky;
       top: 0;
-      background: white;
     }
 
     .ledger-table td {
@@ -260,21 +234,28 @@
 
     .bf-row {
       background: #fefce8;
-      font-weight: 600;
-      border-left: 3px solid var(--primary-light);
+      border-left: 4px solid var(--primary-light);
     }
 
-    .bf-row td:first-child {
-      font-weight: 800;
+    .bf-row td {
+      font-weight: 600;
     }
 
     .bf-label {
-      background: #eef2ff;
+      background: #e0e7ff;
       border-radius: 20px;
-      padding: 2px 8px;
-      font-size: 0.65rem;
+      padding: 4px 10px;
+      font-size: 0.7rem;
       font-weight: 700;
       display: inline-block;
+    }
+
+    .transfer-badge {
+      background: #e0f2fe;
+      font-size: 0.6rem;
+      padding: 2px 8px;
+      border-radius: 30px;
+      margin-left: 6px;
     }
 
     .action-btn {
@@ -286,7 +267,6 @@
       color: var(--text-muted);
     }
 
-    /* modals */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -311,7 +291,6 @@
     }
 
     .modal h3 {
-      font-size: 1.2rem;
       margin-bottom: 1rem;
     }
 
@@ -340,9 +319,6 @@
       bottom: 20px;
       right: 20px;
       z-index: 1100;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
     }
 
     .toast {
@@ -351,21 +327,14 @@
       padding: 10px 18px;
       border-radius: 40px;
       font-size: 0.75rem;
-    }
-
-    .transfer-badge {
-      background: #e0f2fe;
-      font-size: 0.6rem;
-      padding: 2px 8px;
-      border-radius: 30px;
-      margin-left: 6px;
+      margin-top: 8px;
     }
 
     .dropdown-menu {
       position: fixed;
       background: white;
       border-radius: 12px;
-      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
       z-index: 200;
       min-width: 110px;
       border: 1px solid var(--border);
@@ -381,10 +350,6 @@
     .dropdown-item.danger {
       color: var(--danger);
     }
-
-    .hidden-header {
-      display: none !important;
-    }
   </style>
 </head>
 <body>
@@ -394,7 +359,7 @@
     <div class="back-btn" id="backBtn"><i class="fas fa-arrow-left"></i> Dashboard</div>
   </div>
   <div class="main-content">
-    <div class="account-card" id="accountHeader">Loading account...</div>
+    <div class="account-card" id="accountHeader">Loading...</div>
 
     <div class="action-row">
       <div class="btn-group">
@@ -402,19 +367,18 @@
         <button class="btn btn-outline" id="transferBtn"><i class="fas fa-exchange-alt"></i> Transfer</button>
       </div>
       <div class="filter-bar">
-        <div class="month-filter"><i class="fas fa-calendar-alt"></i><input type="month" id="monthFilterInput"></div>
-        <button class="clear-filter" id="clearFilterBtn" style="display:none;"><i class="fas fa-times"></i> Reset</button>
-        <span id="filterBadge" class="filter-badge" style="display:none;"><i class="fas fa-filter"></i> <span></span></span>
+        <div class="month-filter"><i class="fas fa-calendar-alt"></i><input type="month" id="monthFilterInput" placeholder="Filter by month"></div>
+        <button class="clear-filter" id="clearFilterBtn" style="display:none;"><i class="fas fa-times"></i> Clear</button>
+        <span id="filterBadge" class="filter-badge" style="display:none;"></span>
       </div>
     </div>
 
     <div class="ledger-table-container">
       <table class="ledger-table">
         <thead>
-          <tr><th>Date</th><th>Description</th><th>Debit (K)</th><th>Credit (K)</th><th>Running Balance (K)</th><th style="width:50px"></th></tr>
+          <tr><th>Date</th><th>Description</th><th>Debit (K)</th><th>Credit (K)</th><th>Balance (K)</th><th></th></tr>
         </thead>
-        <tbody id="ledgerTbody"><tr><td colspan="6">Loading ledger...</td></tr>
-        </tbody>
+        <tbody id="ledgerTbody"><tr><td colspan="6">Loading...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -428,7 +392,7 @@
     <div class="form-group"><label>Type</label><select id="txType"><option value="credit">Income (Credit)</option><option value="debit">Expense (Debit)</option></select></div>
     <div class="form-group"><label>Amount (K)</label><input type="number" id="txAmount" step="0.01" placeholder="0.00"></div>
     <div class="form-group"><label>Description</label><input type="text" id="txDesc" placeholder="e.g., Sales, Rent"></div>
-    <div class="btn-group" style="margin-top: 1rem;"><button id="saveTxBtn" class="btn">Save</button><button id="closeTxBtn" class="btn btn-outline">Cancel</button></div>
+    <div class="btn-group"><button id="saveTxBtn" class="btn">Save</button><button id="closeTxBtn" class="btn btn-outline">Cancel</button></div>
   </div>
 </div>
 
@@ -440,7 +404,7 @@
     <div class="form-group"><label>To Account</label><select id="toAccountSelect"></select></div>
     <div class="form-group"><label>Amount (K)</label><input type="number" id="transferAmount" step="0.01"></div>
     <div class="form-group"><label>Date</label><input type="date" id="transferDate"></div>
-    <div class="form-group"><label>Description (optional)</label><input type="text" id="transferDesc" placeholder="Transfer notes"></div>
+    <div class="form-group"><label>Description</label><input type="text" id="transferDesc" placeholder="Transfer notes"></div>
     <div class="btn-group"><button id="execTransferBtn" class="btn">Execute</button><button id="cancelTransferBtn" class="btn btn-outline">Cancel</button></div>
   </div>
 </div>
@@ -449,7 +413,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
-  import { getFirestore, collection, query, where, addDoc, updateDoc, deleteDoc, doc, onSnapshot, runTransaction, getDocs } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+  import { getFirestore, collection, query, where, addDoc, updateDoc, deleteDoc, doc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
@@ -459,187 +423,219 @@
     messagingSenderId: "416692703333",
     appId: "1:416692703333:web:d4b60292621435c748f68c"
   };
+  
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const loggedInUser = localStorage.getItem('loggedInUser') || '';
-  const userName = (loggedInUser || localStorage.getItem('userName') || '').toLowerCase();
-  if (userName !== 'chris') { document.body.innerHTML = '<div style="padding:30px">Unauthorized</div>'; throw new Error('Access Denied'); }
+  const userName = (localStorage.getItem('loggedInUser') || '').toLowerCase();
+  if (userName !== 'chris') { document.body.innerHTML = '<div style="padding:30px">Access Denied</div>'; throw new Error('Unauthorized'); }
 
   const accountId = localStorage.getItem('selectedAccountId');
-  if (!accountId) { toast('No account selected', 'error'); setTimeout(() => location.href = 'accounts-dashboard.html', 1500); }
+  if (!accountId) { toast('No account selected'); setTimeout(() => location.href = 'accounts-dashboard.html', 1500); }
 
   let currentAccount = null;
   let allTransactions = [];
   let allAccounts = [];
   let unsubscribeAccount, unsubscribeTrans, unsubscribeAccounts;
   let activeDropdown = null;
+  let editingId = null;
 
-  // Filter and storage helpers
+  // Month filter storage
   const MONTH_FILTER_KEY = `trismart_month_filter_${accountId}`;
   function getStoredMonth() { return localStorage.getItem(MONTH_FILTER_KEY) || ''; }
   function setStoredMonth(val) { val ? localStorage.setItem(MONTH_FILTER_KEY, val) : localStorage.removeItem(MONTH_FILTER_KEY); }
 
-  // Helper: get filtered & SORTED (ascending date) transactions
+  // Get filtered transactions sorted by date (oldest first)
   function getFilteredAndSorted() {
     const monthFilter = getStoredMonth();
     let filtered = [...allTransactions];
     if (monthFilter) {
       filtered = filtered.filter(tx => tx.date && tx.date.startsWith(monthFilter));
     }
-    // CRITICAL: ascending order (oldest first)
-    return filtered.sort((a,b) => (a.date < b.date ? -1 : (a.date > b.date ? 1 : 0)));
+    return filtered.sort((a, b) => a.date.localeCompare(b.date));
   }
 
-  // CORE: build ledger rows with Balance Brought Forward for each new month period
-  // Each month block gets a "Balance Brought Forward" row at the beginning,
-  // and transactions within month continue the running balance.
-  function buildLedgerWithBroughtForward(transactions, accountOpeningBalance = 0) {
-    if (!transactions.length && accountOpeningBalance === 0) return [];
-
-    // Group transactions by month (YYYY-MM)
-    const grouped = new Map(); // key: YYYY-MM, value: array of trans
-    for (const tx of transactions) {
-      const monthKey = tx.date.substring(0, 7);
-      if (!grouped.has(monthKey)) grouped.set(monthKey, []);
-      grouped.get(monthKey).push(tx);
-    }
-
-    // Sort months ascending
-    const sortedMonths = Array.from(grouped.keys()).sort();
-    const resultRows = [];
-    let globalCarryBalance = accountOpeningBalance; // balance that carries month to month
-
-    for (let i = 0; i < sortedMonths.length; i++) {
-      const monthKey = sortedMonths[i];
-      const monthTxs = grouped.get(monthKey);
-      // sort transactions inside month by date ascending
-      monthTxs.sort((a,b) => (a.date < b.date ? -1 : 1));
-      
-      // Brought forward row for this month
-      const bfRow = {
-        id: `bf_${monthKey}`,
-        date: `${monthKey}-01`,
-        description: `⟳ BALANCE BROUGHT FORWARD (${formatMonthYear(monthKey)})`,
-        debit: null,
-        credit: null,
-        isBroughtForward: true,
-        runningBalance: globalCarryBalance
-      };
-      resultRows.push(bfRow);
-      
-      // now compute running inside this month
-      let monthRunning = globalCarryBalance;
-      for (const tx of monthTxs) {
-        const delta = tx.type === 'credit' ? tx.amount : -tx.amount;
-        monthRunning += delta;
-        resultRows.push({
-          ...tx,
-          runningBalance: monthRunning,
-          isBroughtForward: false
-        });
-      }
-      // after month ends, globalCarryBalance = last transaction balance (or same if empty)
-      if (monthTxs.length > 0) {
-        globalCarryBalance = monthRunning;
-      }
-      // else if month has no tx? but we only have month with txs.
-    }
-    return resultRows;
+  // Get all transactions from ALL months (for calculating previous month balances)
+  function getAllTransactionsSorted() {
+    return [...allTransactions].sort((a, b) => a.date.localeCompare(b.date));
   }
 
+  // Calculate balance up to a specific date (exclusive)
+  function getBalanceBeforeDate(date) {
+    let balance = currentAccount?.startingBalance || 0;
+    const allSorted = getAllTransactionsSorted();
+    for (const tx of allSorted) {
+      if (tx.date >= date) break;
+      balance += tx.type === 'credit' ? tx.amount : -tx.amount;
+    }
+    return balance;
+  }
+
+  // Format month name
   function formatMonthYear(ym) {
     const [y, m] = ym.split('-');
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return `${months[parseInt(m)-1]} ${y}`;
   }
 
+  // Get the previous month's closing balance for the current filtered month
+  function getPreviousMonthClosingBalance(currentFilterMonth) {
+    if (!currentFilterMonth) return null;
+    
+    // Get all transactions from ALL time
+    const allSorted = getAllTransactionsSorted();
+    if (allSorted.length === 0) return null;
+    
+    // Find the last transaction date BEFORE the current filter month
+    let lastTxBeforeMonth = null;
+    for (const tx of allSorted) {
+      if (tx.date >= currentFilterMonth) break;
+      lastTxBeforeMonth = tx;
+    }
+    
+    if (lastTxBeforeMonth) {
+      // Calculate balance including all transactions up to that point
+      let balance = currentAccount?.startingBalance || 0;
+      for (const tx of allSorted) {
+        if (tx.date > lastTxBeforeMonth.date) break;
+        balance += tx.type === 'credit' ? tx.amount : -tx.amount;
+      }
+      return balance;
+    }
+    
+    // No transactions before this month, use starting balance if any
+    return currentAccount?.startingBalance || null;
+  }
+
+  // Build ledger with Balance Brought Forward for the filtered month
+  function buildLedgerWithBroughtForward() {
+    const monthFilter = getStoredMonth();
+    let filteredTxs = getFilteredAndSorted();
+    
+    if (!monthFilter) {
+      // No filter: show all transactions with no BF rows (standard view)
+      let running = currentAccount?.startingBalance || 0;
+      const allSorted = getAllTransactionsSorted();
+      const rows = [];
+      for (const tx of allSorted) {
+        running += tx.type === 'credit' ? tx.amount : -tx.amount;
+        rows.push({ ...tx, runningBalance: running, isBroughtForward: false });
+      }
+      return rows;
+    }
+    
+    // WITH MONTH FILTER: show Brought Forward from previous month
+    const previousClosing = getPreviousMonthClosingBalance(monthFilter);
+    const rows = [];
+    
+    // Add Balance Brought Forward row
+    if (previousClosing !== null) {
+      rows.push({
+        id: `bf_${monthFilter}`,
+        date: `${monthFilter}-01`,
+        description: `BALANCE BROUGHT FORWARD (from ${formatMonthYear(getPreviousMonthKey(monthFilter))})`,
+        debit: null,
+        credit: null,
+        runningBalance: previousClosing,
+        isBroughtForward: true
+      });
+    }
+    
+    // Add current month's transactions with running balance
+    let running = previousClosing !== null ? previousClosing : (currentAccount?.startingBalance || 0);
+    for (const tx of filteredTxs) {
+      running += tx.type === 'credit' ? tx.amount : -tx.amount;
+      rows.push({ ...tx, runningBalance: running, isBroughtForward: false });
+    }
+    
+    return rows;
+  }
+  
+  function getPreviousMonthKey(currentMonth) {
+    const [year, month] = currentMonth.split('-').map(Number);
+    let prevYear = year;
+    let prevMonth = month - 1;
+    if (prevMonth === 0) {
+      prevMonth = 12;
+      prevYear--;
+    }
+    return `${prevYear}-${String(prevMonth).padStart(2, '0')}`;
+  }
+
   function renderLedger() {
     const tbody = document.getElementById('ledgerTbody');
     if (!currentAccount) { tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>'; return; }
-    const filteredSorted = getFilteredAndSorted();
-    // IMPORTANT: get opening balance from account (starting balance from account creation?)
-    // For true continuity: openingBalance is account.balance - net of all transactions? Actually safest:
-    // To compute initial balance before any transaction: we need total net effect of all tx. But since we store balance separately,
-    // but we want the brought forward from previous months before first tx. we use currentAccount.balance minus sum of all tx? 
-    // More robust: total cumulative from earliest month should reflect opening. But brought forward continuity: 
-    // We compute net effect of all transactions & derive initial balance that makes account balance match after all tx.
-    // Simpler: use first month's brought forward = starting balance of account (original balance). We'll store a startingBalance property or deduce:
-    const totalTxImpact = allTransactions.reduce((sum, tx) => sum + (tx.type === 'credit' ? tx.amount : -tx.amount), 0);
-    const derivedStartingBalance = (currentAccount.balance || 0) - totalTxImpact;
-    const openingBalanceBeforeAnyTx = derivedStartingBalance;
     
-    const ledgerRows = buildLedgerWithBroughtForward(filteredSorted, openingBalanceBeforeAnyTx);
+    const ledgerRows = buildLedgerWithBroughtForward();
     
     if (ledgerRows.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6">No transactions. Add entry to see running balance with brought forward.</td></tr>`;
+      tbody.innerHTML = '<tr><td colspan="6">No transactions. Click "Add Transaction" to start.</td></tr>';
       return;
     }
     
     tbody.innerHTML = ledgerRows.map(row => {
       if (row.isBroughtForward) {
-        // special styling for brought forward row
         return `
-          <tr class="bf-row" style="background:#fef9e3;">
-            <td><strong>${row.date}</strong></td>
-            <td><span class="bf-label"><i class="fas fa-forward"></i> ${escapeHtml(row.description)}</span></td>
+          <tr class="bf-row">
+            <td style="font-weight:700;">${row.date}</td>
+            <td><span class="bf-label"><i class="fas fa-arrow-right"></i> ${row.description}</span></td>
             <td>—</td>
             <td>—</td>
-            <td class="balance-amount" style="font-weight:800; color:#1e3a8a;">K${row.runningBalance.toFixed(2)}</td>
+            <td style="font-weight:800; color:#1e3a8a;">K${row.runningBalance.toFixed(2)}</td>
             <td></td>
           </tr>
         `;
       }
+      
       const isDebit = row.type === 'debit';
       const debitDisplay = isDebit ? `K${row.amount.toFixed(2)}` : '';
       const creditDisplay = !isDebit ? `K${row.amount.toFixed(2)}` : '';
       const transferTag = row.isTransfer ? '<span class="transfer-badge"><i class="fas fa-exchange-alt"></i> transfer</span>' : '';
+      
       return `
         <tr>
           <td>${row.date || '-'}</td>
           <td><strong>${escapeHtml(row.description || '')}</strong> ${transferTag}</td>
           <td class="debit">${debitDisplay}</td>
           <td class="credit">${creditDisplay}</td>
-          <td class="balance-amount">K${(row.runningBalance || 0).toFixed(2)}</td>
-          <td class="action-cell"><button class="action-btn" data-txn-id="${row.id}" data-action-menu><i class="fas fa-ellipsis-v"></i></button></td>
+          <td class="balance">K${row.runningBalance.toFixed(2)}</td>
+          <td class="action-cell"><button class="action-btn" data-txn-id="${row.id}"><i class="fas fa-ellipsis-v"></i></button></td>
         </tr>
       `;
     }).join('');
     
-    // attach dropdowns for real transactions only (ignore bf rows)
-    document.querySelectorAll('[data-action-menu]').forEach(btn => {
+    // Attach dropdown handlers
+    document.querySelectorAll('[data-txn-id]').forEach(btn => {
       const id = btn.getAttribute('data-txn-id');
       if (id && !id.startsWith('bf_')) {
-        btn.removeEventListener('click', dropdownHandler);
-        btn.addEventListener('click', dropdownHandler);
-      } else {
-        btn.style.opacity = '0.4';
-        btn.disabled = true;
+        btn.onclick = (e) => showDropdown(e, id);
       }
     });
   }
 
-  function dropdownHandler(e) {
-    e.stopPropagation();
-    const txnId = this.getAttribute('data-txn-id');
-    if (!txnId || txnId.startsWith('bf_')) return;
+  function showDropdown(event, txId) {
+    event.stopPropagation();
     closeDropdown();
-    const rect = this.getBoundingClientRect();
+    const rect = event.currentTarget.getBoundingClientRect();
     const div = document.createElement('div');
     div.className = 'dropdown-menu';
     div.style.position = 'fixed';
     div.style.top = `${rect.bottom + 4}px`;
     div.style.left = `${rect.left - 30}px`;
-    div.innerHTML = `<div class="dropdown-item" data-act="edit"><i class="fas fa-pen"></i> Edit</div><div class="dropdown-item danger" data-act="delete"><i class="fas fa-trash"></i> Delete</div>`;
+    div.innerHTML = `
+      <div class="dropdown-item" data-action="edit"><i class="fas fa-pen"></i> Edit</div>
+      <div class="dropdown-item danger" data-action="delete"><i class="fas fa-trash"></i> Delete</div>
+    `;
     document.body.appendChild(div);
     activeDropdown = div;
-    div.querySelector('[data-act="edit"]').addEventListener('click', () => { editTransaction(txnId); closeDropdown(); });
-    div.querySelector('[data-act="delete"]').addEventListener('click', () => { deleteTransaction(txnId); closeDropdown(); });
+    
+    div.querySelector('[data-action="edit"]').onclick = () => { editTransaction(txId); closeDropdown(); };
+    div.querySelector('[data-action="delete"]').onclick = () => { deleteTransaction(txId); closeDropdown(); };
     setTimeout(() => document.addEventListener('click', () => closeDropdown(), { once: true }), 10);
   }
 
   function closeDropdown() { if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; } }
 
-  function editTransaction(txId) {
+  async function editTransaction(txId) {
     const tx = allTransactions.find(t => t.id === txId);
     if (!tx) return;
     document.getElementById('modalTitle').innerText = 'Edit Transaction';
@@ -647,12 +643,12 @@
     document.getElementById('txType').value = tx.type;
     document.getElementById('txAmount').value = tx.amount;
     document.getElementById('txDesc').value = tx.description;
-    window._editingId = txId;
+    editingId = txId;
     document.getElementById('txModal').classList.add('show');
   }
 
   async function deleteTransaction(txId) {
-    if (!confirm('Delete transaction? Balance will revert.')) return;
+    if (!confirm('Delete this transaction?')) return;
     const tx = allTransactions.find(t => t.id === txId);
     if (!tx) return;
     try {
@@ -664,21 +660,25 @@
         txRun.update(accRef, { balance: bal + delta });
         txRun.delete(doc(db, 'account_transactions', txId));
       });
-      toast('Transaction removed', 'success');
+      toast('Transaction deleted');
     } catch (err) { toast(err.message, 'error'); }
   }
 
-  async function saveTransactionHandler() {
+  async function saveTransaction() {
     const date = document.getElementById('txDate').value;
     const type = document.getElementById('txType').value;
     const amount = parseFloat(document.getElementById('txAmount').value);
     const desc = document.getElementById('txDesc').value.trim();
-    if (!date || isNaN(amount) || amount <= 0 || !desc) { toast('Valid date, amount>0, description', 'error'); return; }
-    const editingId = window._editingId;
+    
+    if (!date || isNaN(amount) || amount <= 0 || !desc) {
+      toast('Please fill all fields correctly', 'error');
+      return;
+    }
+    
     try {
       if (editingId) {
         const oldTx = allTransactions.find(t => t.id === editingId);
-        if (!oldTx) throw new Error('Missing');
+        if (!oldTx) throw new Error('Transaction not found');
         const oldDelta = oldTx.type === 'credit' ? oldTx.amount : -oldTx.amount;
         const newDelta = type === 'credit' ? amount : -amount;
         const delta = newDelta - oldDelta;
@@ -693,83 +693,167 @@
         await runTransaction(db, async (txRun) => {
           const accRef = doc(db, 'accounts', accountId);
           const snap = await txRun.get(accRef);
-          let newBal = Number(snap.data().balance) + (type === 'credit' ? amount : -amount);
+          const newBal = Number(snap.data().balance) + (type === 'credit' ? amount : -amount);
           txRun.update(accRef, { balance: newBal });
           txRun.set(doc(collection(db, 'account_transactions')), {
             accountId, accountName: currentAccount?.name, date, type, amount, description: desc, createdAt: new Date().toISOString()
           });
         });
-        toast('Transaction added ✓');
+        toast('Transaction added');
       }
-      window._editingId = null;
+      editingId = null;
       document.getElementById('txModal').classList.remove('show');
       document.getElementById('txDate').value = '';
       document.getElementById('txAmount').value = '';
+      document.getElementById('txDesc').value = '';
     } catch (err) { toast(err.message, 'error'); }
   }
 
-  // Transfer logic and subscriptions...
   async function openTransfer() {
     if (!currentAccount) return;
     document.getElementById('fromAccName').value = currentAccount.name;
     document.getElementById('transferAmount').value = '';
     document.getElementById('transferDate').valueAsDate = new Date();
     const select = document.getElementById('toAccountSelect');
-    select.innerHTML = '<option value="">-- select --</option>';
-    allAccounts.forEach(acc => { if (acc.id !== accountId) select.innerHTML += `<option value="${acc.id}">${escapeHtml(acc.name)}</option>`; });
+    select.innerHTML = '<option value="">-- Select account --</option>';
+    allAccounts.forEach(acc => {
+      if (acc.id !== accountId) {
+        select.innerHTML += `<option value="${acc.id}">${escapeHtml(acc.name)}</option>`;
+      }
+    });
     document.getElementById('transferModal').classList.add('show');
   }
 
-  document.getElementById('execTransferBtn').onclick = async () => {
+  async function executeTransfer() {
     const toId = document.getElementById('toAccountSelect').value;
     const amount = parseFloat(document.getElementById('transferAmount').value);
     const date = document.getElementById('transferDate').value;
     const desc = document.getElementById('transferDesc').value.trim() || 'Transfer';
-    if (!toId || isNaN(amount) || amount <= 0 || !date) { toast('Fill all fields', 'error'); return; }
+    
+    if (!toId || isNaN(amount) || amount <= 0 || !date) {
+      toast('Please fill all fields', 'error');
+      return;
+    }
+    
     const toAcc = allAccounts.find(a => a.id === toId);
     if (!toAcc) return;
-    if (currentAccount.balance < amount) { toast('Insufficient funds', 'error'); return; }
+    if (currentAccount.balance < amount) {
+      toast('Insufficient funds', 'error');
+      return;
+    }
+    
     try {
       await runTransaction(db, async (tx) => {
         const fromRef = doc(db, 'accounts', accountId);
         const toRef = doc(db, 'accounts', toId);
         const fSnap = await tx.get(fromRef);
         const tSnap = await tx.get(toRef);
-        let fBal = Number(fSnap.data().balance), tBal = Number(tSnap.data().balance);
-        tx.update(fromRef, { balance: fBal - amount });
-        tx.update(toRef, { balance: tBal + amount });
-        tx.set(doc(collection(db, 'account_transactions')), { accountId, accountName: currentAccount.name, date, type: 'debit', amount, description: `Transfer to ${toAcc.name}: ${desc}`, createdAt: new Date().toISOString(), isTransfer: true, linkedAccountId: toId });
-        tx.set(doc(collection(db, 'account_transactions')), { accountId: toId, accountName: toAcc.name, date, type: 'credit', amount, description: `Transfer from ${currentAccount.name}: ${desc}`, createdAt: new Date().toISOString(), isTransfer: true, linkedAccountId: accountId });
+        tx.update(fromRef, { balance: Number(fSnap.data().balance) - amount });
+        tx.update(toRef, { balance: Number(tSnap.data().balance) + amount });
+        tx.set(doc(collection(db, 'account_transactions')), {
+          accountId, accountName: currentAccount.name, date, type: 'debit', amount, description: `Transfer to ${toAcc.name}: ${desc}`, createdAt: new Date().toISOString(), isTransfer: true
+        });
+        tx.set(doc(collection(db, 'account_transactions')), {
+          accountId: toId, accountName: toAcc.name, date, type: 'credit', amount, description: `Transfer from ${currentAccount.name}: ${desc}`, createdAt: new Date().toISOString(), isTransfer: true
+        });
       });
-      toast(`Transferred K${amount.toFixed(2)}`);
+      toast(`Transferred K${amount.toFixed(2)} to ${toAcc.name}`);
       document.getElementById('transferModal').classList.remove('show');
-    } catch(err) { toast(err.message, 'error'); }
-  };
+    } catch (err) { toast(err.message, 'error'); }
+  }
 
-  function loadAccount() { unsubscribeAccount = onSnapshot(doc(db, 'accounts', accountId), (docSnap) => { if(docSnap.exists()) { currentAccount = { id: docSnap.id, ...docSnap.data(), balance: Number(docSnap.data().balance) || 0 }; document.getElementById('accountHeader').innerHTML = `<div><h1>${escapeHtml(currentAccount.name)}</h1><div style="color:var(--text-muted);">${currentAccount.type || 'Asset'}</div></div><div class="balance-big">K${currentAccount.balance.toFixed(2)}</div>`; renderLedger(); } }); }
-  function loadTransactions() { unsubscribeTrans = onSnapshot(query(collection(db, 'account_transactions'), where('accountId', '==', accountId)), (snap) => { allTransactions = snap.docs.map(d => ({ id: d.id, ...d.data(), amount: Number(d.data().amount) || 0 })); renderLedger(); }); }
-  function loadAllAccounts() { unsubscribeAccounts = onSnapshot(collection(db, 'accounts'), (snap) => { allAccounts = snap.docs.map(d => ({ id: d.id, ...d.data() })); }); }
+  // Firebase subscriptions
+  function loadAccount() {
+    unsubscribeAccount = onSnapshot(doc(db, 'accounts', accountId), (docSnap) => {
+      if (docSnap.exists()) {
+        currentAccount = { id: docSnap.id, ...docSnap.data(), balance: Number(docSnap.data().balance) || 0, startingBalance: Number(docSnap.data().startingBalance) || 0 };
+        document.getElementById('accountHeader').innerHTML = `
+          <div class="account-details"><h1>${escapeHtml(currentAccount.name)}</h1><div style="color:var(--text-muted);">${currentAccount.type || 'Asset'}</div></div>
+          <div class="balance-big">K${currentAccount.balance.toFixed(2)}</div>
+        `;
+        renderLedger();
+      }
+    });
+  }
+  
+  function loadTransactions() {
+    unsubscribeTrans = onSnapshot(query(collection(db, 'account_transactions'), where('accountId', '==', accountId)), (snap) => {
+      allTransactions = snap.docs.map(d => ({ id: d.id, ...d.data(), amount: Number(d.data().amount) || 0 }));
+      renderLedger();
+    });
+  }
+  
+  function loadAllAccounts() {
+    unsubscribeAccounts = onSnapshot(collection(db, 'accounts'), (snap) => {
+      allAccounts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    });
+  }
 
+  // UI setup
   function initUI() {
     const monthInput = document.getElementById('monthFilterInput');
     const saved = getStoredMonth();
-    if (saved) { monthInput.value = saved; showFilterBadge(saved); }
-    monthInput.addEventListener('change', () => { setStoredMonth(monthInput.value); if(monthInput.value) showFilterBadge(monthInput.value); else hideFilterBadge(); renderLedger(); });
-    document.getElementById('clearFilterBtn').onclick = () => { monthInput.value = ''; setStoredMonth(''); hideFilterBadge(); renderLedger(); };
-    document.getElementById('addTxBtn').onclick = () => { window._editingId = null; document.getElementById('modalTitle').innerText = 'Add Transaction'; document.getElementById('txDate').valueAsDate = new Date(); document.getElementById('txAmount').value = ''; document.getElementById('txDesc').value = ''; document.getElementById('txModal').classList.add('show'); };
+    if (saved) { monthInput.value = saved; updateFilterBadge(saved); }
+    
+    monthInput.addEventListener('change', () => {
+      setStoredMonth(monthInput.value);
+      if (monthInput.value) updateFilterBadge(monthInput.value);
+      else clearFilterBadge();
+      renderLedger();
+    });
+    
+    document.getElementById('clearFilterBtn').onclick = () => {
+      monthInput.value = '';
+      setStoredMonth('');
+      clearFilterBadge();
+      renderLedger();
+    };
+    
+    document.getElementById('addTxBtn').onclick = () => {
+      editingId = null;
+      document.getElementById('modalTitle').innerText = 'Add Transaction';
+      document.getElementById('txDate').valueAsDate = new Date();
+      document.getElementById('txAmount').value = '';
+      document.getElementById('txDesc').value = '';
+      document.getElementById('txModal').classList.add('show');
+    };
+    
     document.getElementById('transferBtn').onclick = openTransfer;
-    document.getElementById('saveTxBtn').onclick = saveTransactionHandler;
+    document.getElementById('saveTxBtn').onclick = saveTransaction;
     document.getElementById('closeTxBtn').onclick = () => document.getElementById('txModal').classList.remove('show');
+    document.getElementById('execTransferBtn').onclick = executeTransfer;
     document.getElementById('cancelTransferBtn').onclick = () => document.getElementById('transferModal').classList.remove('show');
     document.getElementById('backBtn').onclick = () => location.href = 'accounts-dashboard.html';
     window.addEventListener('click', (e) => { if (!e.target.closest('.dropdown-menu')) closeDropdown(); });
   }
-
-  function showFilterBadge(val) { const b = document.getElementById('filterBadge'); b.style.display = 'inline-flex'; b.querySelector('span').innerText = formatMonthYear(val); document.getElementById('clearFilterBtn').style.display = 'inline-flex'; }
-  function hideFilterBadge() { document.getElementById('filterBadge').style.display = 'none'; document.getElementById('clearFilterBtn').style.display = 'none'; }
-  function toast(msg, type='info') { const wrap = document.getElementById('toastWrap'); const div = document.createElement('div'); div.className = 'toast'; div.innerHTML = `<i class="fas ${type==='error'?'fa-circle-exclamation':'fa-check-circle'}"></i> ${msg}`; wrap.appendChild(div); setTimeout(()=>div.remove(), 3000); }
-  function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
-  initUI(); loadAccount(); loadTransactions(); loadAllAccounts();
+  
+  function updateFilterBadge(month) {
+    const badge = document.getElementById('filterBadge');
+    badge.innerHTML = `<i class="fas fa-filter"></i> ${formatMonthYear(month)}`;
+    badge.style.display = 'inline-flex';
+    document.getElementById('clearFilterBtn').style.display = 'inline-flex';
+  }
+  
+  function clearFilterBadge() {
+    document.getElementById('filterBadge').style.display = 'none';
+    document.getElementById('clearFilterBtn').style.display = 'none';
+  }
+  
+  function toast(msg, type = 'info') {
+    const wrap = document.getElementById('toastWrap');
+    const div = document.createElement('div');
+    div.className = 'toast';
+    div.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> ${msg}`;
+    wrap.appendChild(div);
+    setTimeout(() => div.remove(), 3000);
+  }
+  
+  function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+  
+  initUI();
+  loadAccount();
+  loadTransactions();
+  loadAllAccounts();
 </script>
 </body>
 </html>
