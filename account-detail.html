@@ -1,592 +1,775 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Trismart · Account Ledger (Ascending Date Order)</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Trismart · Ledger with Balance Brought Forward</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-:root {
-  --p: #4361ee;
-  --p2: #3a56d4;
-  --ok: #2ecc71;
-  --danger: #ef4444;
-  --bg: #f4f6fb;
-  --sur: #ffffff;
-  --lite: #f1f3f5;
-  --bdr: #dee2e6;
-  --txt: #212529;
-  --fade: #6c757d;
-  --radius: 12px;
-  --radius-lg: 16px;
-  --sh: 0 1px 6px rgba(0,0,0,0.05);
-}
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #3b82f6;
+      --accent: #0f172a;
+      --success: #059669;
+      --danger: #dc2626;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --radius: 16px;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
 
-html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg); }
-.app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-.topbar { background: var(--sur); border-bottom: 1px solid var(--bdr); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-.logo { display: flex; align-items: center; gap: 12px; }
-.logo-mark { width: 32px; height: 32px; background: linear-gradient(135deg, var(--p), var(--p2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; }
-.back-btn { padding: 7px 14px; background: var(--lite); border: 1px solid var(--bdr); border-radius: 40px; font-size: 0.7rem; font-weight: 700; cursor: pointer; text-decoration: none; color: var(--txt); }
-.main-content { flex: 1; overflow-y: auto; padding: 20px 24px; }
-.account-header-card { background: var(--sur); border: 1px solid var(--bdr); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 24px; box-shadow: var(--sh); }
-.account-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
-.account-info { display: flex; align-items: center; gap: 16px; }
-.account-icon-large { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; background: rgba(67,97,238,0.1); color: var(--p); }
-.account-name h1 { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
-.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
-.section-header-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.section-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: var(--fade); letter-spacing: 0.08em; }
-.month-filter { display: flex; align-items: center; gap: 8px; background: var(--sur); border: 1.5px solid var(--bdr); border-radius: 40px; padding: 5px 12px; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
-.month-filter input { border: none; outline: none; background: transparent; font-family: inherit; font-size: 0.7rem; font-weight: 700; width: 110px; cursor: pointer; }
-.clear-filter-btn { padding: 5px 10px; background: rgba(239,68,68,0.1); color: var(--danger); border-radius: 40px; font-size: 0.65rem; font-weight: 700; cursor: pointer; border: none; }
-.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 40px; font-size: 0.7rem; font-weight: 700; cursor: pointer; border: none; background: linear-gradient(135deg, var(--p), var(--p2)); color: white; }
-.btn-outline { background: transparent; border: 1.5px solid var(--bdr); color: var(--txt); }
-.btn-outline:hover { border-color: var(--p); color: var(--p); }
-.table-container { background: var(--sur); border: 1px solid var(--bdr); border-radius: var(--radius); overflow: auto; max-height: calc(100vh - 340px); box-shadow: var(--sh); }
-.transaction-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; min-width: 650px; }
-.transaction-table th { padding: 12px 12px; text-align: left; font-size: 0.55rem; font-weight: 800; text-transform: uppercase; color: var(--fade); border-bottom: 1px solid var(--bdr); background: white; position: sticky; top: 0; }
-.transaction-table td { padding: 10px 12px; border-bottom: 1px solid #eff3f8; vertical-align: middle; }
-.debit-amount { color: var(--danger); font-weight: 700; }
-.credit-amount { color: var(--ok); font-weight: 700; }
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; }
-.modal-overlay.show { display: flex; }
-.modal-content { background: white; border-radius: 24px; max-width: 500px; width: 90%; padding: 24px; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--bdr); }
-.form-group { margin-bottom: 16px; }
-.form-group label { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; color: var(--fade); display: block; margin-bottom: 5px; }
-.form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1.5px solid var(--bdr); border-radius: 12px; font-size: 0.8rem; }
-.form-actions { display: flex; gap: 10px; margin-top: 20px; }
-.toast-wrap { position: fixed; bottom: 20px; right: 20px; z-index: 1100; display: flex; flex-direction: column; gap: 8px; }
-.toast { background: #1e293b; color: white; padding: 10px 18px; border-radius: 40px; font-size: 0.7rem; }
-.dropdown-menu { position: absolute; background: white; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); z-index: 200; min-width: 110px; overflow: hidden; border: 1px solid var(--bdr); }
-.dropdown-item { padding: 10px 14px; font-size: 0.7rem; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.1s; }
-.dropdown-item:hover { background: var(--lite); }
-.dropdown-item.danger { color: var(--danger); }
-.action-cell { position: relative; }
-.action-btn { background: transparent; border: none; cursor: pointer; padding: 6px 8px; border-radius: 30px; color: var(--fade); font-size: 0.9rem; }
-.action-btn:hover { background: var(--lite); color: var(--txt); }
-.hide-header-btn { cursor: pointer; background: transparent; border: none; margin-left: 12px; color: var(--fade); font-size: 0.8rem; transition: 0.1s; padding: 5px 10px; border-radius: 40px; }
-.hide-header-btn:hover { background: var(--lite); color: var(--p); }
-.filter-badge { background: rgba(67,97,238,0.1); padding: 4px 10px; border-radius: 40px; font-size: 0.65rem; font-weight: 700; color: var(--p); display: inline-flex; align-items: center; gap: 5px; }
-.header-controls-hidden { display: none !important; }
-.unhide-trigger { cursor: pointer; background: var(--lite); padding: 6px 14px; border-radius: 40px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.7rem; font-weight: 700; border: 1px solid var(--bdr); margin-bottom: 16px; }
-.unhide-trigger:hover { background: var(--sur); border-color: var(--p); }
-.action-bar { display: flex; justify-content: space-between; margin-bottom: 16px; align-items: center; gap: 12px; flex-wrap: wrap; }
-.action-buttons-group { display: flex; gap: 10px; }
-.transfer-badge { background: rgba(67,97,238,0.1); color: var(--p); font-size: 0.6rem; padding: 2px 8px; border-radius: 20px; margin-left: 8px; }
-@media (max-width: 700px) { .main-content { padding: 12px; } }
-</style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      height: 100vh;
+      overflow: hidden;
+      color: var(--text-main);
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* Topbar */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      backdrop-filter: blur(4px);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .back-btn {
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 0.4rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    /* Main scroll */
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+
+    /* Account card */
+    .account-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .account-details h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+    }
+
+    .balance-big {
+      font-size: 1.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--primary);
+    }
+
+    /* action row */
+    .action-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.75rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--primary);
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-outline {
+      background: white;
+      border: 1.5px solid var(--border);
+      color: var(--text-main);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* month filter row */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: var(--surface);
+      padding: 0.5rem 1rem;
+      border-radius: 60px;
+      border: 1px solid var(--border);
+    }
+
+    .month-filter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg);
+      padding: 0.25rem 0.8rem;
+      border-radius: 40px;
+    }
+
+    .month-filter input {
+      border: none;
+      background: transparent;
+      font-weight: 600;
+      font-size: 0.7rem;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .clear-filter {
+      background: #fee2e2;
+      border: none;
+      padding: 0.25rem 0.8rem;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--danger);
+      cursor: pointer;
+    }
+
+    .filter-badge {
+      background: #e0e7ff;
+      padding: 0.25rem 0.8rem;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    /* table */
+    .ledger-table-container {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: auto;
+      max-height: calc(100vh - 340px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .ledger-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+      min-width: 700px;
+    }
+
+    .ledger-table th {
+      text-align: left;
+      padding: 0.9rem 0.8rem;
+      background: #fefefe;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--text-muted);
+      position: sticky;
+      top: 0;
+      background: white;
+    }
+
+    .ledger-table td {
+      padding: 0.75rem 0.8rem;
+      border-bottom: 1px solid #f0f2f5;
+    }
+
+    .debit {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .credit {
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .bf-row {
+      background: #fefce8;
+      font-weight: 600;
+      border-left: 3px solid var(--primary-light);
+    }
+
+    .bf-row td:first-child {
+      font-weight: 800;
+    }
+
+    .bf-label {
+      background: #eef2ff;
+      border-radius: 20px;
+      padding: 2px 8px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      display: inline-block;
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 30px;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    /* modals */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 24px;
+      width: 90%;
+      max-width: 460px;
+      padding: 1.5rem;
+    }
+
+    .modal h3 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 0.6rem;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      font-size: 0.8rem;
+    }
+
+    .toast-wrap {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      background: #1e293b;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 40px;
+      font-size: 0.75rem;
+    }
+
+    .transfer-badge {
+      background: #e0f2fe;
+      font-size: 0.6rem;
+      padding: 2px 8px;
+      border-radius: 30px;
+      margin-left: 6px;
+    }
+
+    .dropdown-menu {
+      position: fixed;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+      z-index: 200;
+      min-width: 110px;
+      border: 1px solid var(--border);
+    }
+
+    .dropdown-item {
+      padding: 8px 14px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .dropdown-item.danger {
+      color: var(--danger);
+    }
+
+    .hidden-header {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
 <div class="app">
   <div class="topbar">
-    <div class="logo"><div class="logo-mark"><i class="fas fa-book"></i></div><div class="logo-text">Trismart · Account</div></div>
-    <div class="back-btn" id="backBtn"><i class="fas fa-arrow-left"></i> Back to Accounts</div>
+    <div class="logo"><div class="logo-icon"><i class="fas fa-book-open"></i></div><span>Trismart · Running Ledger</span></div>
+    <div class="back-btn" id="backBtn"><i class="fas fa-arrow-left"></i> Dashboard</div>
   </div>
   <div class="main-content">
-    <div class="account-header-card" id="accountHeader">Loading account...</div>
+    <div class="account-card" id="accountHeader">Loading account...</div>
 
-    <div class="action-bar">
-      <div class="action-buttons-group">
-        <button class="btn" id="addTransactionBtn"><i class="fas fa-plus"></i> Add Transaction</button>
-        <button class="btn btn-outline" id="transferBtn" style="background:white;"><i class="fas fa-exchange-alt"></i> Transfer Funds</button>
+    <div class="action-row">
+      <div class="btn-group">
+        <button class="btn" id="addTxBtn"><i class="fas fa-plus-circle"></i> Add Transaction</button>
+        <button class="btn btn-outline" id="transferBtn"><i class="fas fa-exchange-alt"></i> Transfer</button>
+      </div>
+      <div class="filter-bar">
+        <div class="month-filter"><i class="fas fa-calendar-alt"></i><input type="month" id="monthFilterInput"></div>
+        <button class="clear-filter" id="clearFilterBtn" style="display:none;"><i class="fas fa-times"></i> Reset</button>
+        <span id="filterBadge" class="filter-badge" style="display:none;"><i class="fas fa-filter"></i> <span></span></span>
       </div>
     </div>
 
-    <div id="historyHeaderWrapper">
-      <div id="transactionHistoryHeader" class="section-header">
-        <div class="section-header-left">
-          <div class="section-title"><i class="fas fa-list"></i> Transaction History</div>
-          <div class="month-filter">
-            <i class="fas fa-calendar-alt"></i>
-            <input type="month" id="monthFilter">
-          </div>
-          <button class="clear-filter-btn" id="clearFilterBtn" style="display:none;"><i class="fas fa-times"></i> All Months</button>
-          <span class="filter-badge" id="filterBadge" style="display:none;"><i class="fas fa-filter"></i> <span id="filterBadgeText"></span></span>
-        </div>
-        <button class="hide-header-btn" id="hideHeaderBtn" title="Hide Transaction History header"><i class="fas fa-eye-slash"></i> Hide</button>
-      </div>
-      <div id="unhideHeaderTrigger" style="display: none; margin-bottom: 16px;">
-        <div class="unhide-trigger" id="unhideHeaderBtn"><i class="fas fa-eye"></i> Show Transaction History</div>
-      </div>
-    </div>
-
-    <div class="table-container">
-      <table class="transaction-table">
+    <div class="ledger-table-container">
+      <table class="ledger-table">
         <thead>
-          <tr><th>Date</th><th>Description</th><th>Debit</th><th>Credit</th><th>Balance</th><th style="width:60px;">Action</th></tr>
+          <tr><th>Date</th><th>Description</th><th>Debit (K)</th><th>Credit (K)</th><th>Running Balance (K)</th><th style="width:50px"></th></tr>
         </thead>
-        <tbody id="transactionsTbody"><tr><td colspan="6">Loading transactions...</td></tr>
+        <tbody id="ledgerTbody"><tr><td colspan="6">Loading ledger...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 </div>
 
-<!-- Transfer Modal -->
-<div id="transferModal" class="modal-overlay">
-  <div class="modal-content">
-    <div class="modal-header"><h3><i class="fas fa-exchange-alt"></i> Transfer Funds</h3><span class="close-modal" id="closeTransferModalBtn">&times;</span></div>
-    <div id="transferFormWrap">
-      <div class="form-group">
-        <label>From Account</label>
-        <input type="text" id="fromAccountName" readonly style="background:#f1f3f5; font-weight:600;">
-      </div>
-      <div class="form-group">
-        <label>To Account</label>
-        <select id="toAccountSelect" required>
-          <option value="">-- Select account --</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Amount (K)</label>
-        <input type="number" id="transferAmount" step="0.01" placeholder="0.00">
-      </div>
-      <div class="form-group">
-        <label>Transfer Date</label>
-        <input type="date" id="transferDate">
-      </div>
-      <div class="form-group">
-        <label>Description (optional)</label>
-        <input type="text" id="transferDesc" placeholder="e.g., Transfer to savings">
-      </div>
-      <div class="form-actions">
-        <button id="submitTransferBtn" class="btn">Execute Transfer</button>
-        <button type="button" id="cancelTransferBtn" class="btn" style="background:#e9ecef; color:#212529;">Cancel</button>
-      </div>
-    </div>
+<!-- Transaction Modal -->
+<div id="txModal" class="modal-overlay">
+  <div class="modal">
+    <h3 id="modalTitle">Add Transaction</h3>
+    <div class="form-group"><label>Date</label><input type="date" id="txDate"></div>
+    <div class="form-group"><label>Type</label><select id="txType"><option value="credit">Income (Credit)</option><option value="debit">Expense (Debit)</option></select></div>
+    <div class="form-group"><label>Amount (K)</label><input type="number" id="txAmount" step="0.01" placeholder="0.00"></div>
+    <div class="form-group"><label>Description</label><input type="text" id="txDesc" placeholder="e.g., Sales, Rent"></div>
+    <div class="btn-group" style="margin-top: 1rem;"><button id="saveTxBtn" class="btn">Save</button><button id="closeTxBtn" class="btn btn-outline">Cancel</button></div>
   </div>
 </div>
 
-<!-- Add/Edit Transaction Modal -->
-<div id="transactionModal" class="modal-overlay">
-  <div class="modal-content">
-    <div class="modal-header"><h3 id="modalTitle">Add Transaction</h3><span class="close-modal" id="closeModalBtn">&times;</span></div>
-    <div id="transactionFormWrap">
-      <div class="form-group"><label>Date</label><input type="date" id="transDate"></div>
-      <div class="form-group"><label>Type</label><select id="transType"><option value="credit">Credit (Income)</option><option value="debit">Debit (Expense)</option></select></div>
-      <div class="form-group"><label>Amount (K)</label><input type="number" id="transAmount" step="0.01" placeholder="0.00"></div>
-      <div class="form-group"><label>Description</label><input type="text" id="transDesc" placeholder="e.g., Rent, Sales"></div>
-      <div class="form-actions"><button id="submitTransBtn" class="btn">Save Transaction</button><button type="button" id="cancelModalBtn" class="btn" style="background:#e9ecef; color:#212529;">Cancel</button></div>
-    </div>
+<!-- Transfer Modal -->
+<div id="transferModal" class="modal-overlay">
+  <div class="modal">
+    <h3><i class="fas fa-exchange-alt"></i> Transfer Funds</h3>
+    <div class="form-group"><label>From Account</label><input type="text" id="fromAccName" readonly style="background:#f1f5f9;"></div>
+    <div class="form-group"><label>To Account</label><select id="toAccountSelect"></select></div>
+    <div class="form-group"><label>Amount (K)</label><input type="number" id="transferAmount" step="0.01"></div>
+    <div class="form-group"><label>Date</label><input type="date" id="transferDate"></div>
+    <div class="form-group"><label>Description (optional)</label><input type="text" id="transferDesc" placeholder="Transfer notes"></div>
+    <div class="btn-group"><button id="execTransferBtn" class="btn">Execute</button><button id="cancelTransferBtn" class="btn btn-outline">Cancel</button></div>
   </div>
 </div>
 
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
-import { getFirestore, collection, query, where, addDoc, updateDoc, deleteDoc, doc, onSnapshot, runTransaction, getDocs } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+  import { getFirestore, collection, query, where, addDoc, updateDoc, deleteDoc, doc, onSnapshot, runTransaction, getDocs } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
 
-const firebaseConfig = { 
-  apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k", 
-  authDomain: "trismartstores.firebaseapp.com", 
-  projectId: "trismartstores", 
-  storageBucket: "trismartstores.appspot.com", 
-  messagingSenderId: "416692703333", 
-  appId: "1:416692703333:web:d4b60292621435c748f68c" 
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const loggedInUser = localStorage.getItem('loggedInUser') || '';
-const userName = (loggedInUser || localStorage.getItem('userName') || '').toLowerCase().trim();
-if (userName !== 'chris') { document.body.innerHTML = `<div style="padding:30px;">Access Denied</div>`; throw new Error('unauth'); }
+  const firebaseConfig = {
+    apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+    authDomain: "trismartstores.firebaseapp.com",
+    projectId: "trismartstores",
+    storageBucket: "trismartstores.appspot.com",
+    messagingSenderId: "416692703333",
+    appId: "1:416692703333:web:d4b60292621435c748f68c"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const loggedInUser = localStorage.getItem('loggedInUser') || '';
+  const userName = (loggedInUser || localStorage.getItem('userName') || '').toLowerCase();
+  if (userName !== 'chris') { document.body.innerHTML = '<div style="padding:30px">Unauthorized</div>'; throw new Error('Access Denied'); }
 
-const accountId = localStorage.getItem('selectedAccountId');
-if (!accountId) { toast('No account selected', 'error'); setTimeout(() => window.location.href = 'accounts-dashboard.html', 1500); }
+  const accountId = localStorage.getItem('selectedAccountId');
+  if (!accountId) { toast('No account selected', 'error'); setTimeout(() => location.href = 'accounts-dashboard.html', 1500); }
 
-let currentAccount = null;
-let accountTransactions = [];
-let allAccounts = [];
-let unsubscribeAccount = null;
-let unsubscribeTransactions = null;
-let unsubscribeAccounts = null;
-let activeDropdown = null;
+  let currentAccount = null;
+  let allTransactions = [];
+  let allAccounts = [];
+  let unsubscribeAccount, unsubscribeTrans, unsubscribeAccounts;
+  let activeDropdown = null;
 
-const HIDE_HEADER_KEY = `trismart_hide_history_header_${accountId}`;
-function isHeaderHidden() { return localStorage.getItem(HIDE_HEADER_KEY) === 'true'; }
-function setHeaderHidden(hidden) { 
-  if (hidden) localStorage.setItem(HIDE_HEADER_KEY, 'true');
-  else localStorage.removeItem(HIDE_HEADER_KEY);
-  updateHeaderVisibility();
-}
-function updateHeaderVisibility() {
-  const hidden = isHeaderHidden();
-  const headerDiv = document.getElementById('transactionHistoryHeader');
-  const unhideTrigger = document.getElementById('unhideHeaderTrigger');
-  if (hidden) {
-    if (headerDiv) headerDiv.classList.add('header-controls-hidden');
-    if (unhideTrigger) unhideTrigger.style.display = 'block';
-  } else {
-    if (headerDiv) headerDiv.classList.remove('header-controls-hidden');
-    if (unhideTrigger) unhideTrigger.style.display = 'none';
-  }
-}
-document.getElementById('unhideHeaderBtn')?.addEventListener('click', () => { setHeaderHidden(false); toast('Transaction history bar is now visible'); });
-document.getElementById('hideHeaderBtn')?.addEventListener('click', () => { setHeaderHidden(true); toast('Transaction history header hidden'); });
+  // Filter and storage helpers
+  const MONTH_FILTER_KEY = `trismart_month_filter_${accountId}`;
+  function getStoredMonth() { return localStorage.getItem(MONTH_FILTER_KEY) || ''; }
+  function setStoredMonth(val) { val ? localStorage.setItem(MONTH_FILTER_KEY, val) : localStorage.removeItem(MONTH_FILTER_KEY); }
 
-const FILTER_KEY = `trismart_month_filter_${accountId}`;
-function getSavedFilter() { return localStorage.getItem(FILTER_KEY) || ''; }
-function saveFilter(value) { if (value) localStorage.setItem(FILTER_KEY, value); else localStorage.removeItem(FILTER_KEY); }
-function initMonthFilter() {
-  const saved = getSavedFilter();
-  const input = document.getElementById('monthFilter');
-  if (saved) { input.value = saved; showFilterBadge(saved); }
-  input.addEventListener('change', () => {
-    saveFilter(input.value);
-    if (input.value) showFilterBadge(input.value);
-    else hideFilterBadge();
-    renderTransactions();
-  });
-}
-function showFilterBadge(yearMonth) {
-  const [year, month] = yearMonth.split('-');
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const label = `${months[parseInt(month,10)-1]} ${year}`;
-  document.getElementById('filterBadgeText').textContent = label;
-  document.getElementById('filterBadge').style.display = 'inline-flex';
-  document.getElementById('clearFilterBtn').style.display = 'inline-flex';
-}
-function hideFilterBadge() {
-  document.getElementById('filterBadge').style.display = 'none';
-  document.getElementById('clearFilterBtn').style.display = 'none';
-}
-window.clearMonthFilter = function() {
-  document.getElementById('monthFilter').value = '';
-  saveFilter('');
-  hideFilterBadge();
-  renderTransactions();
-};
-document.getElementById('clearFilterBtn').onclick = () => window.clearMonthFilter();
-function getFilteredTransactions() {
-  const filter = getSavedFilter();
-  if (!filter) return accountTransactions;
-  return accountTransactions.filter(t => t.date && t.date.startsWith(filter));
-}
-
-function toast(msg, type = 'success') {
-  const wrap = document.getElementById('toastWrap');
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.style.background = type === 'error' ? '#b91c1c' : '#1e293b';
-  t.innerHTML = `<i class="fas ${type === 'error' ? 'fa-times-circle' : 'fa-check-circle'}"></i> ${msg}`;
-  wrap.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
-}
-function closeModal(modalId) { document.getElementById(modalId).classList.remove('show'); }
-document.getElementById('closeModalBtn').onclick = () => closeModal('transactionModal');
-document.getElementById('cancelModalBtn').onclick = () => closeModal('transactionModal');
-document.getElementById('closeTransferModalBtn').onclick = () => closeModal('transferModal');
-document.getElementById('cancelTransferBtn').onclick = () => closeModal('transferModal');
-document.getElementById('addTransactionBtn').onclick = () => { openTransactionModalForAdd(); };
-document.getElementById('transferBtn').onclick = () => { openTransferModal(); };
-
-function openTransactionModalForAdd(transactionToEdit = null) {
-  document.getElementById('modalTitle').innerText = transactionToEdit ? 'Edit Transaction' : 'Add Transaction';
-  document.getElementById('transDate').value = transactionToEdit ? transactionToEdit.date : new Date().toISOString().slice(0,10);
-  document.getElementById('transType').value = transactionToEdit ? transactionToEdit.type : 'credit';
-  document.getElementById('transAmount').value = transactionToEdit ? transactionToEdit.amount : '';
-  document.getElementById('transDesc').value = transactionToEdit ? transactionToEdit.description : '';
-  window._editingId = transactionToEdit ? transactionToEdit.id : null;
-  document.getElementById('transactionModal').classList.add('show');
-}
-
-async function openTransferModal() {
-  if (!currentAccount) { toast('Account not loaded', 'error'); return; }
-  document.getElementById('fromAccountName').value = currentAccount.name;
-  document.getElementById('transferAmount').value = '';
-  document.getElementById('transferDesc').value = '';
-  document.getElementById('transferDate').valueAsDate = new Date();
-  
-  const toSelect = document.getElementById('toAccountSelect');
-  toSelect.innerHTML = '<option value="">-- Select account --</option>';
-  for (const acc of allAccounts) {
-    if (acc.id !== accountId) {
-      toSelect.innerHTML += `<option value="${acc.id}">${escapeHtml(acc.name)} (${acc.type?.toUpperCase() || 'ASSET'})</option>`;
+  // Helper: get filtered & SORTED (ascending date) transactions
+  function getFilteredAndSorted() {
+    const monthFilter = getStoredMonth();
+    let filtered = [...allTransactions];
+    if (monthFilter) {
+      filtered = filtered.filter(tx => tx.date && tx.date.startsWith(monthFilter));
     }
+    // CRITICAL: ascending order (oldest first)
+    return filtered.sort((a,b) => (a.date < b.date ? -1 : (a.date > b.date ? 1 : 0)));
   }
-  document.getElementById('transferModal').classList.add('show');
-}
 
-document.getElementById('submitTransferBtn').onclick = async () => {
-  const toAccountId = document.getElementById('toAccountSelect').value;
-  const amount = parseFloat(document.getElementById('transferAmount').value);
-  const date = document.getElementById('transferDate').value;
-  const desc = document.getElementById('transferDesc').value.trim() || 'Funds transfer';
-  
-  if (!toAccountId) { toast('Select destination account', 'error'); return; }
-  if (isNaN(amount) || amount <= 0) { toast('Enter valid amount', 'error'); return; }
-  if (!date) { toast('Select date', 'error'); return; }
-  if (currentAccount.balance < amount) { toast('Insufficient funds in source account', 'error'); return; }
-  
-  const toAccount = allAccounts.find(a => a.id === toAccountId);
-  if (!toAccount) { toast('Destination account not found', 'error'); return; }
-  
-  try {
-    await runTransaction(db, async (tx) => {
-      const fromRef = doc(db, 'accounts', accountId);
-      const toRef = doc(db, 'accounts', toAccountId);
-      const fromSnap = await tx.get(fromRef);
-      const toSnap = await tx.get(toRef);
-      if (!fromSnap.exists() || !toSnap.exists()) throw new Error('Account missing');
-      
-      let fromBalance = Number(fromSnap.data().balance) || 0;
-      let toBalance = Number(toSnap.data().balance) || 0;
-      if (fromBalance < amount) throw new Error('Insufficient funds');
-      
-      tx.update(fromRef, { balance: fromBalance - amount });
-      tx.update(toRef, { balance: toBalance + amount });
-      
-      const outgoingTrans = {
-        accountId: accountId,
-        accountName: currentAccount.name,
-        date: date,
-        type: 'debit',
-        amount: amount,
-        description: `Transfer to ${toAccount.name}: ${desc}`,
-        createdAt: new Date().toISOString(),
-        isTransfer: true,
-        linkedAccountId: toAccountId
-      };
-      const incomingTrans = {
-        accountId: toAccountId,
-        accountName: toAccount.name,
-        date: date,
-        type: 'credit',
-        amount: amount,
-        description: `Transfer from ${currentAccount.name}: ${desc}`,
-        createdAt: new Date().toISOString(),
-        isTransfer: true,
-        linkedAccountId: accountId
-      };
-      tx.set(doc(collection(db, 'account_transactions')), outgoingTrans);
-      tx.set(doc(collection(db, 'account_transactions')), incomingTrans);
-    });
-    toast(`Transferred K${amount.toFixed(2)} from ${currentAccount.name} to ${toAccount.name}`);
-    closeModal('transferModal');
-  } catch (err) {
-    console.error(err);
-    toast(err.message, 'error');
-  }
-};
+  // CORE: build ledger rows with Balance Brought Forward for each new month period
+  // Each month block gets a "Balance Brought Forward" row at the beginning,
+  // and transactions within month continue the running balance.
+  function buildLedgerWithBroughtForward(transactions, accountOpeningBalance = 0) {
+    if (!transactions.length && accountOpeningBalance === 0) return [];
 
-document.getElementById('submitTransBtn').onclick = async () => {
-  const amount = parseFloat(document.getElementById('transAmount').value);
-  const type = document.getElementById('transType').value;
-  const date = document.getElementById('transDate').value;
-  const desc = document.getElementById('transDesc').value.trim();
-  if (!date) { toast('Pick a date', 'error'); return; }
-  if (isNaN(amount) || amount <= 0) { toast('Valid amount >0', 'error'); return; }
-  if (!desc) { toast('Description required', 'error'); return; }
-  const editingId = window._editingId;
-  try {
-    if (editingId) {
-      const oldTransaction = accountTransactions.find(t => t.id === editingId);
-      if (!oldTransaction) throw new Error('Transaction not found');
-      const oldEffect = oldTransaction.type === 'credit' ? oldTransaction.amount : -oldTransaction.amount;
-      const newEffect = type === 'credit' ? amount : -amount;
-      const delta = newEffect - oldEffect;
-      await runTransaction(db, async (tx) => {
-        const accRef = doc(db, 'accounts', accountId);
-        const accSnap = await tx.get(accRef);
-        if (!accSnap.exists()) throw new Error('Account missing');
-        let newBalance = (accSnap.data().balance || 0) + delta;
-        tx.update(accRef, { balance: newBalance });
-        const transRef = doc(db, 'account_transactions', editingId);
-        tx.update(transRef, { date, type, amount, description: desc });
-      });
-      toast('Transaction updated');
-      closeModal('transactionModal');
-    } else {
-      await runTransaction(db, async (tx) => {
-        const accRef = doc(db, 'accounts', accountId);
-        const accSnap = await tx.get(accRef);
-        if (!accSnap.exists()) throw new Error('Account not found');
-        let currentBalance = Number(accSnap.data().balance) || 0;
-        let newBalance = type === 'credit' ? currentBalance + amount : currentBalance - amount;
-        tx.update(accRef, { balance: newBalance });
-        const newTrans = {
-          accountId, accountName: currentAccount?.name || '', date, type, amount, description: desc,
-          createdAt: new Date().toISOString()
-        };
-        tx.set(doc(collection(db, 'account_transactions')), newTrans);
-      });
-      toast('Transaction added ✓');
-      closeModal('transactionModal');
+    // Group transactions by month (YYYY-MM)
+    const grouped = new Map(); // key: YYYY-MM, value: array of trans
+    for (const tx of transactions) {
+      const monthKey = tx.date.substring(0, 7);
+      if (!grouped.has(monthKey)) grouped.set(monthKey, []);
+      grouped.get(monthKey).push(tx);
     }
-    window._editingId = null;
-  } catch (err) { console.error(err); toast(err.message, 'error'); }
-};
 
-window.deleteTransactionHandler = async (transactionId) => {
-  if (!confirm('Delete this transaction? It will update the account balance.')) return;
-  const transaction = accountTransactions.find(t => t.id === transactionId);
-  if (!transaction) return;
-  try {
-    await runTransaction(db, async (tx) => {
-      const accRef = doc(db, 'accounts', accountId);
-      const accDoc = await tx.get(accRef);
-      if (!accDoc.exists()) throw new Error('Account missing');
-      let bal = Number(accDoc.data().balance) || 0;
-      let newBal = transaction.type === 'credit' ? bal - transaction.amount : bal + transaction.amount;
-      tx.update(accRef, { balance: newBal });
-      tx.delete(doc(db, 'account_transactions', transactionId));
+    // Sort months ascending
+    const sortedMonths = Array.from(grouped.keys()).sort();
+    const resultRows = [];
+    let globalCarryBalance = accountOpeningBalance; // balance that carries month to month
+
+    for (let i = 0; i < sortedMonths.length; i++) {
+      const monthKey = sortedMonths[i];
+      const monthTxs = grouped.get(monthKey);
+      // sort transactions inside month by date ascending
+      monthTxs.sort((a,b) => (a.date < b.date ? -1 : 1));
+      
+      // Brought forward row for this month
+      const bfRow = {
+        id: `bf_${monthKey}`,
+        date: `${monthKey}-01`,
+        description: `⟳ BALANCE BROUGHT FORWARD (${formatMonthYear(monthKey)})`,
+        debit: null,
+        credit: null,
+        isBroughtForward: true,
+        runningBalance: globalCarryBalance
+      };
+      resultRows.push(bfRow);
+      
+      // now compute running inside this month
+      let monthRunning = globalCarryBalance;
+      for (const tx of monthTxs) {
+        const delta = tx.type === 'credit' ? tx.amount : -tx.amount;
+        monthRunning += delta;
+        resultRows.push({
+          ...tx,
+          runningBalance: monthRunning,
+          isBroughtForward: false
+        });
+      }
+      // after month ends, globalCarryBalance = last transaction balance (or same if empty)
+      if (monthTxs.length > 0) {
+        globalCarryBalance = monthRunning;
+      }
+      // else if month has no tx? but we only have month with txs.
+    }
+    return resultRows;
+  }
+
+  function formatMonthYear(ym) {
+    const [y, m] = ym.split('-');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[parseInt(m)-1]} ${y}`;
+  }
+
+  function renderLedger() {
+    const tbody = document.getElementById('ledgerTbody');
+    if (!currentAccount) { tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>'; return; }
+    const filteredSorted = getFilteredAndSorted();
+    // IMPORTANT: get opening balance from account (starting balance from account creation?)
+    // For true continuity: openingBalance is account.balance - net of all transactions? Actually safest:
+    // To compute initial balance before any transaction: we need total net effect of all tx. But since we store balance separately,
+    // but we want the brought forward from previous months before first tx. we use currentAccount.balance minus sum of all tx? 
+    // More robust: total cumulative from earliest month should reflect opening. But brought forward continuity: 
+    // We compute net effect of all transactions & derive initial balance that makes account balance match after all tx.
+    // Simpler: use first month's brought forward = starting balance of account (original balance). We'll store a startingBalance property or deduce:
+    const totalTxImpact = allTransactions.reduce((sum, tx) => sum + (tx.type === 'credit' ? tx.amount : -tx.amount), 0);
+    const derivedStartingBalance = (currentAccount.balance || 0) - totalTxImpact;
+    const openingBalanceBeforeAnyTx = derivedStartingBalance;
+    
+    const ledgerRows = buildLedgerWithBroughtForward(filteredSorted, openingBalanceBeforeAnyTx);
+    
+    if (ledgerRows.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6">No transactions. Add entry to see running balance with brought forward.</td></tr>`;
+      return;
+    }
+    
+    tbody.innerHTML = ledgerRows.map(row => {
+      if (row.isBroughtForward) {
+        // special styling for brought forward row
+        return `
+          <tr class="bf-row" style="background:#fef9e3;">
+            <td><strong>${row.date}</strong></td>
+            <td><span class="bf-label"><i class="fas fa-forward"></i> ${escapeHtml(row.description)}</span></td>
+            <td>—</td>
+            <td>—</td>
+            <td class="balance-amount" style="font-weight:800; color:#1e3a8a;">K${row.runningBalance.toFixed(2)}</td>
+            <td></td>
+          </tr>
+        `;
+      }
+      const isDebit = row.type === 'debit';
+      const debitDisplay = isDebit ? `K${row.amount.toFixed(2)}` : '';
+      const creditDisplay = !isDebit ? `K${row.amount.toFixed(2)}` : '';
+      const transferTag = row.isTransfer ? '<span class="transfer-badge"><i class="fas fa-exchange-alt"></i> transfer</span>' : '';
+      return `
+        <tr>
+          <td>${row.date || '-'}</td>
+          <td><strong>${escapeHtml(row.description || '')}</strong> ${transferTag}</td>
+          <td class="debit">${debitDisplay}</td>
+          <td class="credit">${creditDisplay}</td>
+          <td class="balance-amount">K${(row.runningBalance || 0).toFixed(2)}</td>
+          <td class="action-cell"><button class="action-btn" data-txn-id="${row.id}" data-action-menu><i class="fas fa-ellipsis-v"></i></button></td>
+        </tr>
+      `;
+    }).join('');
+    
+    // attach dropdowns for real transactions only (ignore bf rows)
+    document.querySelectorAll('[data-action-menu]').forEach(btn => {
+      const id = btn.getAttribute('data-txn-id');
+      if (id && !id.startsWith('bf_')) {
+        btn.removeEventListener('click', dropdownHandler);
+        btn.addEventListener('click', dropdownHandler);
+      } else {
+        btn.style.opacity = '0.4';
+        btn.disabled = true;
+      }
     });
-    toast('Transaction deleted');
-  } catch (err) { toast(err.message, 'error'); }
-};
-
-window.editTransactionHandler = (transactionId) => {
-  const txn = accountTransactions.find(t => t.id === transactionId);
-  if (txn) openTransactionModalForAdd(txn);
-};
-
-function closeDropdown() { if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; } }
-function showDropdown(event, transactionId) {
-  event.stopPropagation();
-  closeDropdown();
-  const rect = event.currentTarget.getBoundingClientRect();
-  const div = document.createElement('div');
-  div.className = 'dropdown-menu';
-  div.style.position = 'fixed';
-  div.style.top = `${rect.bottom + 4}px`;
-  div.style.left = `${rect.left - 40}px`;
-  div.innerHTML = `
-    <div class="dropdown-item" data-action="edit"><i class="fas fa-pen"></i> Edit</div>
-    <div class="dropdown-item danger" data-action="delete"><i class="fas fa-trash-alt"></i> Delete</div>
-  `;
-  document.body.appendChild(div);
-  activeDropdown = div;
-  div.querySelector('[data-action="edit"]').addEventListener('click', (e) => {
-    e.stopPropagation();
-    editTransactionHandler(transactionId);
-    closeDropdown();
-  });
-  div.querySelector('[data-action="delete"]').addEventListener('click', (e) => {
-    e.stopPropagation();
-    deleteTransactionHandler(transactionId);
-    closeDropdown();
-  });
-  const removeHandler = () => { closeDropdown(); document.removeEventListener('click', removeHandler); };
-  setTimeout(() => document.addEventListener('click', removeHandler), 10);
-}
-
-function loadAccount() {
-  if (unsubscribeAccount) unsubscribeAccount();
-  unsubscribeAccount = onSnapshot(doc(db, 'accounts', accountId), (docSnap) => {
-    if (docSnap.exists()) { 
-      currentAccount = { id: docSnap.id, ...docSnap.data(), balance: Number(docSnap.data().balance) || 0 }; 
-      renderAccountHeader(); 
-    } else toast('Account not found', 'error');
-  });
-}
-
-function loadAllAccounts() {
-  if (unsubscribeAccounts) unsubscribeAccounts();
-  unsubscribeAccounts = onSnapshot(collection(db, 'accounts'), (snap) => {
-    allAccounts = snap.docs.map(doc => ({ id: doc.id, ...doc.data(), balance: Number(doc.data().balance) || 0 }));
-  });
-}
-
-function loadTransactions() {
-  if (unsubscribeTransactions) unsubscribeTransactions();
-  const q = query(collection(db, 'account_transactions'), where('accountId', '==', accountId));
-  unsubscribeTransactions = onSnapshot(q, (snap) => {
-    accountTransactions = snap.docs.map(d => ({ id: d.id, ...d.data(), amount: Number(d.data().amount) || 0 }));
-    renderTransactions();
-  }, (err) => { console.error(err); toast('Transactions error', 'error'); });
-}
-
-function renderAccountHeader() {
-  if (!currentAccount) return;
-  document.getElementById('accountHeader').innerHTML = `
-    <div class="account-row">
-      <div class="account-info">
-        <div class="account-icon-large"><i class="fas fa-wallet"></i></div>
-        <div class="account-name">
-          <h1>${escapeHtml(currentAccount.name)}</h1>
-          <span class="account-type-badge" style="background:rgba(67,97,238,0.15);">${currentAccount.type?.toUpperCase() || 'ASSET'}</span>
-          ${currentAccount.description ? `<div style="font-size:0.65rem;color:var(--fade); margin-top:4px;">${escapeHtml(currentAccount.description)}</div>` : ''}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderTransactions() {
-  const tbody = document.getElementById('transactionsTbody');
-  const filtered = getFilteredTransactions();
-  if (filtered.length === 0) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No transactions for this period. Click "Add Transaction" to get started.</td></tr>`;
-    return;
   }
-  
-  // ✅ CRITICAL: Sort in ASCENDING order by date (oldest first, latest at bottom)
-  const sortedAsc = [...filtered].sort((a, b) => (a.date < b.date ? -1 : 1));
-  
-  // Calculate running balance in ascending order (oldest to newest)
-  let running = 0;
-  const balanceMap = new Map();
-  for (const t of sortedAsc) { 
-    running += t.type === 'credit' ? t.amount : -t.amount; 
-    balanceMap.set(t.id, running); 
+
+  function dropdownHandler(e) {
+    e.stopPropagation();
+    const txnId = this.getAttribute('data-txn-id');
+    if (!txnId || txnId.startsWith('bf_')) return;
+    closeDropdown();
+    const rect = this.getBoundingClientRect();
+    const div = document.createElement('div');
+    div.className = 'dropdown-menu';
+    div.style.position = 'fixed';
+    div.style.top = `${rect.bottom + 4}px`;
+    div.style.left = `${rect.left - 30}px`;
+    div.innerHTML = `<div class="dropdown-item" data-act="edit"><i class="fas fa-pen"></i> Edit</div><div class="dropdown-item danger" data-act="delete"><i class="fas fa-trash"></i> Delete</div>`;
+    document.body.appendChild(div);
+    activeDropdown = div;
+    div.querySelector('[data-act="edit"]').addEventListener('click', () => { editTransaction(txnId); closeDropdown(); });
+    div.querySelector('[data-act="delete"]').addEventListener('click', () => { deleteTransaction(txnId); closeDropdown(); });
+    setTimeout(() => document.addEventListener('click', () => closeDropdown(), { once: true }), 10);
   }
-  
-  // Render using ascending order directly — this ensures oldest transaction appears at top,
-  // and the most recent transaction / latest date stays at the bottom.
-  tbody.innerHTML = sortedAsc.map(trans => {
-    const isDebit = trans.type === 'debit';
-    const debitDisplay = isDebit ? `K${trans.amount.toFixed(2)}` : '';
-    const creditDisplay = !isDebit ? `K${trans.amount.toFixed(2)}` : '';
-    const balance = balanceMap.get(trans.id) || 0;
-    const transferTag = trans.isTransfer ? '<span class="transfer-badge"><i class="fas fa-exchange-alt"></i> transfer</span>' : '';
-    return `
-      <tr>
-        <td>${trans.date || '-'}</td>
-        <td><strong>${escapeHtml(trans.description || '-')}</strong> ${transferTag}</td>
-        <td class="debit-amount">${debitDisplay}</td>
-        <td class="credit-amount">${creditDisplay}</td>
-        <td class="balance-amount-table">K${balance.toFixed(2)}</td>
-        <td class="action-cell">
-          <button class="action-btn" data-txn-id="${trans.id}" data-action-menu><i class="fas fa-ellipsis-v"></i></button>
-        </td>
-      </tr>
-    `;
-  }).join('');
-  
-  document.querySelectorAll('[data-action-menu]').forEach(btn => {
-    btn.removeEventListener('click', dropdownHandler);
-    btn.addEventListener('click', dropdownHandler);
-  });
-}
 
-function dropdownHandler(e) {
-  e.stopPropagation();
-  const txnId = this.getAttribute('data-txn-id');
-  if (txnId) showDropdown(e, txnId);
-}
+  function closeDropdown() { if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; } }
 
-function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+  function editTransaction(txId) {
+    const tx = allTransactions.find(t => t.id === txId);
+    if (!tx) return;
+    document.getElementById('modalTitle').innerText = 'Edit Transaction';
+    document.getElementById('txDate').value = tx.date;
+    document.getElementById('txType').value = tx.type;
+    document.getElementById('txAmount').value = tx.amount;
+    document.getElementById('txDesc').value = tx.description;
+    window._editingId = txId;
+    document.getElementById('txModal').classList.add('show');
+  }
 
-window.deleteTransactionHandler = window.deleteTransactionHandler;
-window.editTransactionHandler = window.editTransactionHandler;
+  async function deleteTransaction(txId) {
+    if (!confirm('Delete transaction? Balance will revert.')) return;
+    const tx = allTransactions.find(t => t.id === txId);
+    if (!tx) return;
+    try {
+      await runTransaction(db, async (txRun) => {
+        const accRef = doc(db, 'accounts', accountId);
+        const snap = await txRun.get(accRef);
+        let bal = Number(snap.data().balance);
+        const delta = tx.type === 'credit' ? -tx.amount : tx.amount;
+        txRun.update(accRef, { balance: bal + delta });
+        txRun.delete(doc(db, 'account_transactions', txId));
+      });
+      toast('Transaction removed', 'success');
+    } catch (err) { toast(err.message, 'error'); }
+  }
 
-document.getElementById('backBtn').addEventListener('click', () => { window.location.href = 'accounts-dashboard.html'; });
-initMonthFilter();
-loadAccount();
-loadAllAccounts();
-loadTransactions();
-updateHeaderVisibility();
-window.addEventListener('click', (e) => { if (!e.target.closest('.dropdown-menu')) closeDropdown(); });
+  async function saveTransactionHandler() {
+    const date = document.getElementById('txDate').value;
+    const type = document.getElementById('txType').value;
+    const amount = parseFloat(document.getElementById('txAmount').value);
+    const desc = document.getElementById('txDesc').value.trim();
+    if (!date || isNaN(amount) || amount <= 0 || !desc) { toast('Valid date, amount>0, description', 'error'); return; }
+    const editingId = window._editingId;
+    try {
+      if (editingId) {
+        const oldTx = allTransactions.find(t => t.id === editingId);
+        if (!oldTx) throw new Error('Missing');
+        const oldDelta = oldTx.type === 'credit' ? oldTx.amount : -oldTx.amount;
+        const newDelta = type === 'credit' ? amount : -amount;
+        const delta = newDelta - oldDelta;
+        await runTransaction(db, async (txRun) => {
+          const accRef = doc(db, 'accounts', accountId);
+          const snap = await txRun.get(accRef);
+          txRun.update(accRef, { balance: Number(snap.data().balance) + delta });
+          txRun.update(doc(db, 'account_transactions', editingId), { date, type, amount, description: desc });
+        });
+        toast('Transaction updated');
+      } else {
+        await runTransaction(db, async (txRun) => {
+          const accRef = doc(db, 'accounts', accountId);
+          const snap = await txRun.get(accRef);
+          let newBal = Number(snap.data().balance) + (type === 'credit' ? amount : -amount);
+          txRun.update(accRef, { balance: newBal });
+          txRun.set(doc(collection(db, 'account_transactions')), {
+            accountId, accountName: currentAccount?.name, date, type, amount, description: desc, createdAt: new Date().toISOString()
+          });
+        });
+        toast('Transaction added ✓');
+      }
+      window._editingId = null;
+      document.getElementById('txModal').classList.remove('show');
+      document.getElementById('txDate').value = '';
+      document.getElementById('txAmount').value = '';
+    } catch (err) { toast(err.message, 'error'); }
+  }
+
+  // Transfer logic and subscriptions...
+  async function openTransfer() {
+    if (!currentAccount) return;
+    document.getElementById('fromAccName').value = currentAccount.name;
+    document.getElementById('transferAmount').value = '';
+    document.getElementById('transferDate').valueAsDate = new Date();
+    const select = document.getElementById('toAccountSelect');
+    select.innerHTML = '<option value="">-- select --</option>';
+    allAccounts.forEach(acc => { if (acc.id !== accountId) select.innerHTML += `<option value="${acc.id}">${escapeHtml(acc.name)}</option>`; });
+    document.getElementById('transferModal').classList.add('show');
+  }
+
+  document.getElementById('execTransferBtn').onclick = async () => {
+    const toId = document.getElementById('toAccountSelect').value;
+    const amount = parseFloat(document.getElementById('transferAmount').value);
+    const date = document.getElementById('transferDate').value;
+    const desc = document.getElementById('transferDesc').value.trim() || 'Transfer';
+    if (!toId || isNaN(amount) || amount <= 0 || !date) { toast('Fill all fields', 'error'); return; }
+    const toAcc = allAccounts.find(a => a.id === toId);
+    if (!toAcc) return;
+    if (currentAccount.balance < amount) { toast('Insufficient funds', 'error'); return; }
+    try {
+      await runTransaction(db, async (tx) => {
+        const fromRef = doc(db, 'accounts', accountId);
+        const toRef = doc(db, 'accounts', toId);
+        const fSnap = await tx.get(fromRef);
+        const tSnap = await tx.get(toRef);
+        let fBal = Number(fSnap.data().balance), tBal = Number(tSnap.data().balance);
+        tx.update(fromRef, { balance: fBal - amount });
+        tx.update(toRef, { balance: tBal + amount });
+        tx.set(doc(collection(db, 'account_transactions')), { accountId, accountName: currentAccount.name, date, type: 'debit', amount, description: `Transfer to ${toAcc.name}: ${desc}`, createdAt: new Date().toISOString(), isTransfer: true, linkedAccountId: toId });
+        tx.set(doc(collection(db, 'account_transactions')), { accountId: toId, accountName: toAcc.name, date, type: 'credit', amount, description: `Transfer from ${currentAccount.name}: ${desc}`, createdAt: new Date().toISOString(), isTransfer: true, linkedAccountId: accountId });
+      });
+      toast(`Transferred K${amount.toFixed(2)}`);
+      document.getElementById('transferModal').classList.remove('show');
+    } catch(err) { toast(err.message, 'error'); }
+  };
+
+  function loadAccount() { unsubscribeAccount = onSnapshot(doc(db, 'accounts', accountId), (docSnap) => { if(docSnap.exists()) { currentAccount = { id: docSnap.id, ...docSnap.data(), balance: Number(docSnap.data().balance) || 0 }; document.getElementById('accountHeader').innerHTML = `<div><h1>${escapeHtml(currentAccount.name)}</h1><div style="color:var(--text-muted);">${currentAccount.type || 'Asset'}</div></div><div class="balance-big">K${currentAccount.balance.toFixed(2)}</div>`; renderLedger(); } }); }
+  function loadTransactions() { unsubscribeTrans = onSnapshot(query(collection(db, 'account_transactions'), where('accountId', '==', accountId)), (snap) => { allTransactions = snap.docs.map(d => ({ id: d.id, ...d.data(), amount: Number(d.data().amount) || 0 })); renderLedger(); }); }
+  function loadAllAccounts() { unsubscribeAccounts = onSnapshot(collection(db, 'accounts'), (snap) => { allAccounts = snap.docs.map(d => ({ id: d.id, ...d.data() })); }); }
+
+  function initUI() {
+    const monthInput = document.getElementById('monthFilterInput');
+    const saved = getStoredMonth();
+    if (saved) { monthInput.value = saved; showFilterBadge(saved); }
+    monthInput.addEventListener('change', () => { setStoredMonth(monthInput.value); if(monthInput.value) showFilterBadge(monthInput.value); else hideFilterBadge(); renderLedger(); });
+    document.getElementById('clearFilterBtn').onclick = () => { monthInput.value = ''; setStoredMonth(''); hideFilterBadge(); renderLedger(); };
+    document.getElementById('addTxBtn').onclick = () => { window._editingId = null; document.getElementById('modalTitle').innerText = 'Add Transaction'; document.getElementById('txDate').valueAsDate = new Date(); document.getElementById('txAmount').value = ''; document.getElementById('txDesc').value = ''; document.getElementById('txModal').classList.add('show'); };
+    document.getElementById('transferBtn').onclick = openTransfer;
+    document.getElementById('saveTxBtn').onclick = saveTransactionHandler;
+    document.getElementById('closeTxBtn').onclick = () => document.getElementById('txModal').classList.remove('show');
+    document.getElementById('cancelTransferBtn').onclick = () => document.getElementById('transferModal').classList.remove('show');
+    document.getElementById('backBtn').onclick = () => location.href = 'accounts-dashboard.html';
+    window.addEventListener('click', (e) => { if (!e.target.closest('.dropdown-menu')) closeDropdown(); });
+  }
+
+  function showFilterBadge(val) { const b = document.getElementById('filterBadge'); b.style.display = 'inline-flex'; b.querySelector('span').innerText = formatMonthYear(val); document.getElementById('clearFilterBtn').style.display = 'inline-flex'; }
+  function hideFilterBadge() { document.getElementById('filterBadge').style.display = 'none'; document.getElementById('clearFilterBtn').style.display = 'none'; }
+  function toast(msg, type='info') { const wrap = document.getElementById('toastWrap'); const div = document.createElement('div'); div.className = 'toast'; div.innerHTML = `<i class="fas ${type==='error'?'fa-circle-exclamation':'fa-check-circle'}"></i> ${msg}`; wrap.appendChild(div); setTimeout(()=>div.remove(), 3000); }
+  function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+  initUI(); loadAccount(); loadTransactions(); loadAllAccounts();
 </script>
 </body>
 </html>
