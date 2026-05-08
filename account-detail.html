@@ -350,6 +350,10 @@
     .dropdown-item.danger {
       color: var(--danger);
     }
+
+    .dropdown-item:hover {
+      background: #f1f5f9;
+    }
   </style>
 </head>
 <body>
@@ -378,7 +382,7 @@
         <thead>
           <tr><th>Date</th><th>Description</th><th>Debit (K)</th><th>Credit (K)</th><th>Balance (K)</th><th></th></tr>
         </thead>
-        <tbody id="ledgerTbody"><tr><td colspan="6">Loading...</td></tr></tbody>
+        <tbody id="ledgerTbody"><tr><td colspan="6">Loading...<\/td></tr></tbody>
       </table>
     </div>
   </div>
@@ -426,11 +430,15 @@
   
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const userName = (localStorage.getItem('loggedInUser') || '').toLowerCase();
-  if (userName !== 'chris') { document.body.innerHTML = '<div style="padding:30px">Access Denied</div>'; throw new Error('Unauthorized'); }
+  
+  // NO ACCESS RESTRICTION - anyone can use it
+  // (You can re-enable the check below if needed)
 
   const accountId = localStorage.getItem('selectedAccountId');
-  if (!accountId) { toast('No account selected'); setTimeout(() => location.href = 'accounts-dashboard.html', 1500); }
+  if (!accountId) { 
+    toast('No account selected'); 
+    setTimeout(() => location.href = 'accounts-dashboard.html', 1500); 
+  }
 
   let currentAccount = null;
   let allTransactions = [];
@@ -457,17 +465,6 @@
   // Get all transactions from ALL months (for calculating previous month balances)
   function getAllTransactionsSorted() {
     return [...allTransactions].sort((a, b) => a.date.localeCompare(b.date));
-  }
-
-  // Calculate balance up to a specific date (exclusive)
-  function getBalanceBeforeDate(date) {
-    let balance = currentAccount?.startingBalance || 0;
-    const allSorted = getAllTransactionsSorted();
-    for (const tx of allSorted) {
-      if (tx.date >= date) break;
-      balance += tx.type === 'credit' ? tx.amount : -tx.amount;
-    }
-    return balance;
   }
 
   // Format month name
@@ -528,7 +525,7 @@
     const rows = [];
     
     // Add Balance Brought Forward row
-    if (previousClosing !== null) {
+    if (previousClosing !== null && previousClosing !== 0) {
       rows.push({
         id: `bf_${monthFilter}`,
         date: `${monthFilter}-01`,
@@ -563,12 +560,12 @@
 
   function renderLedger() {
     const tbody = document.getElementById('ledgerTbody');
-    if (!currentAccount) { tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>'; return; }
+    if (!currentAccount) { tbody.innerHTML = '<tr><td colspan="6">Loading...<\/td><\/tr>'; return; }
     
     const ledgerRows = buildLedgerWithBroughtForward();
     
     if (ledgerRows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6">No transactions. Click "Add Transaction" to start.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6">No transactions. Click "Add Transaction" to start.<\/td><\/tr>';
       return;
     }
     
@@ -576,13 +573,13 @@
       if (row.isBroughtForward) {
         return `
           <tr class="bf-row">
-            <td style="font-weight:700;">${row.date}</td>
-            <td><span class="bf-label"><i class="fas fa-arrow-right"></i> ${row.description}</span></td>
-            <td>—</td>
-            <td>—</td>
-            <td style="font-weight:800; color:#1e3a8a;">K${row.runningBalance.toFixed(2)}</td>
-            <td></td>
-          </tr>
+            <td style="font-weight:700;">${row.date}<\/td>
+            <td><span class="bf-label"><i class="fas fa-arrow-right"></i> ${row.description}<\/span><\/td>
+            <td>—<\/td>
+            <td>—<\/td>
+            <td style="font-weight:800; color:#1e3a8a;">K${row.runningBalance.toFixed(2)}<\/td>
+            <td><\/td>
+          <\/tr>
         `;
       }
       
@@ -593,13 +590,13 @@
       
       return `
         <tr>
-          <td>${row.date || '-'}</td>
-          <td><strong>${escapeHtml(row.description || '')}</strong> ${transferTag}</td>
-          <td class="debit">${debitDisplay}</td>
-          <td class="credit">${creditDisplay}</td>
-          <td class="balance">K${row.runningBalance.toFixed(2)}</td>
-          <td class="action-cell"><button class="action-btn" data-txn-id="${row.id}"><i class="fas fa-ellipsis-v"></i></button></td>
-        </tr>
+          <td>${row.date || '-'}<\/td>
+          <td><strong>${escapeHtml(row.description || '')}<\/strong> ${transferTag}<\/td>
+          <td class="debit">${debitDisplay}<\/td>
+          <td class="credit">${creditDisplay}<\/td>
+          <td class="balance">K${row.runningBalance.toFixed(2)}<\/td>
+          <td class="action-cell"><button class="action-btn" data-txn-id="${row.id}"><i class="fas fa-ellipsis-v"><\/i><\/button><\/td>
+        <\/tr>
       `;
     }).join('');
     
