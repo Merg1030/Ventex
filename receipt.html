@@ -99,6 +99,12 @@
       margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--border);
     }
     .balance-info { background: #fef3c7; padding: 10px; border-radius: 10px; margin-top: 10px; text-align: center; font-weight: 600; }
+    .balance-found {
+      background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 12px;
+      padding: 10px 16px; margin-top: 0.5rem; font-size: 0.78rem; color: #3730a3;
+      display: none; align-items: center; gap: 8px;
+    }
+    .balance-found.show { display: flex; }
     .action-buttons { display: flex; gap: 12px; justify-content: flex-end; margin-top: 1.5rem; }
     .btn-primary {
       background: var(--primary); color: white; border: none;
@@ -108,6 +114,11 @@
     .btn-secondary {
       background: transparent; border: 1.5px solid var(--border);
       padding: 10px 28px; border-radius: 40px; font-weight: 500; cursor: pointer;
+    }
+    .btn-tiny {
+      background: var(--bg); border: 1px dashed var(--border); color: var(--primary);
+      padding: 8px 16px; border-radius: 30px; font-weight: 600; font-size: 0.72rem;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
     }
     .receipts-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -156,6 +167,19 @@
     .error-box .error-detail { font-size: 0.75rem; color: #ef4444; margin-top: 0.5rem; font-family: monospace; }
     .loading-box { text-align: center; padding: 3rem; color: var(--text-muted); }
     .empty-box { text-align: center; padding: 3rem; color: var(--text-muted); }
+    .items-table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
+    .items-table th {
+      text-align: left; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--text-muted); padding: 6px 8px; border-bottom: 2px solid var(--border);
+    }
+    .items-table td { padding: 6px 8px; }
+    .items-table input {
+      width: 100%; padding: 8px 10px; border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 0.82rem; font-family: inherit;
+    }
+    .items-table input:focus { outline: none; border-color: var(--primary); }
+    .item-remove { color: var(--danger); cursor: pointer; text-align: center; }
+    .items-total-row { font-weight: 700; font-size: 0.85rem; }
     @media (max-width: 768px) {
       .container { padding: 1rem; }
       .header { padding: 0 1rem; }
@@ -218,18 +242,45 @@
           <input type="text" id="transactionRef" placeholder="Airtel TXN ID / Cheque #">
         </div>
         <div class="input-group">
-          <label>Amount Paid (K)</label>
+          <label>Amount Paid Now (K)</label>
           <input type="number" id="amountPaid" step="0.01" placeholder="0.00">
         </div>
         <div class="input-group">
           <label>Previous Balance (K)</label>
           <input type="number" id="previousBalance" step="0.01" value="0">
         </div>
+        <div class="input-group">
+          <label>Agreed Next Payment Date</label>
+          <input type="date" id="nextPaymentDate">
+        </div>
       </div>
-      <div class="input-group" style="margin-top: 0.5rem;">
-        <label>Notes / Description</label>
-        <input type="text" id="notes" placeholder="Payment for invoice, deposit, etc.">
+
+      <div id="balanceFoundBox" class="balance-found">
+        <i class="fas fa-circle-info"></i> <span id="balanceFoundText"></span>
       </div>
+
+      <div style="margin-top: 1.25rem;">
+        <div class="form-title" style="font-size:0.85rem; margin-bottom:0.75rem;">
+          <i class="fas fa-list"></i> Items / Description
+        </div>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th style="width:50%;">Description</th>
+              <th style="width:15%;">Qty</th>
+              <th style="width:20%;">Unit Price (K)</th>
+              <th style="width:10%;">Amount (K)</th>
+              <th style="width:5%;"></th>
+            </tr>
+          </thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+        <button class="btn-tiny" id="addItemBtn" style="margin-top:0.6rem;"><i class="fas fa-plus"></i> Add Item</button>
+        <div style="display:flex; justify-content:flex-end; margin-top:0.6rem;">
+          <div class="items-total-row">Items Total: K <span id="itemsTotalDisplay">0.00</span></div>
+        </div>
+      </div>
+
       <div class="action-buttons">
         <button class="btn-secondary" id="resetBtn"><i class="fas fa-undo-alt"></i> Reset</button>
         <button class="btn-primary" id="saveReceiptBtn"><i class="fas fa-save"></i> Issue Receipt</button>
@@ -294,12 +345,10 @@
   };
 
   // ─── Auth check ───────────────────────────────────────────────────────────
-  // Checks localStorage first. If not set, prompts with a simple password.
   function checkAuth() {
     const stored = localStorage.getItem('loggedInUser') || localStorage.getItem('userName') || '';
     if (stored.toLowerCase().trim() === 'chris') return true;
 
-    // Not found in storage — ask
     const entered = window.prompt('Enter access name to continue:');
     if (!entered || entered.toLowerCase().trim() !== 'chris') {
       document.body.innerHTML = `
@@ -329,6 +378,7 @@
 
   let receipts = [];
   let currentReceiptForPdf = null;
+  let itemRowCount = 0;
 
   // ─── Toast ────────────────────────────────────────────────────────────────
   function showToast(msg, isError = false) {
@@ -365,24 +415,114 @@
     return `TRS-${yymm}-${random}`;
   }
 
+  // ─── Items table ──────────────────────────────────────────────────────────
+  function addItemRow(desc = '', qty = 1, price = '') {
+    itemRowCount++;
+    const id = `item_${itemRowCount}`;
+    const tr = document.createElement('tr');
+    tr.id = id;
+    tr.innerHTML = `
+      <td><input type="text" class="item-desc" placeholder="e.g. 50kg Cement" value="${escapeHtml(desc)}"></td>
+      <td><input type="number" class="item-qty" min="0" step="1" value="${qty}"></td>
+      <td><input type="number" class="item-price" min="0" step="0.01" placeholder="0.00" value="${price}"></td>
+      <td class="item-amount" style="font-weight:600;">0.00</td>
+      <td class="item-remove"><i class="fas fa-trash"></i></td>
+    `;
+    document.getElementById('itemsBody').appendChild(tr);
+    tr.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => { recalcItems(); updatePreview(); }));
+    tr.querySelector('.item-remove').addEventListener('click', () => { tr.remove(); recalcItems(); updatePreview(); });
+    recalcItems();
+  }
+
+  function getItems() {
+    return Array.from(document.querySelectorAll('#itemsBody tr')).map(tr => {
+      const desc = tr.querySelector('.item-desc').value.trim();
+      const qty = parseFloat(tr.querySelector('.item-qty').value) || 0;
+      const price = parseFloat(tr.querySelector('.item-price').value) || 0;
+      return { description: desc, qty, price, amount: qty * price };
+    }).filter(it => it.description || it.qty || it.price);
+  }
+
+  function recalcItems() {
+    let total = 0;
+    document.querySelectorAll('#itemsBody tr').forEach(tr => {
+      const qty = parseFloat(tr.querySelector('.item-qty').value) || 0;
+      const price = parseFloat(tr.querySelector('.item-price').value) || 0;
+      const amt = qty * price;
+      tr.querySelector('.item-amount').textContent = amt.toFixed(2);
+      total += amt;
+    });
+    document.getElementById('itemsTotalDisplay').textContent = total.toFixed(2);
+    return total;
+  }
+
+  function getItemsTotal() {
+    return getItems().reduce((sum, it) => sum + it.amount, 0);
+  }
+
+  // ─── Customer balance lookup ────────────────────────────────────────────
+  let balanceLookupTimer = null;
+  async function lookupCustomerBalance() {
+    const name = document.getElementById('customerName').value.trim().toLowerCase();
+    const phone = document.getElementById('customerPhone').value.trim();
+    const box = document.getElementById('balanceFoundBox');
+    if (!name) { box.classList.remove('show'); return; }
+
+    try {
+      if (receipts.length === 0) {
+        const snap = await getDocs(collection(db, 'receipts'));
+        receipts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      }
+      const matches = receipts.filter(r => {
+        const rName = (r.customerName || '').trim().toLowerCase();
+        const rPhone = (r.customerPhone || '').trim();
+        return rName === name || (phone && rPhone && rPhone === phone);
+      });
+      if (matches.length === 0) { box.classList.remove('show'); return; }
+
+      matches.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      const last = matches[0];
+      const outstanding = Number(last.newBalance || 0);
+
+      document.getElementById('previousBalance').value = outstanding.toFixed(2);
+      box.classList.add('show');
+      document.getElementById('balanceFoundText').textContent =
+        `Existing customer found — last receipt ${last.receiptNumber || ''} on ${last.date || ''}. Carried-forward balance: K ${outstanding.toFixed(2)} applied automatically.`;
+      updatePreview();
+    } catch (err) {
+      console.warn('Balance lookup failed:', err.message);
+    }
+  }
+
+  function scheduleBalanceLookup() {
+    clearTimeout(balanceLookupTimer);
+    balanceLookupTimer = setTimeout(lookupCustomerBalance, 500);
+  }
+
   // ─── Preview update ───────────────────────────────────────────────────────
   function updatePreview() {
     const customer = document.getElementById('customerName').value || '___________';
     const phone = document.getElementById('customerPhone').value || 'N/A';
     const amount = parseFloat(document.getElementById('amountPaid').value) || 0;
     const prevBalance = parseFloat(document.getElementById('previousBalance').value) || 0;
-    const newBalance = prevBalance - amount;
+    const itemsTotal = recalcItems();
+    const newBalance = prevBalance + itemsTotal - amount;
     const paymentMethod = document.getElementById('paymentMethod').value;
     const ref = document.getElementById('transactionRef').value || '—';
-    const notes = document.getElementById('notes').value || '—';
+    const nextPaymentDate = document.getElementById('nextPaymentDate').value;
     const date = document.getElementById('receiptDate').value || new Date().toISOString().split('T')[0];
     const receiptNum = document.getElementById('receiptNumber').value;
+    const items = getItems();
 
     const balanceStatus = newBalance > 0
       ? `<span style="color:#f59e0b;">Remaining Balance: K ${newBalance.toFixed(2)}</span>`
       : newBalance < 0
         ? `<span style="color:#ef4444;">Overpayment / Credit: K ${Math.abs(newBalance).toFixed(2)}</span>`
         : `<span style="color:#10b981;">FULLY SETTLED ✓</span>`;
+
+    const itemsHtml = items.length
+      ? items.map(it => `<div class="receipt-row"><span>${escapeHtml(it.description || 'Item')} ${it.qty ? `x${it.qty}` : ''}</span><span>K ${it.amount.toFixed(2)}</span></div>`).join('')
+      : `<div class="receipt-row"><span style="color:#94a3b8;">No items added</span><span>—</span></div>`;
 
     document.getElementById('receiptPreview').innerHTML = `
       <div style="text-align:center; margin-bottom:15px;">
@@ -397,9 +537,12 @@
       <div class="receipt-row"><strong>Phone:</strong> <span>${escapeHtml(phone)}</span></div>
       <div class="receipt-row"><strong>Payment Method:</strong> <span>${paymentMethod}</span></div>
       ${ref !== '—' ? `<div class="receipt-row"><strong>Transaction Ref:</strong> <span>${escapeHtml(ref)}</span></div>` : ''}
-      <div class="receipt-row"><strong>Description:</strong> <span>${escapeHtml(notes)}</span></div>
+      <div style="margin-top:8px; font-weight:700; font-size:0.75rem; color:#64748b; text-transform:uppercase;">Items</div>
+      ${itemsHtml}
+      <div class="receipt-row"><strong>Items Total:</strong> <span>K ${itemsTotal.toFixed(2)}</span></div>
       <div class="receipt-row"><strong>Previous Balance:</strong> <span>K ${prevBalance.toFixed(2)}</span></div>
-      <div class="receipt-row receipt-total"><strong>Amount Paid:</strong> <strong>K ${amount.toFixed(2)}</strong></div>
+      <div class="receipt-row receipt-total"><strong>Amount Paid Now:</strong> <strong>K ${amount.toFixed(2)}</strong></div>
+      ${nextPaymentDate ? `<div class="receipt-row"><strong>Next Payment Due:</strong> <span>${nextPaymentDate}</span></div>` : ''}
       <div class="balance-info">${balanceStatus}</div>
       <div style="text-align:center; margin-top:15px; font-size:0.6rem; color:#94a3b8;">
         <i class="fas fa-check-circle"></i> Thank you for your payment
@@ -410,10 +553,14 @@
   async function saveReceipt() {
     const customerName = document.getElementById('customerName').value.trim();
     if (!customerName) { showToast('Please enter customer name', true); return; }
-    const amountPaid = parseFloat(document.getElementById('amountPaid').value);
-    if (isNaN(amountPaid) || amountPaid <= 0) { showToast('Please enter a valid amount', true); return; }
+    const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
+    const items = getItems();
+    const itemsTotal = items.reduce((s, it) => s + it.amount, 0);
+    if (amountPaid <= 0 && itemsTotal <= 0) { showToast('Add at least an item or an amount paid', true); return; }
 
     const prevBalance = parseFloat(document.getElementById('previousBalance').value) || 0;
+    const newBalance = prevBalance + itemsTotal - amountPaid;
+
     const receiptData = {
       receiptNumber: document.getElementById('receiptNumber').value,
       date: document.getElementById('receiptDate').value,
@@ -421,10 +568,12 @@
       customerPhone: document.getElementById('customerPhone').value,
       paymentMethod: document.getElementById('paymentMethod').value,
       transactionRef: document.getElementById('transactionRef').value,
+      items,
+      itemsTotal,
       amountPaid,
       previousBalance: prevBalance,
-      newBalance: prevBalance - amountPaid,
-      notes: document.getElementById('notes').value,
+      newBalance,
+      nextPaymentDate: document.getElementById('nextPaymentDate').value || '',
       createdAt: new Date().toISOString(),
       companyDetails: {
         name: 'Trismart Enterprises',
@@ -442,7 +591,8 @@
 
     try {
       await addDoc(collection(db, 'receipts'), receiptData);
-      showToast(`Receipt ${receiptData.receiptNumber} saved!`);
+      receipts.push({ id: 'local_' + Date.now(), ...receiptData });
+      showToast(`Receipt ${receiptData.receiptNumber} saved! Balance carried: K ${newBalance.toFixed(2)}`);
       resetForm();
       document.getElementById('historyTab').click();
     } catch (err) {
@@ -464,7 +614,11 @@
     document.getElementById('transactionRef').value = '';
     document.getElementById('amountPaid').value = '';
     document.getElementById('previousBalance').value = '0';
-    document.getElementById('notes').value = '';
+    document.getElementById('nextPaymentDate').value = '';
+    document.getElementById('balanceFoundBox').classList.remove('show');
+    document.getElementById('itemsBody').innerHTML = '';
+    itemRowCount = 0;
+    addItemRow();
     updatePreview();
   }
 
@@ -474,20 +628,16 @@
     grid.innerHTML = '<div class="loading-box" style="grid-column:1/-1;"><i class="fas fa-spinner fa-pulse"></i><br>Connecting to Firebase...</div>';
 
     try {
-      // Step 1: try without ordering first (avoids missing-index errors)
       let snap;
       try {
         const q = query(collection(db, 'receipts'), orderBy('createdAt', 'desc'));
         snap = await getDocs(q);
       } catch (orderErr) {
-        // If ordering fails (e.g. index not built), fall back to unordered
         console.warn('Ordered query failed, trying unordered:', orderErr.message);
         snap = await getDocs(collection(db, 'receipts'));
       }
 
       receipts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-      // Sort client-side as fallback
       receipts.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
 
       if (receipts.length === 0) {
@@ -505,7 +655,7 @@
           <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">
             <i class="fas fa-money-bill-wave"></i> ${escapeHtml(rec.paymentMethod || '')}
           </div>
-          <div class="receipt-amount">Paid: K ${Number(rec.amountPaid).toFixed(2)}</div>
+          <div class="receipt-amount">Paid: K ${Number(rec.amountPaid || 0).toFixed(2)}</div>
           <div style="font-size:0.7rem; margin-top:4px; color:${rec.newBalance > 0 ? '#f59e0b' : '#10b981'};">
             Balance: K ${Number(rec.newBalance || 0).toFixed(2)}
           </div>
@@ -514,7 +664,6 @@
     } catch (err) {
       console.error('Load error full:', err);
 
-      // Friendly diagnosis based on error code
       let diagnosis = err.message;
       let hint = '';
       if (err.code === 'permission-denied' || err.message.includes('permission')) {
@@ -546,7 +695,6 @@
     }
   }
 
-  // Make retryable from the error button
   window._retryLoad = loadReceipts;
 
   // ─── View receipt modal ───────────────────────────────────────────────────
@@ -561,6 +709,10 @@
         ? `Credit: K ${Math.abs(Number(rec.newBalance)).toFixed(2)}`
         : 'Fully Settled ✓';
 
+    const itemsRows = (rec.items || []).map(it =>
+      `<div class="receipt-row"><span>${escapeHtml(it.description || 'Item')} ${it.qty ? `x${it.qty}` : ''}</span><span>K ${Number(it.amount || 0).toFixed(2)}</span></div>`
+    ).join('') || `<div class="receipt-row"><span style="color:#94a3b8;">No items recorded</span><span>—</span></div>`;
+
     document.getElementById('receiptDetails').innerHTML = `
       <div style="text-align:center; border-bottom:2px solid #e2e8f0; padding-bottom:12px; margin-bottom:12px;">
         <h3 style="color:#2563eb;">TRISMART ENTERPRISES</h3>
@@ -571,63 +723,122 @@
       <div class="receipt-row"><strong>Customer:</strong> ${escapeHtml(rec.customerName)}</div>
       <div class="receipt-row"><strong>Phone:</strong> ${escapeHtml(rec.customerPhone || 'N/A')}</div>
       <div class="receipt-row"><strong>Payment:</strong> ${escapeHtml(rec.paymentMethod)} ${rec.transactionRef ? `(${escapeHtml(rec.transactionRef)})` : ''}</div>
-      <div class="receipt-row"><strong>Notes:</strong> ${escapeHtml(rec.notes || '—')}</div>
+      <div style="margin-top:8px; font-weight:700; font-size:0.75rem; color:#64748b; text-transform:uppercase;">Items</div>
+      ${itemsRows}
       <div class="receipt-row"><strong>Previous Balance:</strong> K ${Number(rec.previousBalance || 0).toFixed(2)}</div>
-      <div class="receipt-row receipt-total"><strong>Amount Paid:</strong> K ${Number(rec.amountPaid).toFixed(2)}</div>
+      <div class="receipt-row receipt-total"><strong>Amount Paid:</strong> K ${Number(rec.amountPaid || 0).toFixed(2)}</div>
+      ${rec.nextPaymentDate ? `<div class="receipt-row"><strong>Next Payment Due:</strong> ${rec.nextPaymentDate}</div>` : ''}
       <div class="balance-info"><strong>${balanceLabel}</strong></div>
       <div style="margin-top:12px; text-align:center; font-size:0.65rem; color:#94a3b8;">Thank you for your business!</div>`;
 
     document.getElementById('receiptModal').classList.add('show');
   };
 
-  // ─── Print receipt ────────────────────────────────────────────────────────
+  // ─── Print receipt (Invoice template) ─────────────────────────────────────
   document.getElementById('printPdfBtn')?.addEventListener('click', () => {
     if (!currentReceiptForPdf) return;
     const rec = currentReceiptForPdf;
     const balanceStatus = rec.newBalance > 0
-      ? `Remaining Balance: K ${Number(rec.newBalance).toFixed(2)}`
+      ? `Balance Due: K ${Number(rec.newBalance).toFixed(2)}`
       : rec.newBalance < 0
-        ? `Credit: K ${Math.abs(Number(rec.newBalance)).toFixed(2)}`
-        : 'FULLY SETTLED ✓';
+        ? `Credit on Account: K ${Math.abs(Number(rec.newBalance)).toFixed(2)}`
+        : 'PAID IN FULL';
+
+    const itemRows = (rec.items && rec.items.length)
+      ? rec.items.map((it, i) => `
+          <tr>
+            <td style="padding:10px 8px; border-bottom:1px solid #e2e8f0;">${i + 1}</td>
+            <td style="padding:10px 8px; border-bottom:1px solid #e2e8f0;">${escapeHtml(it.description || '')}</td>
+            <td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; text-align:center;">${it.qty || ''}</td>
+            <td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; text-align:right;">${Number(it.price || 0).toFixed(2)}</td>
+            <td style="padding:10px 8px; border-bottom:1px solid #e2e8f0; text-align:right;">${Number(it.amount || 0).toFixed(2)}</td>
+          </tr>`).join('')
+      : `<tr><td colspan="5" style="padding:14px 8px; text-align:center; color:#94a3b8;">No items recorded</td></tr>`;
 
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
       <html>
         <head>
-          <title>Receipt ${rec.receiptNumber}</title>
+          <title>Invoice ${rec.receiptNumber}</title>
           <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
           <style>
             * { margin:0; padding:0; box-sizing:border-box; }
-            body { font-family:'Inter',sans-serif; padding:30px; background:white; color:#1e293b; }
-            .row { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid #e2e8f0; font-size:13px; }
-            .total { display:flex; justify-content:space-between; padding:12px 0; font-size:1.1rem; font-weight:800; color:#2563eb; border-top:2px solid #e2e8f0; margin-top:8px; }
-            .balance { background:#fef3c7; padding:10px; border-radius:8px; text-align:center; margin-top:10px; font-weight:600; font-size:13px; }
-            @media print { body { padding:0; } }
+            body { font-family:'Inter',sans-serif; padding:40px; background:white; color:#1e293b; }
+            .top { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #2563eb; padding-bottom:18px; margin-bottom:24px; }
+            .brand h1 { color:#2563eb; font-size:1.6rem; letter-spacing:-0.5px; }
+            .brand p { font-size:11px; color:#64748b; margin-top:4px; }
+            .doc-label { text-align:right; }
+            .doc-label h2 { font-size:1.3rem; color:#1e293b; letter-spacing:1px; }
+            .doc-label p { font-size:11px; color:#64748b; margin-top:4px; }
+            .meta { display:flex; justify-content:space-between; margin-bottom:24px; gap:30px; }
+            .meta-block h4 { font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color:#94a3b8; margin-bottom:6px; }
+            .meta-block p { font-size:13px; margin-bottom:2px; }
+            table { width:100%; border-collapse:collapse; margin-bottom:20px; }
+            thead th { background:#2563eb; color:white; font-size:10px; text-transform:uppercase; letter-spacing:0.5px; padding:10px 8px; text-align:left; }
+            thead th:nth-child(3) { text-align:center; }
+            thead th:nth-child(4), thead th:nth-child(5) { text-align:right; }
+            .totals { width:280px; margin-left:auto; }
+            .totals .row { display:flex; justify-content:space-between; padding:6px 0; font-size:13px; }
+            .totals .row.grand { border-top:2px solid #1e293b; margin-top:6px; padding-top:10px; font-weight:800; font-size:15px; color:#2563eb; }
+            .status-banner { margin-top:20px; padding:14px; border-radius:8px; text-align:center; font-weight:700; font-size:14px; }
+            .status-banner.due { background:#fef3c7; color:#92400e; }
+            .status-banner.credit { background:#fee2e2; color:#991b1b; }
+            .status-banner.paid { background:#d1fae5; color:#065f46; }
+            .next-payment { margin-top:14px; font-size:12px; color:#64748b; text-align:center; }
+            .footer { margin-top:36px; text-align:center; font-size:11px; color:#94a3b8; border-top:1px solid #e2e8f0; padding-top:16px; }
+            @media print { body { padding:20px; } }
           </style>
         </head>
         <body>
-          <div style="text-align:center; margin-bottom:20px;">
-            <h2 style="color:#2563eb; margin-bottom:4px;">TRISMART ENTERPRISES</h2>
-            <p style="font-size:12px;">${rec.companyDetails?.email || 'trismart.zm@gmail.com'} | ${rec.companyDetails?.phone || '+260 775 390905'}</p>
-            <p style="font-size:11px;">FNB Bank: ${rec.companyDetails?.account || '63042080133'} | Industrial Area, Lusaka</p>
-            <hr style="margin:10px 0;">
+          <div class="top">
+            <div class="brand">
+              <h1>TRISMART ENTERPRISES</h1>
+              <p>${rec.companyDetails?.email || 'trismart.zm@gmail.com'} | ${rec.companyDetails?.phone || '+260 775 390905'}</p>
+              <p>FNB Bank: ${rec.companyDetails?.account || '63042080133'} | Industrial Area, Lusaka</p>
+            </div>
+            <div class="doc-label">
+              <h2>INVOICE / RECEIPT</h2>
+              <p>${escapeHtml(rec.receiptNumber)}</p>
+            </div>
           </div>
-          <div class="row"><strong>Receipt #:</strong> <span>${escapeHtml(rec.receiptNumber)}</span></div>
-          <div class="row"><strong>Date:</strong> <span>${rec.date}</span></div>
-          <div class="row"><strong>Customer:</strong> <span>${escapeHtml(rec.customerName)}</span></div>
-          <div class="row"><strong>Phone:</strong> <span>${escapeHtml(rec.customerPhone || 'N/A')}</span></div>
-          <div class="row"><strong>Payment Method:</strong> <span>${escapeHtml(rec.paymentMethod)}</span></div>
-          ${rec.transactionRef ? `<div class="row"><strong>Transaction Ref:</strong> <span>${escapeHtml(rec.transactionRef)}</span></div>` : ''}
-          <div class="row"><strong>Description:</strong> <span>${escapeHtml(rec.notes || '—')}</span></div>
-          <div class="row"><strong>Previous Balance:</strong> <span>K ${Number(rec.previousBalance || 0).toFixed(2)}</span></div>
-          <div class="total"><strong>Amount Paid:</strong> <strong>K ${Number(rec.amountPaid).toFixed(2)}</strong></div>
-          <div class="balance">${balanceStatus}</div>
-          <div style="text-align:center; margin-top:20px; font-size:11px; color:#64748b;">Thank you for your business!</div>
+
+          <div class="meta">
+            <div class="meta-block">
+              <h4>Billed To</h4>
+              <p><strong>${escapeHtml(rec.customerName)}</strong></p>
+              <p>${escapeHtml(rec.customerPhone || 'N/A')}</p>
+            </div>
+            <div class="meta-block">
+              <h4>Date Issued</h4>
+              <p>${rec.date}</p>
+              <h4 style="margin-top:10px;">Payment Method</h4>
+              <p>${escapeHtml(rec.paymentMethod)} ${rec.transactionRef ? `(${escapeHtml(rec.transactionRef)})` : ''}</p>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr><th>#</th><th>Description</th><th>Qty</th><th>Unit Price</th><th>Amount</th></tr>
+            </thead>
+            <tbody>${itemRows}</tbody>
+          </table>
+
+          <div class="totals">
+            <div class="row"><span>Items Total</span><span>K ${Number(rec.itemsTotal || 0).toFixed(2)}</span></div>
+            <div class="row"><span>Previous Balance</span><span>K ${Number(rec.previousBalance || 0).toFixed(2)}</span></div>
+            <div class="row"><span>Amount Paid</span><span>K ${Number(rec.amountPaid || 0).toFixed(2)}</span></div>
+            <div class="row grand"><span>${rec.newBalance > 0 ? 'Balance Due' : rec.newBalance < 0 ? 'Credit' : 'Total'}</span><span>K ${Math.abs(Number(rec.newBalance || 0)).toFixed(2)}</span></div>
+          </div>
+
+          <div class="status-banner ${rec.newBalance > 0 ? 'due' : rec.newBalance < 0 ? 'credit' : 'paid'}">${balanceStatus}</div>
+          ${rec.nextPaymentDate ? `<div class="next-payment"><i>Agreed next payment date: <strong>${rec.nextPaymentDate}</strong></i></div>` : ''}
+
+          <div class="footer">Thank you for your business — Trismart Enterprises</div>
           <script>window.onload = () => { window.print(); }<\/script>
         </body>
       </html>`);
     printWindow.document.close();
-    showToast('Print window opened');
+    showToast('Invoice print window opened');
   });
 
   // ─── Modal close ──────────────────────────────────────────────────────────
@@ -663,15 +874,24 @@
   // ─── Form listeners ───────────────────────────────────────────────────────
   document.getElementById('saveReceiptBtn').addEventListener('click', saveReceipt);
   document.getElementById('resetBtn').addEventListener('click', resetForm);
-  ['amountPaid', 'previousBalance', 'customerName', 'notes', 'transactionRef', 'customerPhone'].forEach(id => {
+  document.getElementById('addItemBtn').addEventListener('click', () => { addItemRow(); updatePreview(); });
+  ['amountPaid', 'previousBalance', 'nextPaymentDate', 'transactionRef'].forEach(id => {
     document.getElementById(id).addEventListener('input', updatePreview);
   });
+  document.getElementById('customerName').addEventListener('input', () => { updatePreview(); scheduleBalanceLookup(); });
+  document.getElementById('customerPhone').addEventListener('input', () => { updatePreview(); scheduleBalanceLookup(); });
   document.getElementById('paymentMethod').addEventListener('change', updatePreview);
 
   // ─── Init ─────────────────────────────────────────────────────────────────
   document.getElementById('receiptNumber').value = generateReceiptNumber();
   document.getElementById('receiptDate').value = new Date().toISOString().split('T')[0];
+  addItemRow();
   updatePreview();
+
+  // Preload receipts in background for instant balance lookups
+  getDocs(collection(db, 'receipts')).then(snap => {
+    receipts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }).catch(() => {});
 </script>
 </body>
 </html>
