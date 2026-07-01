@@ -271,7 +271,7 @@
   <!-- ═══ NEW RECEIPT PANEL ════════════════════════════════════ -->
   <div id="newReceiptPanel">
     <div class="company-info">
-      <div class="company-detail"><i class="fas fa-store"></i> Trismart Enterprises</div>
+      <div class="company-detail"><i class="fas fa-store"></i> Trismart </div>
       <div class="company-detail"><i class="fas fa-envelope"></i> trismart.zm@gmail.com</div>
       <div class="company-detail"><i class="fas fa-phone"></i> +260 775 390905</div>
       <div class="company-detail"><i class="fas fa-university"></i> FNB Bank · 63042080133</div>
@@ -307,10 +307,10 @@
         <div class="input-group">
           <label>Payment Method</label>
           <select id="paymentMethod">
-            <option value="Cash">💵 Cash</option>
-            <option value="Airtel Money">📱 Airtel Money</option>
-            <option value="FNB Transfer">🏦 FNB Transfer</option>
-            <option value="Card">💳 Card</option>
+            <option value="Cash">Cash</option>
+            <option value="Airtel Money"> Airtel Money</option>
+            <option value="FNB Transfer"> FNB Transfer</option>
+            <option value="Card"> Card</option>
           </select>
         </div>
         <div class="input-group">
@@ -940,7 +940,7 @@ document.getElementById('printStatementBtn').addEventListener('click', () => {
       @media print{body{padding:20px;}}
     </style></head><body>
     <div class="top">
-      <div class="brand"><h1>TRISMART ENTERPRISES</h1><p>trismart.zm@gmail.com | +260 775 390905 | FNB 63042080133</p></div>
+      <div class="brand"><h1>TRISMART </h1><p>trismart.zm@gmail.com | +260 775 390905 | FNB 63042080133</p></div>
       <div class="doc-lbl"><h2>CUSTOMER STATEMENT</h2><p>Printed: ${new Date().toLocaleDateString()}</p></div>
     </div>
     <div class="customer-box"><h3>${esc(name)}</h3><p>${esc(phone)||'No phone on file'} · ${records.length} transaction${records.length>1?'s':''} · Period: ${records[0].date||'—'} to ${records[records.length-1].date||'—'}</p></div>
@@ -992,7 +992,7 @@ document.getElementById('printPdfBtn').addEventListener('click', () => {
       @media print{body{padding:20px;}}
     </style></head><body>
     <div class="top">
-      <div class="brand"><h1>TRISMART ENTERPRISES</h1><p>${rec.companyDetails?.email||'trismart.zm@gmail.com'} | ${rec.companyDetails?.phone||'+260 775 390905'}</p><p>FNB Bank: ${rec.companyDetails?.account||'63042080133'} | Industrial Area, Lusaka</p></div>
+      <div class="brand"><h1>TRISMART</h1><p>${rec.companyDetails?.email||'trismart.zm@gmail.com'} | ${rec.companyDetails?.phone||'+260 775 390905'}</p><p>FNB Bank: ${rec.companyDetails?.account||'63042080133'} | Industrial Area, Lusaka</p></div>
       <div class="doc-lbl"><h2>INVOICE / RECEIPT</h2><p>${esc(rec.receiptNumber)}</p></div>
     </div>
     <div class="meta">
