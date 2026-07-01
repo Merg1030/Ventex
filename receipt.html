@@ -637,7 +637,7 @@ function updatePreview() {
 
   document.getElementById('receiptPreview').innerHTML = `
     <div style="text-align:center; margin-bottom:14px;">
-      <h2 style="color:#2563eb; font-size:1.1rem;">TRISMART ENTERPRISES</h2>
+      <h2 style="color:#2563eb; font-size:1.1rem;">TRISMART</h2>
       <p style="font-size:0.62rem; color:#64748b;">trismart.zm@gmail.com | +260 775 390905 | FNB 63042080133</p>
       <hr style="margin:8px 0; border-color:#e2e8f0;">
     </div>
@@ -684,7 +684,7 @@ async function saveReceipt() {
     linkedTo: linkedReceiptId || null,
     createdAt: new Date().toISOString(),
     companyDetails: {
-      name: 'Trismart Enterprises',
+      name: 'Trismart',
       email: 'trismart.zm@gmail.com',
       phone: '+260 775 390905',
       bank: 'FNB Bank',
@@ -803,7 +803,7 @@ window.viewReceipt = (id) => {
 
   document.getElementById('receiptDetails').innerHTML = `
     <div style="text-align:center; border-bottom:2px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
-      <h3 style="color:#2563eb;">TRISMART ENTERPRISES</h3>
+      <h3 style="color:#2563eb;">TRISMART</h3>
       <p style="font-size:0.7rem;">${rec.companyDetails?.email||'trismart.zm@gmail.com'} | ${rec.companyDetails?.phone||'+260 775 390905'}</p>
     </div>
     <div class="receipt-row"><strong>Receipt #</strong>${esc(rec.receiptNumber)}</div>
@@ -951,7 +951,7 @@ document.getElementById('printStatementBtn').addEventListener('click', () => {
     </div>
     <table><thead><tr><th>#</th><th>Receipt</th><th>Date</th><th>Charged</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>
     <div class="banner">${balTxt}</div>
-    <div class="footer">Trismart Enterprises — This is a computer-generated statement</div>
+    <div class="footer">Trismart </div>
     <script>window.onload=()=>{window.print();}<\/script>
   </body></html>`);
   pw.document.close();
@@ -1008,7 +1008,7 @@ document.getElementById('printPdfBtn').addEventListener('click', () => {
     </div>
     <div class="banner">${balTxt}</div>
     ${rec.nextPaymentDate?`<div class="next">Next agreed payment date: <strong>${rec.nextPaymentDate}</strong></div>`:''}
-    <div class="footer">Thank you for your business — Trismart Enterprises</div>
+    <div class="footer">Thank you for your business — Trismart </div>
     <script>window.onload=()=>{window.print();}<\/script>
   </body></html>`);
   pw.document.close();
