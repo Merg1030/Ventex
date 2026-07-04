@@ -43,7 +43,38 @@
             font-size: 14px;
         }
 
-        /* Master warehouse banner — hidden by default, shown via JS */
+        /* Location selector bar */
+        .location-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .location-bar label {
+            font-weight: 700;
+            font-size: 14px;
+            color: #000;
+        }
+
+        .location-bar select {
+            padding: 10px 14px;
+            border: 2px solid #0066cc;
+            border-radius: 4px;
+            font-size: 15px;
+            font-weight: bold;
+            background: white;
+            cursor: pointer;
+            min-width: 220px;
+        }
+
+        /* Master warehouse banner — shown when Master is the selected location */
         .master-banner {
             display: none;
             background: linear-gradient(90deg, #f8961e, #f3722c);
@@ -154,6 +185,11 @@
 
         .add-item-btn:hover {
             background-color: #218838;
+        }
+
+        .add-item-btn:disabled {
+            background-color: #9bc9a8;
+            cursor: not-allowed;
         }
 
         .current-grv {
@@ -394,12 +430,30 @@
             margin-bottom: 12px;
         }
 
+        .access-denied {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .access-denied-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.15);
+            font-size: 15px;
+            font-weight: bold;
+            color: #721c24;
+        }
+
         @media (max-width: 768px) {
             .container { padding: 15px; }
             .input-grid { grid-template-columns: 1fr; }
             th, td { padding: 8px 5px; font-size: 12px; }
             .control-btn { padding: 8px 15px; font-size: 12px; margin: 5px; }
             .modal-content { padding: 15px; width: 95%; }
+            .location-bar select { min-width: 0; width: 100%; }
         }
     </style>
 </head>
@@ -408,9 +462,19 @@
         <h1>GRV PROCESSING SYSTEM</h1>
         <p class="subtitle">Manage Goods Received Vouchers</p>
 
-        <!-- Shown only when branchId = "master" -->
+        <!-- Location selector -->
+        <div class="location-bar">
+            <label for="locationSelect"><i></i> Restocking Location:</label>
+            <select id="locationSelect">
+                <option value="master"> Master Warehouse</option>
+                <option value="kabanana"> Kabanana Branch</option>
+                <option value="makeni"> Makeni Branch</option>
+            </select>
+        </div>
+
+        <!-- Shown only when location = "master" -->
         <div class="master-banner" id="masterBanner">
-            ⭐ MASTER WAREHOUSE — Receiving stock into central inventory
+             MASTER WAREHOUSE — Receiving stock into central inventory
         </div>
         
         <div class="control-panel">
@@ -581,31 +645,44 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const branchId = localStorage.getItem('branchId');
-        if (!branchId) {
-            alert('Branch ID not found. Please select a branch from the dashboard.');
-            window.location.href = 'dashboard.html';
+        // ===== ACCESS CONTROL: only "chris" may use this page =====
+        const loggedInUser = (localStorage.getItem('loggedInUser') || localStorage.getItem('userName') || '').toLowerCase().trim();
+        if (loggedInUser !== 'chris') {
+            document.body.innerHTML = `<div class="access-denied"><div class="access-denied-box">❌ Access Denied. Only 'chris' can process GRVs.</div></div>`;
+            throw new Error('unauthorized');
         }
 
-        // Is this the master warehouse mode?
-        const isMaster = branchId === 'master';
+        const locationNames = {
+            master: 'Master Warehouse',
+            kabanana: 'Kabanana Branch',
+            makeni: 'Makeni Branch'
+        };
+
+        // Selected restocking location — driven by the dropdown, not localStorage
+        let branchId = localStorage.getItem('grvLastLocation') || 'master';
+        if (!locationNames[branchId]) branchId = 'master';
+
+        const locationSelect = document.getElementById('locationSelect');
+        locationSelect.value = branchId;
+
+        let isMaster = branchId === 'master';
 
         let items = [];
         let currentGRV = 1;
         let processedGRVs = [];
         let inventory = [];
 
-        // Apply master-mode styling if needed
+        // Apply/remove master-mode styling based on current location
         function applyMasterStyling() {
-            if (!isMaster) return;
-            document.getElementById('masterBanner').style.display = 'block';
-            document.getElementById('currentGRV').classList.add('master-mode');
-            document.getElementById('processBtnEl').classList.add('master-mode');
-            document.getElementById('processSubtitle').textContent =
-                'Click to process all items above — stock will be added to Master Warehouse';
+            document.getElementById('masterBanner').style.display = isMaster ? 'block' : 'none';
+            document.getElementById('currentGRV').classList.toggle('master-mode', isMaster);
+            document.getElementById('processBtnEl').classList.toggle('master-mode', isMaster);
+            document.getElementById('processSubtitle').textContent = isMaster
+                ? 'Click to process all items above — stock will be added to Master Warehouse'
+                : `Click to process all items above — stock will be added to ${locationNames[branchId]}`;
         }
 
-        // Get next GRV number from database
+        // Get next GRV number for the current location
         async function getNextGRVNumber() {
             try {
                 const grvCounterRef = doc(db, 'grvCounter', branchId);
@@ -624,8 +701,7 @@
             }
         }
 
-        // Fetch inventory — always pulls from the current branchId
-        // So when branchId = "master", it shows master warehouse items
+        // Fetch inventory for the current location
         async function fetchInventory() {
             try {
                 const q = query(collection(db, 'inventory'), where('branchId', '==', branchId));
@@ -653,6 +729,7 @@
                 opt.setAttribute('data-code', item.code);
                 sel.appendChild(opt);
             });
+            document.getElementById('itemCode').value = '';
         }
 
         function autoFillItemCode() {
@@ -678,7 +755,6 @@
             document.getElementById('historySection').classList.remove('hidden-section');
             document.getElementById('historySection').classList.add('visible-section');
             document.getElementById('hideBtn').style.display = 'inline-block';
-            // refresh to ensure ascending order each time we open history
             updateGRVHistory();
         }
 
@@ -691,15 +767,13 @@
         }
 
         function loadLocalData() {
-            // Use a per-branch localStorage key so master data doesn't bleed into branch data
             const savedItems = localStorage.getItem(`grvItems_${branchId}`);
-            if (savedItems) { items = JSON.parse(savedItems); updateTable(); }
+            items = savedItems ? JSON.parse(savedItems) : [];
+            updateTable();
 
             const savedProcessed = localStorage.getItem(`processedGRVs_${branchId}`);
-            if (savedProcessed) { 
-                processedGRVs = JSON.parse(savedProcessed); 
-                updateGRVHistory(); 
-            }
+            processedGRVs = savedProcessed ? JSON.parse(savedProcessed) : [];
+            updateGRVHistory();
         }
 
         function saveLocalData() {
@@ -711,7 +785,7 @@
             const num = currentGRV.toString().padStart(2, '0');
             const prefix = isMaster ? 'MGRV' : 'GRV';
             document.getElementById('currentGRV').textContent =
-                `Currently Adding to: ${prefix}-${num}`;
+                `Currently Adding to: ${prefix}-${num} (${locationNames[branchId]})`;
         }
 
         function addItem() {
@@ -811,7 +885,7 @@
                 return;
             }
 
-            const destination = isMaster ? 'Master Warehouse' : `Branch (${branchId})`;
+            const destination = locationNames[branchId];
             if (!confirm(`Process ${pendingItems.length} item(s) as ${grvNum} → ${destination}?`)) return;
 
             try {
@@ -831,14 +905,35 @@
 
                 await addDoc(collection(db, 'grvRecords'), grv);
 
-                // Update inventory stock (always updates the correct branchId's inventory)
+                // Update inventory stock for the selected location only
                 for (const item of pendingItems) {
                     const invItem = inventory.find(inv => inv.code === item.code);
                     if (invItem) {
                         const itemRef = doc(db, 'inventory', invItem.id);
                         await updateDoc(itemRef, { stock: (invItem.stock || 0) + item.quantity });
-                        // Update local copy so subsequent items in same session are accurate
                         invItem.stock = (invItem.stock || 0) + item.quantity;
+
+                        await addDoc(collection(db, 'restockHistory'), {
+                            date: grv.date,
+                            code: item.code,
+                            name: item.name,
+                            price: item.unitPrice,
+                            quantity: item.quantity,
+                            total: item.totalPrice,
+                            branchId,
+                            grvNumber: grvNum
+                        });
+                    } else {
+                        // Item didn't exist yet at this location — create it
+                        const newRef = await addDoc(collection(db, 'inventory'), {
+                            code: item.code,
+                            name: item.name,
+                            price: item.unitPrice,
+                            stock: item.quantity,
+                            sold: 0,
+                            branchId
+                        });
+                        inventory.push({ id: newRef.id, code: item.code, name: item.name, stock: item.quantity });
 
                         await addDoc(collection(db, 'restockHistory'), {
                             date: grv.date,
@@ -853,7 +948,7 @@
                     }
                 }
 
-                // Advance GRV counter
+                // Advance GRV counter for this location
                 const counterRef = doc(db, 'grvCounter', branchId);
                 await setDoc(counterRef, { nextGRV: currentGRV + 1 }, { merge: true });
 
@@ -865,11 +960,11 @@
 
                 await getNextGRVNumber();
                 updateTable();
-                // After processing, refresh history with ascending order
                 updateGRVHistory();
                 saveLocalData();
+                populateItemDropdown();
 
-                showMessage(`${grvNum} processed successfully!`, 'success');
+                showMessage(`${grvNum} processed successfully into ${destination}!`, 'success');
 
             } catch (error) {
                 console.error('Error processing GRV:', error);
@@ -877,27 +972,24 @@
             }
         }
 
-        // ========== CORE CHANGE: DISPLAY GRV FILES IN ASCENDING ORDER (OLDEST FIRST) ==========
+        // ========== DISPLAY GRV FILES IN ASCENDING ORDER (OLDEST FIRST) ==========
         function updateGRVHistory() {
             const body = document.getElementById('grvHistoryBody');
             body.innerHTML = '';
 
             if (processedGRVs.length === 0) {
                 body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:15px;color:#666;">
-                    No GRV files processed yet.</td></tr>`;
+                    No GRV files processed yet for ${locationNames[branchId]}.</td></tr>`;
                 return;
             }
 
-            // Create a copy and sort by date (oldest first), then by time to be precise
             const sortedAsc = [...processedGRVs].sort((a, b) => {
-                // Combine date and time for accurate chronological order
                 const dateTimeA = `${a.date || ''} ${a.time || ''}`;
                 const dateTimeB = `${b.date || ''} ${b.time || ''}`;
                 if (dateTimeA === dateTimeB) return 0;
                 return dateTimeA.localeCompare(dateTimeB);
             });
 
-            // Render each GRV in ascending order (oldest at top)
             for (const grv of sortedAsc) {
                 const row = document.createElement('tr');
                 const totalVal = typeof grv.totalValue === 'number' ? grv.totalValue.toFixed(2) : parseFloat(grv.totalValue || 0).toFixed(2);
@@ -965,21 +1057,35 @@
                 const q = query(collection(db, 'grvRecords'), where('branchId', '==', branchId));
                 const snap = await getDocs(q);
                 processedGRVs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                updateGRVHistory();   // will automatically sort ascending
+                updateGRVHistory();
                 saveLocalData();
             } catch (error) {
                 console.error('Error fetching GRVs:', error);
             }
         }
 
-        window.onload = async function () {
+        // Full reload of everything for the currently selected location
+        async function loadLocation() {
+            hideAllSections();
             applyMasterStyling();
             await getNextGRVNumber();
             await fetchInventory();
             loadLocalData();
             await fetchExistingGRVs();
-            // final refresh to ensure ascending order after all data loads
             updateGRVHistory();
+        }
+
+        // React to location dropdown changes
+        locationSelect.addEventListener('change', async () => {
+            branchId = locationSelect.value;
+            isMaster = branchId === 'master';
+            localStorage.setItem('grvLastLocation', branchId);
+            await loadLocation();
+            showMessage(`Switched to ${locationNames[branchId]}`, 'success');
+        });
+
+        window.onload = async function () {
+            await loadLocation();
         };
 
         // Expose to global scope
