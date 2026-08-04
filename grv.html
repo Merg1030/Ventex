@@ -513,7 +513,7 @@
 
             <!-- Live running total of quantity queued to restock for this GRV -->
             <div class="restock-counter" id="restockCounter">
-                Total To Restock: <span id="restockCounterValue">0</span>
+                Total Amount To Restock: <span id="restockCounterValue">0.00</span>
             </div>
             
             <div class="form-section">
@@ -924,9 +924,9 @@
                 });
             }
 
-            // Live "Total To Restock" counter — sum of quantities for the current GRV's items
-            const totalToRestock = currentItems.reduce((sum, i) => sum + Number(i.quantity || 0), 0);
-            document.getElementById('restockCounterValue').textContent = totalToRestock;
+            // Live "Total To Restock" counter — sum of the MONEY value (totalPrice) for the current GRV's items
+            const totalToRestock = currentItems.reduce((sum, i) => sum + Number(i.totalPrice || 0), 0);
+            document.getElementById('restockCounterValue').textContent = totalToRestock.toFixed(2);
         }
 
         function deleteItem(id) {
