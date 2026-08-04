@@ -208,6 +208,28 @@
             background-color: #f8961e;
         }
 
+        /* Live "to restock" counter */
+        .restock-counter {
+            background-color: #17a2b8;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 3px;
+            margin: 0 0 15px 0;
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+            letter-spacing: 0.02em;
+        }
+
+        .restock-counter.master-mode {
+            background-color: #6f42c1;
+        }
+
+        .restock-counter span {
+            font-size: 20px;
+            padding-left: 6px;
+        }
+
         .items-table-container {
             overflow-x: auto;
             margin: 20px 0;
@@ -474,7 +496,7 @@
 
         <!-- Shown only when location = "master" -->
         <div class="master-banner" id="masterBanner">
-             MASTER WAREHOUSE — Receiving stock into central inventory
+             MASTER WAREHOUSE — Receiving stock into central inventory (all branch items available below)
         </div>
         
         <div class="control-panel">
@@ -487,6 +509,11 @@
         <div id="processSection" class="hidden-section">
             <div class="current-grv" id="currentGRV">
                 Currently Adding to: GRV-01
+            </div>
+
+            <!-- Live running total of quantity queued to restock for this GRV -->
+            <div class="restock-counter" id="restockCounter">
+                Total To Restock: <span id="restockCounterValue">0</span>
             </div>
             
             <div class="form-section">
@@ -670,12 +697,19 @@
         let items = [];
         let currentGRV = 1;
         let processedGRVs = [];
+
+        // `inventory` = the CURRENT branch's own stock records (used to check/update stock on process)
         let inventory = [];
+        // `dropdownItems` = the list of items shown in the "Item Name" select.
+        // For Master this is pooled from ALL branches so you can restock anything into Master
+        // even if Master doesn't carry it yet. For other branches it's just their own inventory.
+        let dropdownItems = [];
 
         // Apply/remove master-mode styling based on current location
         function applyMasterStyling() {
             document.getElementById('masterBanner').style.display = isMaster ? 'block' : 'none';
             document.getElementById('currentGRV').classList.toggle('master-mode', isMaster);
+            document.getElementById('restockCounter').classList.toggle('master-mode', isMaster);
             document.getElementById('processBtnEl').classList.toggle('master-mode', isMaster);
             document.getElementById('processSubtitle').textContent = isMaster
                 ? 'Click to process all items above — stock will be added to Master Warehouse'
@@ -701,7 +735,7 @@
             }
         }
 
-        // Fetch inventory for the current location
+        // Fetch inventory for the CURRENT branch (used for stock lookups/updates on process)
         async function fetchInventory() {
             try {
                 const q = query(collection(db, 'inventory'), where('branchId', '==', branchId));
@@ -713,16 +747,45 @@
                     stock: d.data().stock || 0
                 }));
                 inventory.sort((a, b) => a.name.localeCompare(b.name));
+
+                if (isMaster) {
+                    // Master sees a pooled catalog of items from every branch
+                    await fetchAllBranchesInventory();
+                } else {
+                    dropdownItems = inventory;
+                }
+
                 populateItemDropdown();
             } catch (error) {
                 console.error('Error fetching inventory:', error);
             }
         }
 
+        // Pull inventory docs from ALL branches and build a de-duplicated catalog (by item code)
+        // so Master can select and restock any item that exists anywhere, even if Master
+        // itself doesn't have it in stock yet.
+        async function fetchAllBranchesInventory() {
+            try {
+                const snap = await getDocs(collection(db, 'inventory')); // no branch filter = everyone
+                const seen = new Map();
+                snap.docs.forEach(d => {
+                    const data = d.data();
+                    if (!data.code || !data.name) return;
+                    if (!seen.has(data.code)) {
+                        seen.set(data.code, { code: data.code, name: data.name });
+                    }
+                });
+                dropdownItems = Array.from(seen.values()).sort((a, b) => a.name.localeCompare(b.name));
+            } catch (error) {
+                console.error('Error fetching pooled inventory:', error);
+                dropdownItems = inventory; // fall back to master-only if pooled fetch fails
+            }
+        }
+
         function populateItemDropdown() {
             const sel = document.getElementById('itemName');
             sel.innerHTML = '<option value="">Select item</option>';
-            inventory.forEach(item => {
+            dropdownItems.forEach(item => {
                 const opt = document.createElement('option');
                 opt.value = item.name;
                 opt.textContent = item.name;
@@ -840,27 +903,30 @@
             if (currentItems.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px;color:#666;">
                     No items added yet. Add items using the form above.</td></tr>`;
-                return;
+            } else {
+                currentItems.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.code}</td>
+                        <td>${item.name}</td>
+                        <td>${item.quantity}</td>
+                        <td>${parseFloat(item.unitPrice).toFixed(2)}</td>
+                        <td>${item.totalPrice}</td>
+                        <td>${item.supplier}</td>
+                        <td><span class="status-badge ${item.status === 'pending' ? 'status-pending' : 'status-processed'}">${item.status}</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-delete" onclick="deleteItem(${item.id})">Delete</button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
             }
 
-            currentItems.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${item.code}</td>
-                    <td>${item.name}</td>
-                    <td>${item.quantity}</td>
-                    <td>${parseFloat(item.unitPrice).toFixed(2)}</td>
-                    <td>${item.totalPrice}</td>
-                    <td>${item.supplier}</td>
-                    <td><span class="status-badge ${item.status === 'pending' ? 'status-pending' : 'status-processed'}">${item.status}</span></td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-delete" onclick="deleteItem(${item.id})">Delete</button>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
+            // Live "Total To Restock" counter — sum of quantities for the current GRV's items
+            const totalToRestock = currentItems.reduce((sum, i) => sum + Number(i.quantity || 0), 0);
+            document.getElementById('restockCounterValue').textContent = totalToRestock;
         }
 
         function deleteItem(id) {
@@ -905,7 +971,11 @@
 
                 await addDoc(collection(db, 'grvRecords'), grv);
 
-                // Update inventory stock for the selected location only
+                // Update inventory stock for the SELECTED (current) location only.
+                // `inventory` here is scoped to branchId, so if this is Master and the item
+                // was pooled in from another branch but doesn't exist in Master yet,
+                // invItem will be undefined and we fall into the "create it" branch below —
+                // which is exactly how it ends up showing in Master's inventory afterwards.
                 for (const item of pendingItems) {
                     const invItem = inventory.find(inv => inv.code === item.code);
                     if (invItem) {
@@ -924,7 +994,7 @@
                             grvNumber: grvNum
                         });
                     } else {
-                        // Item didn't exist yet at this location — create it
+                        // Item didn't exist yet at THIS location — create it here now
                         const newRef = await addDoc(collection(db, 'inventory'), {
                             code: item.code,
                             name: item.name,
@@ -962,7 +1032,7 @@
                 updateTable();
                 updateGRVHistory();
                 saveLocalData();
-                populateItemDropdown();
+                await fetchInventory(); // refresh so dropdown + stock levels reflect the new item/quantities
 
                 showMessage(`${grvNum} processed successfully into ${destination}!`, 'success');
 
