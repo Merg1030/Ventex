@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trismart · Profit & Loss</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        :root {
+            --bg: #f4f6fb;
+            --bg2: #ffffff;
+            --bg3: #f1f3f5;
+            --border: #e2e6ef;
+            --border2: #cdd3e0;
+            --text: #1a1e2e;
+            --text-fade: #6b7490;
+            --text-dim: #a0a8c0;
+            --blue: #4361ee;
+            --cyan: #00b4d8;
+            --green: #10b981;
+            --orange: #f59e0b;
+            --purple: #7c3aed;
+            --danger: #ef4444;
+            --radius: 10px;
+            --radius-lg: 14px;
+            --shadow: 0 2px 12px rgba(67,97,238,0.08);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* HEADER */
+        .header {
+            background: var(--bg2);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .logo-mark {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, var(--blue), var(--cyan));
+            border-radius: 10px; color: white; font-size: 1.1rem;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .header h1 { font-size: 1.4rem; font-weight: 800; }
+        .header h1 span { color: var(--blue); }
+        .header .sub { font-size: 0.78rem; color: var(--text-fade); font-weight: 500; }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--blue), var(--cyan));
+            color: white;
+            box-shadow: 0 2px 8px rgba(67,97,238,0.2);
+        }
+        .btn-primary:hover { transform: translateY(-1px); }
+        .btn-secondary {
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            color: var(--text-fade);
+        }
+        .btn-secondary:hover { border-color: var(--blue); color: var(--blue); background: white; }
+
+        /* FILTERS */
+        .filters {
+            background: var(--bg2);
+            border-radius: var(--radius-lg);
+            padding: 14px 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 4px;
+            background: var(--bg3);
+            border: 1.5px solid var(--border2);
+            border-radius: 8px;
+            padding: 3px;
+        }
+        .filter-btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-fade);
+            transition: all 0.15s;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .filter-btn.active {
+            background: var(--blue);
+            color: white;
+            box-shadow: 0 1px 3px rgba(67,97,238,0.3);
+        }
+        .filter-btn:hover:not(.active) { background: rgba(67,97,238,0.08); }
+
+        .date-input {
+            background: var(--bg3);
+            border: 1.5px solid var(--border2);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.76rem;
+            font-weight: 600;
+            color: var(--text);
+            outline: none;
+            cursor: pointer;
+        }
+        .date-input:focus { border-color: var(--blue); }
+
+        .week-controls {
+            display: none;
+            align-items: center;
+            gap: 6px;
+        }
+        .week-controls.show { display: flex; }
+        .week-nav {
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            color: var(--text-fade);
+            transition: all 0.15s;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .week-nav:hover { background: var(--blue); color: white; border-color: var(--blue); }
+        .week-label {
+            background: var(--bg3);
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 160px;
+            padding: 6px 12px 6px 32px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.76rem;
+            background: var(--bg3);
+            font-family: 'DM Sans', sans-serif;
+            outline: none;
+            transition: all 0.15s;
+            position: relative;
+        }
+        .search-input:focus { border-color: var(--blue); background: white; box-shadow: 0 0 0 3px rgba(67,97,238,0.1); }
+        .search-wrap { position: relative; flex: 1; min-width: 160px; }
+        .search-wrap i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.72rem; }
+
+        .branch-select {
+            background: var(--bg3);
+            border: 1.5px solid var(--border2);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text);
+            outline: none;
+            cursor: pointer;
+        }
+        .branch-select:focus { border-color: var(--blue); }
+
+        /* KPI ROW */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .kpi-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px 18px;
+            box-shadow: var(--shadow);
+        }
+        .kpi-card .kpi-label {
+            font-size: 0.6rem;
+            font-weight: 800;
+            color: var(--text-fade);
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            margin-bottom: 4px;
+        }
+        .kpi-card .kpi-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            font-family: 'DM Mono', monospace;
+        }
+        .kpi-card.k1 { border-left: 3px solid var(--blue); }
+        .kpi-card.k1 .kpi-value { color: var(--blue); }
+        .kpi-card.k2 { border-left: 3px solid var(--green); }
+        .kpi-card.k2 .kpi-value { color: var(--green); }
+        .kpi-card.k3 { border-left: 3px solid var(--orange); }
+        .kpi-card.k3 .kpi-value { color: var(--orange); }
+        .kpi-card.k4 { border-left: 3px solid var(--purple); }
+        .kpi-card.k4 .kpi-value { color: var(--purple); }
+
+        /* P&L TABLE */
+        .pl-container {
+            background: var(--bg2);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .pl-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .pl-table tr { border-bottom: 1px solid #f0f3f9; }
+        .pl-table tr:last-child { border-bottom: none; }
+        .pl-table td {
+            padding: 10px 18px;
+            vertical-align: middle;
+        }
+        .col-label { width: 55%; font-weight: 500; color: var(--text); }
+        .col-amount { width: 20%; text-align: right; font-weight: 500; color: var(--text); font-family: 'DM Mono', monospace; }
+        .col-sub { width: 25%; text-align: right; font-weight: 600; color: var(--text); font-family: 'DM Mono', monospace; }
+
+        .indent-1 { padding-left: 36px !important; font-weight: 400; color: var(--text-fade); }
+        .indent-2 { padding-left: 56px !important; font-weight: 400; color: var(--text-fade); font-size: 0.85rem; }
+
+        .row-subtotal td {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            border-top: 2px solid #dce3ed;
+            font-weight: 600;
+        }
+        .row-subtotal .col-label { font-weight: 700; color: var(--text); }
+
+        .row-total td {
+            padding-top: 14px;
+            padding-bottom: 14px;
+            border-top: 2px solid var(--blue);
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+        .row-total .col-label { font-weight: 800; color: var(--text); }
+        .row-total .col-amount, .row-total .col-sub { font-weight: 800; }
+
+        .row-spacer td { padding: 4px 0; border-bottom: none; }
+
+        .profit-positive { color: var(--green); }
+        .profit-negative { color: var(--danger); }
+
+        .pl-header-row td {
+            padding-top: 16px;
+            padding-bottom: 10px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: var(--text);
+            border-bottom: 2px solid var(--border);
+        }
+        .pl-header-row .col-label { font-size: 0.95rem; }
+
+        .tax-note {
+            font-size: 0.7rem;
+            color: var(--text-fade);
+            padding: 10px 18px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            background: var(--bg3);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .kpi-row { grid-template-columns: 1fr 1fr; }
+            .filters { flex-direction: column; align-items: stretch; }
+            .filter-group { align-self: flex-start; }
+            .search-wrap { min-width: 100%; }
+            .pl-table td { padding: 8px 12px; font-size: 0.8rem; }
+            .indent-1 { padding-left: 20px !important; }
+            .indent-2 { padding-left: 36px !important; }
+            .header { flex-direction: column; align-items: stretch; }
+            .header-actions { align-self: flex-start; }
+        }
+        @media (max-width: 480px) {
+            .kpi-row { grid-template-columns: 1fr; }
+            .col-label { width: 45%; font-size: 0.75rem; }
+            .col-amount, .col-sub { font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo-mark"><i class="fas fa-store-alt"></i></div>
+            <div>
+                <h1>Tri<span>smart</span> · Profit &amp; Loss</h1>
+                <div class="sub">Electronics Store · All Branches</div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+            <button class="btn btn-primary" onclick="exportReport()"><i class="fas fa-file-pdf"></i> Export</button>
+        </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filters">
+        <div class="filter-group">
+            <button class="filter-btn active" data-filter="day" onclick="setFilter('day')"><i class="fas fa-calendar-day"></i> Day</button>
+            <button class="filter-btn" data-filter="week" onclick="setFilter('week')"><i class="fas fa-calendar-week"></i> Week</button>
+            <button class="filter-btn" data-filter="month" onclick="setFilter('month')"><i class="fas fa-calendar-alt"></i> Month</button>
+        </div>
+
+        <div id="dayPicker">
+            <input type="date" class="date-input" id="dayFilter" value="2026-08-19">
+        </div>
+
+        <div class="week-controls" id="weekPicker">
+            <button class="week-nav" onclick="changeWeek(-1)"><i class="fas fa-chevron-left"></i></button>
+            <span class="week-label" id="weekLabel">Week</span>
+            <button class="week-nav" onclick="changeWeek(1)"><i class="fas fa-chevron-right"></i></button>
+        </div>
+
+        <div id="monthPicker" style="display:none;">
+            <input type="month" class="date-input" id="monthFilter" value="2026-08">
+        </div>
+
+        <select class="branch-select" id="branchSelect">
+            <option value="">All Branches</option>
+            <option value="makeni">makeni</option>
+            <option value="kabanana">kabanana</option>
+            <option value="dealer_sale">dealer_sale</option>
+        </select>
+
+        <div class="search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" class="search-input" id="searchInput" placeholder="Search product, code…">
+        </div>
+
+        <button class="btn btn-primary" onclick="applyFilters()"><i class="fas fa-filter"></i> Filter</button>
+        <button class="btn btn-secondary" onclick="resetFilters()"><i class="fas fa-undo"></i> Reset</button>
+    </div>
+
+    <!-- KPI ROW -->
+    <div class="kpi-row">
+        <div class="kpi-card k1"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="kpiSales">K 0.00</div></div>
+        <div class="kpi-card k2"><div class="kpi-label">Gross Profit</div><div class="kpi-value" id="kpiProfit">K 0.00</div></div>
+        <div class="kpi-card k3"><div class="kpi-label">Qty Sold</div><div class="kpi-value" id="kpiQty">0</div></div>
+        <div class="kpi-card k4"><div class="kpi-label">Net Profit</div><div class="kpi-value" id="kpiNet">K 0.00</div></div>
+    </div>
+
+    <!-- P&L TABLE -->
+    <div class="pl-container">
+        <table class="pl-table" id="plTable">
+            <tbody id="plBody">
+                <!-- Rows will be generated by JavaScript -->
+            </tbody>
+        </table>
+        <div class="tax-note">
+            <span><i class="fas fa-calculator"></i> Tax rate: 4% of net profit</span>
+            <span id="periodDisplay">Period: August 2026</span>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ─── DATA FROM YOUR FILES ────────────────────────────────
+
+    // Sales data (August 2026)
+    const salesData = [
+        {date:"2026-08-01", branch:"makeni", code:"EL-2", product:"Iphone cable - iron stone", price:25.00, qty:1, discount:0.00, cost:6.93},
+        {date:"2026-08-01", branch:"makeni", code:"EL-30", product:"Small phone battery", price:20.00, qty:1, discount:0.00, cost:10.00},
+        {date:"2026-08-01", branch:"makeni", code:"EL-43", product:"Privacy screen protector", price:40.00, qty:1, discount:0.00, cost:15.00},
+        {date:"2026-08-01", branch:"makeni", code:"AFO", product:"Type C cable - iron stone", price:30.00, qty:1, discount:5.00, cost:15.00},
+        {date:"2026-08-01", branch:"makeni", code:"EL-5", product:"Macron airpods", price:70.00, qty:1, discount:0.00, cost:40.00},
+        {date:"2026-08-02", branch:"makeni", code:"EL-6", product:"S8 round pin ear phones", price:35.00, qty:1, discount:0.00, cost:10.40},
+        {date:"2026-08-02", branch:"makeni", code:"EL-27", product:"Type c usb cable - white", price:25.00, qty:1, discount:0.00, cost:8.00},
+        {date:"2026-08-02", branch:"makeni", code:"EL-9", product:"Iphone full fast charger", price:100.00, qty:1, discount:0.00, cost:55.70},
+        {date:"2026-08-02", branch:"makeni", code:"EL-58", product:"Samsung silicon cover", price:80.00, qty:1, discount:5.00, cost:35.00},
+        {date:"2026-08-02", branch:"makeni", code:"EL-2", product:"Iphone cable - iron stone", price:25.00, qty:1, discount:0.00, cost:6.93},
+        {date:"2026-08-03", branch:"makeni", code:"EL-6", product:"S8 round pin ear phones", price:35.00, qty:1, discount:0.00, cost:10.40},
+        {date:"2026-08-03", branch:"makeni", code:"EL-30", product:"Small phone battery", price:20.00, qty:1, discount:0.00, cost:10.00},
+        {date:"2026-08-03", branch:"makeni", code:"EL-30", product:"Small phone battery", price:20.00, qty:1, discount:0.00, cost:10.00},
+        {date:"2026-08-03", branch:"makeni", code:"EL-35", product:"2Gb memory card", price:60.00, qty:1, discount:10.00, cost:41.00},
+        {date:"2026-08-04", branch:"makeni", code:"EL-45", product:"c to iphone cable", price:30.00, qty:1, discount:0.00, cost:12.00},
+        {date:"2026-08-04", branch:"makeni", code:"EL-5", product:"Macron airpods", price:70.00, qty:1, discount:0.00, cost:40.00},
+        {date:"2026-08-04", branch:"makeni", code:"EL-14", product:"C TO C cable", price:40.00, qty:1, discount:0.00, cost:10.00},
+        {date:"2026-08-04", branch:"makeni", code:"EL-8", product:"Type c 20 watts charger head", price:65.00, qty:1, discount:5.00, cost:30.00},
+        {date:"2026-08-04", branch:"makeni", code:"EL-3", product:"45W PD - Type c full charger", price:85.00, qty:1, discount:0.00, cost:25.00},
+        {date:"2026-08-06", branch:"makeni", code:"EL-22", product:"itel small phone", price:200.00, qty:1, discount:0.00, cost:100.00},
+        {date:"2026-08-06", branch:"makeni", code:"EL-43", product:"Privacy screen protector", price:40.00, qty:1, discount:0.00, cost:8.00},
+        {date:"2026-08-06", branch:"makeni", code:"AO", product:"White micro - cable", price:15.00, qty:1, discount:0.00, cost:4.00},
+        {date:"2026-08-07", branch:"makeni", code:"EL-39", product:"Flat full charger", price:65.00, qty:1, discount:0.00, cost:35.00},
+        {date:"2026-08-07", branch:"makeni", code:"EL-78", product:"Calus battery small", price:45.00, qty:1, discount:0.00, cost:20.00},
+        {date:"2026-08-07", branch:"makeni", code:"EL-2", product:"Iphone cable - iron stone", price:25.00, qty:1, discount:0.00, cost:6.93},
+        {date:"2026-08-07", branch:"makeni", code:"EL-3", product:"45W PD - Type c full charger", price:85.00, qty:1, discount:5.00, cost:25.00},
+        {date:"2026-08-07", branch:"makeni", code:"EL-1", product:"micro cable - iron stone", price:25.00, qty:1, discount:0.00, cost:5.93},
+        {date:"2026-08-08", branch:"makeni", code:"EL-1", product:"micro cable - iron stone", price:25.00, qty:2, discount:0.00, cost:5.93},
+        {date:"2026-08-08", branch:"makeni", code:"EL-2", product:"Iphone cable - iron stone", price:25.00, qty:1, discount:0.00, cost:6.93},
+        {date:"2026-08-08", branch:"makeni", code:"EL-29", product:"New fashion pouch", price:25.00, qty:1, discount:0.00, cost:15.00},
+        {date:"2026-08-08", branch:"makeni", code:"EL-8", product:"Type c 20 watts charger head", price:65.00, qty:1, discount:0.00, cost:30.00},
+        {date:"2026-08-09", branch:"makeni", code:"EL-14", product:"C TO C cable", price:40.00, qty:1, discount:0.00, cost:10.00},
+        {date:"2026-08-09", branch:"makeni", code:"EL-2", product:"Iphone cable - iron stone", price:25.00, qty:1, discount:0.00, cost:6.93},
+        {date:"2026-08-09", branch:"makeni", code:"EL-5", product:"Macron airpods", price:70.00, qty:1, discount:0.00, cost:35.00},
+        {date:"2026-08-10", branch:"makeni", code:"EL-62", product:"Charger head", price:35.00, qty:1, discount:0.00, cost:20.00},
+        {date:"2026-08-10", branch:"makeni", code:"EL-43", product:"Privacy screen protector", price:40.00, qty:1, discount:0.00, cost:8.00},
+        {date:"2026-08-10", branch:"makeni", code:"EL-62", product:"Charger head", price:35.00, qty:1, discount:0.00, cost:20.00},
+        {date:"2026-08-10", branch:"makeni", code:"EL-2", product:"Iphone cable - iron stone", price:25.00, qty:1, discount:0.00, cost:6.93},
+        {date:"2026-08-10", branch:"makeni", code:"EL-3", product:"45W PD - Type c full charger", price:85.00, qty:1, discount:35.00, cost:25.00},
+        {date:"2026-08-10", branch:"makeni", code:"EL-6", product:"S8 round pin ear phones", price:35.00, qty:1, discount:0.00, cost:10.40},
+        {date:"2026-08-10", branch:"makeni", code:"EL-3", product:"45W PD - Type c full charger", price:85.00, qty:1, discount:0.00, cost:25.00},
+        {date:"2026-08-10", branch:"makeni", code:"AFO", product:"Type C cable - iron stone", price:30.00, qty:1, discount:0.00, cost:10.00},
+        {date:"2026-08-11", branch:"makeni", code:"EL-2", product:"Iphone cable - iron stone", price:25.00, qty:1, discount:0.00, cost:6.93},
+        {date:"2026-08-11", branch:"makeni", code:"EL-62", product:"Charger head", price:35.00, qty:1, discount:0.00, cost:20.00},
+        {date:"2026-08-11", branch:"makeni", code:"EL-31", product:"Mango airpods", price:130.00, qty:1, discount:0.00, cost:90.00},
+        {date:"2026-08-12", branch:"makeni", code:"EL-58", product:"Samsung silicon cover", price:80.00, qty:1, discount:10.00, cost:40.00},
+        {date:"2026-08-12", branch:"makeni", code:"EL-22", product:"itel small phone", price:230.00, qty:1, discount:0.00, cost:110.00},
+        {date:"2026-08-12", branch:"makeni", code:"EL-1", product:"micro cable - iron stone", price:25.00, qty:1, discount:0.00, cost:5.93},
+        {date:"2026-08-12", branch:"makeni", code:"EL-62", product:"Charger head", price:35.00, qty:1, discount:0.00, cost:20.00},
+        {date:"2026-08-13", branch:"makeni", code:"EL-9", product:"Iphone full fast charger", price:100.00, qty:1, discount:0.00, cost:55.00},
+        {date:"2026-08-13", branch:"makeni", code:"EL-81", product:"Tv avs", price:20.00, qty:1, discount:0.00, cost:10.00},
+        {date:"2026-08-14", branch:"makeni", code:"EL-9", product:"Iphone full fast charger", price:100.00, qty:1, discount:0.00, cost:55.00},
+        {date:"2026-08-16", branch:"makeni", code:"EL-5", product:"Macron airpods", price:70.00, qty:2, discount:0.00, cost:35.00},
+        {date:"2026-08-16", branch:"makeni", code:"EL-1", product:"micro cable - iron stone", price:25.00, qty:1, discount:0.00, cost:5.93},
+        {date:"2026-08-16", branch:"makeni", code:"EL-2", product:"Iphone cable - iron stone", price:25.00, qty:1, discount:0.00, cost:6.93},
+        {date:"2026-08-16", branch:"makeni", code:"EL-25", product:"Sony ear sets", price:20.00, qty:1, discount:0.00, cost:7.00},
+        {date:"2026-08-17", branch:"makeni", code:"EL-43", product:"Privacy screen protector", price:40.00, qty:1, discount:0.00, cost:8.00},
+        {date:"2026-08-17", branch:"makeni", code:"EL-2", product:"Iphone cable - iron stone", price:25.00, qty:1, discount:0.00, cost:6.93},
+        {date:"2026-08-17", branch:"makeni", code:"EL-71", product:"Green micro cable", price:20.00, qty:1, discount:0.00, cost:10.00},
+        {date:"2026-08-17", branch:"makeni", code:"EL-5", product:"Macron airpods", price:70.00, qty:1, discount:0.00, cost:35.00},
+        {date:"2026-08-17", branch:"makeni", code:"EL-2", product:"Iphone cable - iron stone", price:25.00, qty:1, discount:0.00, cost:6.93},
+        {date:"2026-08-17", branch:"makeni", code:"EL-58", product:"Samsung silicon cover", price:80.00, qty:1, discount:0.00, cost:40.00},
+        {date:"2026-08-17", branch:"makeni", code:"EL-1", product:"micro cable - iron stone", price:25.00, qty:1, discount:0.00, cost:5.93},
+        {date:"2026-08-17", branch:"makeni", code:"EL-29", product:"New fashion pouch", price:25.00, qty:1, discount:0.00, cost:15.00},
+        {date:"2026-08-19", branch:"makeni", code:"EL-35", product:"2Gb memory card", price:60.00, qty:1, discount:0.00, cost:42.00},
+        {date:"2026-08-19", branch:"makeni", code:"AO", product:"White micro - cable", price:15.00, qty:1, discount:0.00, cost:4.00},
+        {date:"2026-08-19", branch:"makeni", code:"EL-25", product:"Sony ear sets", price:20.00, qty:1, discount:0.00, cost:7.00}
+    ];
+
+    // Ledger expenses (August 2026)
+    const ledgerExpenses = [
+        {date:"2026-08-04", description:"transaction fees", amount:50.00},
+        {date:"2026-08-04", description:"shop alarm system", amount:197.00},
+        {date:"2026-08-04", description:"inventory reorder", amount:1472.00},
+        {date:"2026-08-04", description:"inventory reorder", amount:335.00},
+        {date:"2026-08-04", description:"inventory reorder", amount:1577.00},
+        {date:"2026-08-05", description:"Hard drive", amount:200.00},
+        {date:"2026-08-06", description:"inventory reorder", amount:485.00},
+        {date:"2026-08-10", description:"inventory reorder", amount:110.00},
+        {date:"2026-08-11", description:"rentals", amount:613.00},
+        {date:"2026-08-11", description:"Reordering - inventory", amount:320.00},
+        {date:"2026-08-12", description:"paccra name clearance", amount:114.00},
+        {date:"2026-08-18", description:"Trismart - business name paccra", amount:230.00}
+    ];
+
+    const TAX_RATE = 0.04; // 4%
+
+    // ─── STATE ────────────────────────────────────────────────
+
+    let currentFilter = 'day';
+    let currentWeekOffset = 0;
+    let displayedData = [];
+
+    function fmt(n) {
+        return 'K ' + Math.abs(Number(n)).toFixed(2);
+    }
+
+    function getWeekRange(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diffToMonday = day === 0 ? -6 : 1 - day;
+        const monday = new Date(d);
+        monday.setDate(d.getDate() + diffToMonday);
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        return {
+            start: monday.toISOString().split('T')[0],
+            end: sunday.toISOString().split('T')[0]
+        };
+    }
+
+    function getCurrentWeekRange() {
+        const today = new Date();
+        const targetDate = new Date(today);
+        targetDate.setDate(today.getDate() + (currentWeekOffset * 7));
+        return getWeekRange(targetDate);
+    }
+
+    function updateWeekLabel() {
+        const range = getCurrentWeekRange();
+        const start = new Date(range.start);
+        const end = new Date(range.end);
+        document.getElementById('weekLabel').textContent =
+            start.toLocaleDateString('en-GB', { day:'numeric', month:'short' }) +
+            ' - ' +
+            end.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    }
+
+    // ─── FILTER FUNCTIONS ─────────────────────────────────────
+
+    window.setFilter = function(type) {
+        currentFilter = type;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === type));
+
+        document.getElementById('dayPicker').style.display = type === 'day' ? 'inline-block' : 'none';
+        document.getElementById('weekPicker').classList.toggle('show', type === 'week');
+        document.getElementById('monthPicker').style.display = type === 'month' ? 'inline-block' : 'none';
+
+        if (type === 'week') updateWeekLabel();
+        applyFilters();
+    };
+
+    window.changeWeek = function(delta) {
+        currentWeekOffset += delta;
+        updateWeekLabel();
+        applyFilters();
+    };
+
+    window.applyFilters = function() {
+        let filtered = salesData.map(s => ({
+            ...s,
+            netSales: (s.price * s.qty) - s.discount,
+            totalCost: s.cost * s.qty,
+            profit: ((s.price * s.qty) - s.discount) - (s.cost * s.qty)
+        }));
+
+        // Date filter
+        if (currentFilter === 'day') {
+            const day = document.getElementById('dayFilter').value;
+            if (day) filtered = filtered.filter(r => r.date === day);
+        } else if (currentFilter === 'week') {
+            const range = getCurrentWeekRange();
+            filtered = filtered.filter(r => r.date >= range.start && r.date <= range.end);
+        } else if (currentFilter === 'month') {
+            const month = document.getElementById('monthFilter').value;
+            if (month) filtered = filtered.filter(r => r.date && r.date.startsWith(month));
+        }
+
+        // Branch
+        const branch = document.getElementById('branchSelect').value;
+        if (branch) filtered = filtered.filter(r => r.branch === branch);
+
+        // Search
+        const search = document.getElementById('searchInput').value.trim().toLowerCase();
+        if (search) {
+            filtered = filtered.filter(r =>
+                r.product.toLowerCase().includes(search) ||
+                r.code.toLowerCase().includes(search) ||
+                r.branch.toLowerCase().includes(search)
+            );
+        }
+
+        displayedData = filtered;
+        renderPL(filtered);
+        updateKPIs(filtered);
+        updatePeriodDisplay();
+    };
+
+    window.resetFilters = function() {
+        document.getElementById('branchSelect').value = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('dayFilter').value = '2026-08-19';
+        document.getElementById('monthFilter').value = '2026-08';
+        currentWeekOffset = 0;
+        if (currentFilter === 'week') updateWeekLabel();
+        applyFilters();
+    };
+
+    // ─── RENDER P&L ──────────────────────────────────────────
+
+    function renderPL(data) {
+        const tbody = document.getElementById('plBody');
+
+        // Calculate totals
+        let totalSales = 0, totalCOGS = 0, totalDiscount = 0, totalQty = 0;
+        data.forEach(d => {
+            totalSales += d.netSales;
+            totalCOGS += d.totalCost;
+            totalDiscount += d.discount;
+            totalQty += d.qty;
+        });
+
+        const grossProfit = totalSales - totalCOGS;
+
+        // Operating expenses (from ledger, filtered by date)
+        let totalExpenses = 0;
+        let expenseDetails = [];
+
+        // Filter expenses by same date range as sales
+        let expenseFiltered = [...ledgerExpenses];
+        if (currentFilter === 'day') {
+            const day = document.getElementById('dayFilter').value;
+            if (day) expenseFiltered = expenseFiltered.filter(e => e.date === day);
+        } else if (currentFilter === 'week') {
+            const range = getCurrentWeekRange();
+            expenseFiltered = expenseFiltered.filter(e => e.date >= range.start && e.date <= range.end);
+        } else if (currentFilter === 'month') {
+            const month = document.getElementById('monthFilter').value;
+            if (month) expenseFiltered = expenseFiltered.filter(e => e.date && e.date.startsWith(month));
+        }
+
+        // Group expenses by description for display
+        const expMap = {};
+        expenseFiltered.forEach(e => {
+            if (!expMap[e.description]) expMap[e.description] = 0;
+            expMap[e.description] += e.amount;
+        });
+
+        // Calculate total expenses
+        expenseFiltered.forEach(e => totalExpenses += e.amount);
+
+        const operatingIncome = grossProfit - totalExpenses;
+        const taxAmount = operatingIncome > 0 ? operatingIncome * TAX_RATE : 0;
+        const netProfit = operatingIncome - taxAmount;
+
+        // Build table rows
+        let html = '';
+
+        // REVENUE
+        html += `<tr class="pl-header-row"><td class="col-label"><strong>Revenue</strong></td><td class="col-amount"></td><td class="col-sub"></td></tr>`;
+        html += `<tr><td class="col-label indent-1">Electronics sales</td><td class="col-amount">${fmt(totalSales)}</td><td class="col-sub"></td></tr>`;
+        html += `<tr class="row-subtotal"><td class="col-label">Total Revenue</td><td class="col-amount"></td><td class="col-sub">${fmt(totalSales)}</td></tr>`;
+        html += `<tr class="row-spacer"><td colspan="3"></td></tr>`;
+
+        // COGS
+        html += `<tr class="pl-header-row"><td class="col-label"><strong>Cost of Goods Sold</strong></td><td class="col-amount"></td><td class="col-sub"></td></tr>`;
+        html += `<tr><td class="col-label indent-1">Inventory cost</td><td class="col-amount">${fmt(totalCOGS)}</td><td class="col-sub"></td></tr>`;
+        html += `<tr class="row-subtotal"><td class="col-label">Total COGS</td><td class="col-amount"></td><td class="col-sub">${fmt(totalCOGS)}</td></tr>`;
+        html += `<tr class="row-spacer"><td colspan="3"></td></tr>`;
+
+        // GROSS PROFIT
+        html += `<tr class="row-subtotal" style="border-top:2px solid #b3c4db;"><td class="col-label"><strong>Gross Profit</strong></td><td class="col-amount"></td><td class="col-sub ${grossProfit >= 0 ? 'profit-positive' : 'profit-negative'}">${fmt(grossProfit)}</td></tr>`;
+        html += `<tr class="row-spacer"><td colspan="3"></td></tr>`;
+
+        // OPERATING EXPENSES
+        html += `<tr class="pl-header-row"><td class="col-label"><strong>Operating Expenses</strong></td><td class="col-amount"></td><td class="col-sub"></td></tr>`;
+
+        if (Object.keys(expMap).length > 0) {
+            Object.entries(expMap).forEach(([desc, amount]) => {
+                html += `<tr><td class="col-label indent-1">${desc}</td><td class="col-amount">${fmt(amount)}</td><td class="col-sub"></td></tr>`;
+            });
+        } else {
+            html += `<tr><td class="col-label indent-1" style="color:var(--text-fade);">No expenses recorded</td><td class="col-amount">—</td><td class="col-sub"></td></tr>`;
+        }
+
+        html += `<tr class="row-subtotal"><td class="col-label">Total Operating Expenses</td><td class="col-amount"></td><td class="col-sub">${fmt(totalExpenses)}</td></tr>`;
+        html += `<tr class="row-spacer"><td colspan="3"></td></tr>`;
+
+        // OPERATING INCOME
+        html += `<tr class="row-subtotal" style="border-top:2px solid #b3c4db;"><td class="col-label"><strong>Operating Income (EBIT)</strong></td><td class="col-amount"></td><td class="col-sub ${operatingIncome >= 0 ? 'profit-positive' : 'profit-negative'}">${fmt(operatingIncome)}</td></tr>`;
+        html += `<tr class="row-spacer"><td colspan="3"></td></tr>`;
+
+        // TAX
+        html += `<tr class="pl-header-row"><td class="col-label"><strong>Tax</strong></td><td class="col-amount"></td><td class="col-sub"></td></tr>`;
+        html += `<tr><td class="col-label indent-1">Income tax (4%)</td><td class="col-amount">${fmt(taxAmount)}</td><td class="col-sub"></td></tr>`;
+        html += `<tr class="row-spacer"><td colspan="3"></td></tr>`;
+
+        // NET PROFIT
+        html += `<tr class="row-total"><td class="col-label"><strong>Net Profit / (Loss)</strong></td><td class="col-amount"></td><td class="col-sub ${netProfit >= 0 ? 'profit-positive' : 'profit-negative'}">${fmt(netProfit)}</td></tr>`;
+
+        // Extra: Quantity and Discount info
+        html += `<tr class="row-spacer"><td colspan="3"></td></tr>`;
+        html += `<tr><td class="col-label indent-1" style="font-size:0.78rem;color:var(--text-fade);">Items sold: <strong>${totalQty}</strong></td><td class="col-amount" style="font-size:0.78rem;color:var(--text-fade);">Discounts: ${fmt(totalDiscount)}</td><td class="col-sub"></td></tr>`;
+
+        tbody.innerHTML = html;
+    }
+
+    function updateKPIs(data) {
+        let qty = 0, netSales = 0, totalCost = 0;
+        data.forEach(d => {
+            qty += d.qty;
+            netSales += d.netSales;
+            totalCost += d.totalCost;
+        });
+
+        const grossProfit = netSales - totalCost;
+
+        // Expenses for the period
+        let totalExpenses = 0;
+        let expenseFiltered = [...ledgerExpenses];
+        if (currentFilter === 'day') {
+            const day = document.getElementById('dayFilter').value;
+            if (day) expenseFiltered = expenseFiltered.filter(e => e.date === day);
+        } else if (currentFilter === 'week') {
+            const range = getCurrentWeekRange();
+            expenseFiltered = expenseFiltered.filter(e => e.date >= range.start && e.date <= range.end);
+        } else if (currentFilter === 'month') {
+            const month = document.getElementById('monthFilter').value;
+            if (month) expenseFiltered = expenseFiltered.filter(e => e.date && e.date.startsWith(month));
+        }
+        expenseFiltered.forEach(e => totalExpenses += e.amount);
+
+        const operatingIncome = grossProfit - totalExpenses;
+        const taxAmount = operatingIncome > 0 ? operatingIncome * TAX_RATE : 0;
+        const netProfit = operatingIncome - taxAmount;
+
+        document.getElementById('kpiSales').textContent = fmt(netSales);
+        document.getElementById('kpiProfit').textContent = fmt(grossProfit);
+        document.getElementById('kpiQty').textContent = qty;
+        document.getElementById('kpiNet').textContent = fmt(netProfit);
+
+        // Color the net profit
+        const netEl = document.getElementById('kpiNet');
+        netEl.style.color = netProfit >= 0 ? 'var(--green)' : 'var(--danger)';
+    }
+
+    function updatePeriodDisplay() {
+        let label = '';
+        if (currentFilter === 'day') {
+            const day = document.getElementById('dayFilter').value;
+            if (day) label = new Date(day).toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+        } else if (currentFilter === 'week') {
+            const range = getCurrentWeekRange();
+            label = `Week of ${range.start} to ${range.end}`;
+        } else if (currentFilter === 'month') {
+            const month = document.getElementById('monthFilter').value;
+            if (month) label = new Date(month + '-01').toLocaleString('en-GB', { month:'long', year:'numeric' });
+        }
+        document.getElementById('periodDisplay').textContent = 'Period: ' + (label || 'All time');
+    }
+
+    // ─── EXPORT ──────────────────────────────────────────────
+
+    window.exportReport = function() {
+        const win = window.open('', '_blank', 'width=1000,height=800');
+        const content = document.getElementById('plBody').innerHTML;
+        const kpiSales = document.getElementById('kpiSales').textContent;
+        const kpiProfit = document.getElementById('kpiProfit').textContent;
+        const kpiQty = document.getElementById('kpiQty').textContent;
+        const kpiNet = document.getElementById('kpiNet').textContent;
+
+        win.document.write(`
+            <html><head><title>Trismart P&L Report</title>
+            <style>
+                body { font-family: 'DM Sans', sans-serif; padding: 30px; color: #1a1e2e; }
+                h1 { font-size: 1.4rem; }
+                .sub { color: #6b7490; margin-bottom: 20px; }
+                .grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+                .card { border: 1px solid #e2e6ef; padding: 12px; border-radius: 8px; }
+                .card .lbl { font-size: 0.65rem; text-transform: uppercase; color: #6b7490; font-weight: 700; }
+                .card .val { font-size: 1.1rem; font-weight: 800; }
+                table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+                td { padding: 8px 12px; border-bottom: 1px solid #f0f2f8; }
+                .row-subtotal td { border-top: 2px solid #dce3ed; font-weight: 600; padding-top: 12px; }
+                .row-total td { border-top: 2px solid #4361ee; font-weight: 800; font-size: 1rem; padding-top: 14px; }
+                .indent-1 { padding-left: 30px; }
+                .profit-positive { color: #10b981; }
+                .profit-negative { color: #ef4444; }
+                .footer { margin-top: 20px; color: #6b7490; font-size: 0.7rem; border-top: 1px solid #e2e6ef; padding-top: 12px; }
+            </style>
+            </head><body>
+            <h1>Tri<span style="color:#4361ee;">smart</span> · Profit & Loss Report</h1>
+            <div class="sub">Generated: ${new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}</div>
+            <div class="grid">
+                <div class="card"><div class="lbl">Total Sales</div><div class="val">${kpiSales}</div></div>
+                <div class="card"><div class="lbl">Gross Profit</div><div class="val">${kpiProfit}</div></div>
+                <div class="card"><div class="lbl">Qty Sold</div><div class="val">${kpiQty}</div></div>
+                <div class="card"><div class="lbl">Net Profit</div><div class="val">${kpiNet}</div></div>
+            </div>
+            <table>
+                <tbody>${content}</tbody>
+            </table>
+            <div class="footer">Trismart Profit & Loss · All amounts in K (ZMW) · Tax rate: 4%</div>
+            </body></html>
+        `);
+        win.document.close();
+        setTimeout(() => win.print(), 500);
+    };
+
+    // ─── INIT ─────────────────────────────────────────────────
+
+    // Set default date
+    document.getElementById('dayFilter').value = '2026-08-19';
+    document.getElementById('monthFilter').value = '2026-08';
+    updateWeekLabel();
+    applyFilters();
+
+    // Event listeners
+    document.getElementById('dayFilter').addEventListener('change', applyFilters);
+    document.getElementById('monthFilter').addEventListener('change', applyFilters);
+    document.getElementById('branchSelect').addEventListener('change', applyFilters);
+    document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); });
+</script>
+</body>
+</html>
