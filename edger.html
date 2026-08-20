@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trismart · Ledger</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    :root {
+      --bg:        #f4f6fb;
+      --bg2:       #ffffff;
+      --bg3:       #f1f3f5;
+      --border:    #e2e6ef;
+      --border2:   #cdd3e0;
+      --text:      #1a1e2e;
+      --text-fade: #6b7490;
+      --text-dim:  #a0a8c0;
+      --blue:      #4361ee;
+      --green:     #10b981;
+      --orange:    #f59e0b;
+      --pink:      #f72585;
+      --purple:    #7c3aed;
+      --teal:      #0d9488;
+      --danger:    #ef4444;
+      --radius:    10px;
+      --radius-lg: 14px;
+      --header-h:  56px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .shell { display: flex; flex-direction: column; height: 100vh; width: 100%; }
+
+    /* TOPBAR */
+    .topbar {
+      height: var(--header-h);
+      flex-shrink: 0;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px; gap: 14px;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .logo-mark {
+      width: 32px; height: 32px; background: var(--teal); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 0.85rem; flex-shrink: 0;
+    }
+    .logo-text { font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -0.3px; }
+    .logo-text span { color: var(--teal); }
+    .page-badge {
+      background: var(--bg3); border-radius: 100px; padding: 3px 11px;
+      font-size: 0.68rem; font-weight: 700; color: var(--text-fade);
+    }
+    .back-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--bg3); border-radius: 100px; padding: 5px 14px;
+      font-size: 0.75rem; font-weight: 700; color: var(--text-fade);
+      text-decoration: none; transition: color 0.15s;
+    }
+    .back-btn:hover { color: var(--teal); }
+
+    /* CONTENT */
+    .content {
+      flex: 1; display: flex; min-height: 0;
+    }
+
+    /* SIDEBAR — accounts */
+    .sidebar {
+      width: 240px; flex-shrink: 0;
+      background: var(--bg2); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; min-height: 0;
+    }
+    .sidebar-hdr {
+      padding: 14px 16px 10px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .sidebar-hdr h3 { font-size: 0.7rem; font-weight: 800; color: var(--text-fade); text-transform: uppercase; letter-spacing: 0.08em; }
+    .add-acct-btn {
+      width: 24px; height: 24px; border-radius: 7px;
+      background: var(--teal); color: white; border: none;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; cursor: pointer; transition: opacity 0.15s;
+    }
+    .add-acct-btn:hover { opacity: 0.85; }
+
+    .acct-list { flex: 1; overflow-y: auto; padding: 4px 10px 10px; }
+    .acct-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 10px; border-radius: 9px;
+      cursor: pointer; transition: background 0.15s;
+      margin-bottom: 2px;
+    }
+    .acct-item:hover { background: var(--bg3); }
+    .acct-item.active { background: rgba(13,148,136,0.1); }
+    .acct-item.active .acct-name { color: var(--teal); }
+    .acct-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--teal); flex-shrink: 0;
+    }
+    .acct-name { font-size: 0.8rem; font-weight: 700; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .acct-del {
+      opacity: 0; font-size: 0.68rem; color: var(--text-dim); background: none; border: none; cursor: pointer; padding: 4px;
+      transition: opacity 0.15s, color 0.15s;
+    }
+    .acct-item:hover .acct-del { opacity: 1; }
+    .acct-del:hover { color: var(--danger); }
+
+    .empty-accts {
+      padding: 20px 14px; text-align: center;
+      font-size: 0.72rem; color: var(--text-dim); line-height: 1.5;
+    }
+
+    /* MAIN PANEL */
+    .main-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 18px 24px; gap: 14px; }
+
+    .panel-top {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; flex-wrap: wrap;
+    }
+    .panel-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .panel-title h1 { font-size: 1.05rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .panel-title-sub { font-size: 0.7rem; color: var(--text-fade); }
+
+    .panel-controls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .month-pill {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--bg3); border-radius: 100px; padding: 6px 13px;
+      font-size: 0.75rem; font-weight: 700; color: var(--text-fade);
+    }
+    .month-pill i { font-size: 0.7rem; color: var(--teal); }
+    .month-pill input[type="month"] {
+      background: transparent; border: none; outline: none;
+      font-family: 'DM Sans', sans-serif; font-size: 0.75rem;
+      font-weight: 700; color: var(--text); cursor: pointer; width: 108px;
+    }
+    .btn-primary {
+      display: flex; align-items: center; gap: 7px;
+      background: var(--teal); color: white; border: none;
+      border-radius: 100px; padding: 8px 16px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* TABLE CARD */
+    .table-card {
+      flex: 1; min-height: 0;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); display: flex; flex-direction: column; overflow: hidden;
+    }
+    .table-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      position: sticky; top: 0; z-index: 1;
+      background: var(--bg2);
+      text-align: left; padding: 12px 18px;
+      font-size: 0.62rem; font-weight: 800; color: var(--text-fade);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--border);
+    }
+    thead th.num { text-align: right; }
+    tbody td {
+      padding: 12px 18px; font-size: 0.8rem; color: var(--text);
+      border-bottom: 1px solid var(--border); vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--bg3); }
+    td.num {
+      text-align: right; font-family: 'DM Mono', monospace; font-weight: 700;
+    }
+    td.date-cell { color: var(--text-fade); font-family: 'DM Mono', monospace; font-size: 0.75rem; white-space: nowrap; }
+    td.ref-cell { color: var(--text-fade); font-size: 0.75rem; }
+    .amt-pos { color: var(--green); }
+    .amt-neg { color: var(--danger); }
+    td.actions-cell { text-align: right; white-space: nowrap; }
+    .row-del {
+      background: none; border: none; color: var(--text-dim); cursor: pointer;
+      font-size: 0.72rem; padding: 4px 6px; transition: color 0.15s;
+    }
+    .row-del:hover { color: var(--danger); }
+
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100%; gap: 8px; color: var(--text-dim); padding: 40px;
+    }
+    .empty-state i { font-size: 1.6rem; opacity: 0.5; }
+    .empty-state p { font-size: 0.8rem; font-weight: 600; }
+    .empty-state span { font-size: 0.7rem; }
+
+    /* TOTAL BAR */
+    .total-bar {
+      flex-shrink: 0; border-top: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px; background: var(--bg3);
+    }
+    .total-lbl { font-size: 0.72rem; font-weight: 800; color: var(--text-fade); text-transform: uppercase; letter-spacing: 0.08em; }
+    .total-val { font-family: 'DM Mono', monospace; font-size: 1.15rem; font-weight: 800; }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(20,24,40,0.35);
+      display: none; align-items: center; justify-content: center; z-index: 50;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg2); border-radius: var(--radius-lg);
+      width: 100%; max-width: 380px; padding: 22px;
+      box-shadow: 0 12px 40px rgba(20,24,40,0.2);
+    }
+    .modal h2 { font-size: 0.95rem; font-weight: 800; margin-bottom: 16px; }
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block; font-size: 0.68rem; font-weight: 800; color: var(--text-fade);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;
+    }
+    .field input {
+      width: 100%; padding: 9px 12px; border-radius: 8px;
+      border: 1.5px solid var(--border2); font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem; color: var(--text); outline: none; transition: border-color 0.15s;
+      background: var(--bg2);
+    }
+    .field input:focus { border-color: var(--teal); }
+    .amt-hint { font-size: 0.65rem; color: var(--text-dim); margin-top: 5px; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 18px; }
+    .btn-secondary {
+      flex: 1; background: var(--bg3); border: none; border-radius: 100px;
+      padding: 9px; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 700;
+      color: var(--text-fade); cursor: pointer; transition: background 0.15s;
+    }
+    .btn-secondary:hover { background: var(--border); }
+    .modal-actions .btn-primary { flex: 1; justify-content: center; }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo-mark"><i class="fas fa-book"></i></div>
+      <div class="logo-text">Tri<span>smart</span></div>
+      <div class="page-badge">Ledger</div>
+    </div>
+    <a href="accounts.html" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-hdr">
+        <h3>Accounts</h3>
+        <button class="add-acct-btn" id="openAddAccount" title="New account"><i class="fas fa-plus"></i></button>
+      </div>
+      <div class="acct-list" id="acctList">
+        <div class="empty-accts">No accounts yet.<br>Tap + to create one.</div>
+      </div>
+    </aside>
+
+    <!-- MAIN PANEL -->
+    <main class="main-panel">
+
+      <div class="panel-top">
+        <div class="panel-title">
+          <div>
+            <h1 id="acctTitle">Select an account</h1>
+            <div class="panel-title-sub" id="acctSub">Create or choose an account from the left</div>
+          </div>
+        </div>
+        <div class="panel-controls">
+          <div class="month-pill">
+            <i class="fas fa-calendar"></i>
+            <input type="month" id="monthFilter">
+          </div>
+          <button class="btn-primary" id="openAddTxn" disabled>
+            <i class="fas fa-plus"></i> Add Transaction
+          </button>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-scroll" id="tableScroll">
+          <div class="empty-state">
+            <i class="fas fa-book-open"></i>
+            <p>No account selected</p>
+            <span>Create an account on the left to start recording entries</span>
+          </div>
+        </div>
+        <div class="total-bar">
+          <div class="total-lbl">Total Balance</div>
+          <div class="total-val" id="totalVal">K 0.00</div>
+        </div>
+      </div>
+
+    </main>
+
+  </div><!-- end content -->
+
+</div><!-- end shell -->
+
+<!-- ADD ACCOUNT MODAL -->
+<div class="modal-overlay" id="accountModal">
+  <div class="modal">
+    <h2>New Account</h2>
+    <div class="field">
+      <label>Account Name</label>
+      <input type="text" id="newAcctName" placeholder="e.g. Petty Cash, Bank – Zanaco">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="cancelAccount">Cancel</button>
+      <button class="btn-primary" id="saveAccount" style="justify-content:center;">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD TRANSACTION MODAL -->
+<div class="modal-overlay" id="txnModal">
+  <div class="modal">
+    <h2>New Transaction</h2>
+    <div class="field">
+      <label>Date</label>
+      <input type="date" id="txnDate">
+    </div>
+    <div class="field">
+      <label>Description</label>
+      <input type="text" id="txnDesc" placeholder="e.g. Cash deposit, Supplier payment">
+    </div>
+    <div class="field">
+      <label>Reference</label>
+      <input type="text" id="txnRef" placeholder="e.g. INV-2031, REC-004">
+    </div>
+    <div class="field">
+      <label>Amount</label>
+      <input type="number" id="txnAmount" placeholder="0.00" step="0.01">
+      <div class="amt-hint">Use a negative number for money out (e.g. -450.00)</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="cancelTxn">Cancel</button>
+      <button class="btn-primary" id="saveTxn" style="justify-content:center;">Add Entry</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script>
+  /* ── Firebase ── */
+  if (!firebase.apps.length) {
+    firebase.initializeApp({
+      apiKey: "AIzaSyB-lm7Y3r1F6VvY8PKvY8glLabZDbJsHM1k",
+      authDomain: "trismartstores.firebaseapp.com",
+      projectId: "trismartstores",
+      storageBucket: "trismartstores.appspot.com",
+      messagingSenderId: "416692703333",
+      appId: "1:416692703333:web:d4b60292621435c748f68c"
+    });
+  }
+  const db = firebase.firestore();
+  db.enablePersistence().catch(() => {});
+
+  const ACCOUNTS_COL = 'ledgerAccounts';
+  const ENTRIES_COL  = 'ledgerEntries';
+
+  let accounts = [];
+  let entries = [];
+  let activeAcctId = null;
+
+  const acctList     = document.getElementById('acctList');
+  const acctTitle     = document.getElementById('acctTitle');
+  const acctSub       = document.getElementById('acctSub');
+  const tableScroll   = document.getElementById('tableScroll');
+  const totalVal      = document.getElementById('totalVal');
+  const monthFilter   = document.getElementById('monthFilter');
+  const openAddTxnBtn = document.getElementById('openAddTxn');
+
+  monthFilter.value = new Date().toISOString().substring(0, 7);
+
+  function fmt(n) {
+    const sign = n < 0 ? '-' : '';
+    return sign + 'K ' + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  /* ── Render account list ── */
+  function renderAccounts() {
+    if (!accounts.length) {
+      acctList.innerHTML = '<div class="empty-accts">No accounts yet.<br>Tap + to create one.</div>';
+      return;
+    }
+    acctList.innerHTML = accounts.map(a => `
+      <div class="acct-item ${a.id === activeAcctId ? 'active' : ''}" data-id="${a.id}">
+        <div class="acct-dot"></div>
+        <div class="acct-name">${escapeHtml(a.name)}</div>
+        <button class="acct-del" data-id="${a.id}" title="Delete account"><i class="fas fa-trash"></i></button>
+      </div>
+    `).join('');
+
+    acctList.querySelectorAll('.acct-item').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('.acct-del')) return;
+        selectAccount(el.dataset.id);
+      });
+    });
+    acctList.querySelectorAll('.acct-del').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteAccount(btn.dataset.id);
+      });
+    });
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function selectAccount(id) {
+    activeAcctId = id;
+    const acct = accounts.find(a => a.id === id);
+    acctTitle.textContent = acct ? acct.name : 'Select an account';
+    acctSub.textContent = 'Journal entries for this account';
+    openAddTxnBtn.disabled = false;
+    renderAccounts();
+    renderEntries();
+  }
+
+  function deleteAccount(id) {
+    if (!confirm('Delete this account and all its transactions? This cannot be undone.')) return;
+    db.collection(ACCOUNTS_COL).doc(id).delete();
+    entries.filter(e => e.accountId === id).forEach(e => {
+      db.collection(ENTRIES_COL).doc(e.id).delete();
+    });
+    if (activeAcctId === id) {
+      activeAcctId = null;
+      acctTitle.textContent = 'Select an account';
+      acctSub.textContent = 'Create or choose an account from the left';
+      openAddTxnBtn.disabled = true;
+      renderEntries();
+    }
+  }
+
+  /* ── Render entries table ── */
+  function renderEntries() {
+    if (!activeAcctId) {
+      tableScroll.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-book-open"></i>
+          <p>No account selected</p>
+          <span>Create an account on the left to start recording entries</span>
+        </div>`;
+      totalVal.textContent = fmt(0);
+      totalVal.style.color = '';
+      return;
+    }
+
+    const [fy, fm] = monthFilter.value.split('-').map(Number);
+    const rows = entries
+      .filter(e => e.accountId === activeAcctId)
+      .filter(e => {
+        if (!e.date) return false;
+        const [y, m] = e.date.split('-').map(Number);
+        return y === fy && m === fm;
+      })
+      .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+
+    const total = rows.reduce((sum, e) => sum + (e.amount || 0), 0);
+    totalVal.textContent = fmt(total);
+    totalVal.style.color = total < 0 ? 'var(--danger)' : 'var(--text)';
+
+    if (!rows.length) {
+      tableScroll.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-receipt"></i>
+          <p>No transactions this month</p>
+          <span>Tap "Add Transaction" to record one</span>
+        </div>`;
+      return;
+    }
+
+    tableScroll.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Reference</th>
+            <th class="num">Amount</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(e => `
+            <tr>
+              <td class="date-cell">${e.date}</td>
+              <td>${escapeHtml(e.description || '')}</td>
+              <td class="ref-cell">${escapeHtml(e.reference || '—')}</td>
+              <td class="num ${e.amount < 0 ? 'amt-neg' : 'amt-pos'}">${fmt(e.amount || 0)}</td>
+              <td class="actions-cell"><button class="row-del" data-id="${e.id}"><i class="fas fa-trash"></i></button></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+
+    tableScroll.querySelectorAll('.row-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (confirm('Delete this transaction?')) {
+          db.collection(ENTRIES_COL).doc(btn.dataset.id).delete();
+        }
+      });
+    });
+  }
+
+  monthFilter.addEventListener('change', renderEntries);
+
+  /* ── Live listeners ── */
+  db.collection(ACCOUNTS_COL).orderBy('createdAt', 'asc').onSnapshot(snap => {
+    accounts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderAccounts();
+    if (activeAcctId && !accounts.find(a => a.id === activeAcctId)) {
+      activeAcctId = null;
+      acctTitle.textContent = 'Select an account';
+      acctSub.textContent = 'Create or choose an account from the left';
+      openAddTxnBtn.disabled = true;
+    }
+    renderEntries();
+  }, err => console.error(err));
+
+  db.collection(ENTRIES_COL).onSnapshot(snap => {
+    entries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderEntries();
+  }, err => console.error(err));
+
+  /* ── Add account modal ── */
+  const accountModal   = document.getElementById('accountModal');
+  const newAcctName    = document.getElementById('newAcctName');
+  document.getElementById('openAddAccount').addEventListener('click', () => {
+    newAcctName.value = '';
+    accountModal.classList.add('open');
+    setTimeout(() => newAcctName.focus(), 50);
+  });
+  document.getElementById('cancelAccount').addEventListener('click', () => accountModal.classList.remove('open'));
+  accountModal.addEventListener('click', (e) => { if (e.target === accountModal) accountModal.classList.remove('open'); });
+
+  document.getElementById('saveAccount').addEventListener('click', async () => {
+    const name = newAcctName.value.trim();
+    if (!name) { newAcctName.focus(); return; }
+    const docRef = await db.collection(ACCOUNTS_COL).add({
+      name,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    accountModal.classList.remove('open');
+    selectAccount(docRef.id);
+  });
+
+  /* ── Add transaction modal ── */
+  const txnModal = document.getElementById('txnModal');
+  const txnDate = document.getElementById('txnDate');
+  const txnDesc = document.getElementById('txnDesc');
+  const txnRef  = document.getElementById('txnRef');
+  const txnAmount = document.getElementById('txnAmount');
+
+  openAddTxnBtn.addEventListener('click', () => {
+    if (!activeAcctId) return;
+    txnDate.value = new Date().toISOString().substring(0, 10);
+    txnDesc.value = '';
+    txnRef.value = '';
+    txnAmount.value = '';
+    txnModal.classList.add('open');
+    setTimeout(() => txnDesc.focus(), 50);
+  });
+  document.getElementById('cancelTxn').addEventListener('click', () => txnModal.classList.remove('open'));
+  txnModal.addEventListener('click', (e) => { if (e.target === txnModal) txnModal.classList.remove('open'); });
+
+  document.getElementById('saveTxn').addEventListener('click', async () => {
+    if (!activeAcctId) return;
+    const amount = parseFloat(txnAmount.value);
+    if (!txnDate.value || !txnDesc.value.trim() || isNaN(amount)) {
+      alert('Please fill in date, description and a valid amount.');
+      return;
+    }
+    await db.collection(ENTRIES_COL).add({
+      accountId: activeAcctId,
+      date: txnDate.value,
+      description: txnDesc.value.trim(),
+      reference: txnRef.value.trim(),
+      amount,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    txnModal.classList.remove('open');
+
+    // if the added entry isn't in the currently filtered month, jump filter to it
+    const [ey, em] = txnDate.value.split('-');
+    monthFilter.value = `${ey}-${em}`;
+  });
+</script>
+</body>
+</html>
