@@ -111,7 +111,7 @@
             border: 1px solid var(--border);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
         }
 
@@ -156,34 +156,21 @@
         }
         .date-input:focus { border-color: var(--blue); }
 
-        .week-controls {
-            display: none;
-            align-items: center;
-            gap: 6px;
-        }
-        .week-controls.show { display: flex; }
-        .week-nav {
+        .quarter-select {
             background: var(--bg3);
-            border: 1px solid var(--border2);
-            border-radius: 6px;
-            padding: 4px 10px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            color: var(--text-fade);
-            transition: all 0.15s;
-            font-family: 'DM Sans', sans-serif;
-        }
-        .week-nav:hover { background: var(--blue); color: white; border-color: var(--blue); }
-        .week-label {
-            background: var(--bg3);
-            border: 1px solid var(--border2);
+            border: 1.5px solid var(--border2);
             border-radius: 8px;
-            padding: 4px 12px;
-            font-size: 0.7rem;
+            padding: 6px 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.76rem;
             font-weight: 600;
             color: var(--text);
-            white-space: nowrap;
+            outline: none;
+            cursor: pointer;
         }
+        .quarter-select:focus { border-color: var(--blue); }
+
+        .filter-hide { display: none; }
 
         .search-input {
             flex: 1;
@@ -196,7 +183,6 @@
             font-family: 'DM Sans', sans-serif;
             outline: none;
             transition: all 0.15s;
-            position: relative;
         }
         .search-input:focus { border-color: var(--blue); background: white; box-shadow: 0 0 0 3px rgba(67,97,238,0.1); }
         .search-wrap { position: relative; flex: 1; min-width: 160px; }
@@ -320,6 +306,8 @@
             display: flex;
             justify-content: space-between;
             background: var(--bg3);
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         /* RESPONSIVE */
@@ -362,23 +350,37 @@
     <!-- FILTERS -->
     <div class="filters">
         <div class="filter-group">
-            <button class="filter-btn active" data-filter="day" onclick="setFilter('day')"><i class="fas fa-calendar-day"></i> Day</button>
-            <button class="filter-btn" data-filter="week" onclick="setFilter('week')"><i class="fas fa-calendar-week"></i> Week</button>
-            <button class="filter-btn" data-filter="month" onclick="setFilter('month')"><i class="fas fa-calendar-alt"></i> Month</button>
+            <button class="filter-btn active" data-filter="monthly" onclick="setFilter('monthly')"><i class="fas fa-calendar-alt"></i> Monthly</button>
+            <button class="filter-btn" data-filter="quarterly" onclick="setFilter('quarterly')"><i class="fas fa-calendar"></i> Quarterly</button>
+            <button class="filter-btn" data-filter="yearly" onclick="setFilter('yearly')"><i class="fas fa-calendar-year"></i> Yearly</button>
         </div>
 
-        <div id="dayPicker">
-            <input type="date" class="date-input" id="dayFilter" value="2026-08-19">
-        </div>
-
-        <div class="week-controls" id="weekPicker">
-            <button class="week-nav" onclick="changeWeek(-1)"><i class="fas fa-chevron-left"></i></button>
-            <span class="week-label" id="weekLabel">Week</span>
-            <button class="week-nav" onclick="changeWeek(1)"><i class="fas fa-chevron-right"></i></button>
-        </div>
-
-        <div id="monthPicker" style="display:none;">
+        <!-- Monthly Picker -->
+        <div id="monthlyPicker">
             <input type="month" class="date-input" id="monthFilter" value="2026-08">
+        </div>
+
+        <!-- Quarterly Picker -->
+        <div id="quarterlyPicker" style="display:none;">
+            <select class="quarter-select" id="quarterFilter">
+                <option value="2026-Q1">Q1 2026 (Jan-Mar)</option>
+                <option value="2026-Q2">Q2 2026 (Apr-Jun)</option>
+                <option value="2026-Q3" selected>Q3 2026 (Jul-Sep)</option>
+                <option value="2026-Q4">Q4 2026 (Oct-Dec)</option>
+                <option value="2025-Q1">Q1 2025 (Jan-Mar)</option>
+                <option value="2025-Q2">Q2 2025 (Apr-Jun)</option>
+                <option value="2025-Q3">Q3 2025 (Jul-Sep)</option>
+                <option value="2025-Q4">Q4 2025 (Oct-Dec)</option>
+            </select>
+        </div>
+
+        <!-- Yearly Picker -->
+        <div id="yearlyPicker" style="display:none;">
+            <select class="quarter-select" id="yearFilter">
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+            </select>
         </div>
 
         <select class="branch-select" id="branchSelect">
@@ -409,7 +411,7 @@
     <div class="pl-container">
         <table class="pl-table" id="plTable">
             <tbody id="plBody">
-                <!-- Rows will be generated by JavaScript -->
+                <!-- Rows generated by JavaScript -->
             </tbody>
         </table>
         <div class="tax-note">
@@ -514,43 +516,40 @@
 
     // ─── STATE ────────────────────────────────────────────────
 
-    let currentFilter = 'day';
-    let currentWeekOffset = 0;
+    let currentFilter = 'monthly';
     let displayedData = [];
 
     function fmt(n) {
         return 'K ' + Math.abs(Number(n)).toFixed(2);
     }
 
-    function getWeekRange(date) {
-        const d = new Date(date);
-        const day = d.getDay();
-        const diffToMonday = day === 0 ? -6 : 1 - day;
-        const monday = new Date(d);
-        monday.setDate(d.getDate() + diffToMonday);
-        const sunday = new Date(monday);
-        sunday.setDate(monday.getDate() + 6);
-        return {
-            start: monday.toISOString().split('T')[0],
-            end: sunday.toISOString().split('T')[0]
-        };
-    }
+    function getDateRange(filterType) {
+        let startDate, endDate;
 
-    function getCurrentWeekRange() {
-        const today = new Date();
-        const targetDate = new Date(today);
-        targetDate.setDate(today.getDate() + (currentWeekOffset * 7));
-        return getWeekRange(targetDate);
-    }
+        if (filterType === 'monthly') {
+            const month = document.getElementById('monthFilter').value;
+            if (!month) return null;
+            startDate = month + '-01';
+            const end = new Date(month + '-01');
+            end.setMonth(end.getMonth() + 1);
+            end.setDate(end.getDate() - 1);
+            endDate = end.toISOString().split('T')[0];
+        } else if (filterType === 'quarterly') {
+            const quarter = document.getElementById('quarterFilter').value;
+            if (!quarter) return null;
+            const [year, q] = quarter.split('-Q');
+            const qStart = { '1': '01', '2': '04', '3': '07', '4': '10' }[q];
+            const qEnd = { '1': '03-31', '2': '06-30', '3': '09-30', '4': '12-31' }[q];
+            startDate = year + '-' + qStart + '-01';
+            endDate = year + '-' + qEnd;
+        } else if (filterType === 'yearly') {
+            const year = document.getElementById('yearFilter').value;
+            if (!year) return null;
+            startDate = year + '-01-01';
+            endDate = year + '-12-31';
+        }
 
-    function updateWeekLabel() {
-        const range = getCurrentWeekRange();
-        const start = new Date(range.start);
-        const end = new Date(range.end);
-        document.getElementById('weekLabel').textContent =
-            start.toLocaleDateString('en-GB', { day:'numeric', month:'short' }) +
-            ' - ' +
-            end.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+        return { start: startDate, end: endDate };
     }
 
     // ─── FILTER FUNCTIONS ─────────────────────────────────────
@@ -559,45 +558,34 @@
         currentFilter = type;
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === type));
 
-        document.getElementById('dayPicker').style.display = type === 'day' ? 'inline-block' : 'none';
-        document.getElementById('weekPicker').classList.toggle('show', type === 'week');
-        document.getElementById('monthPicker').style.display = type === 'month' ? 'inline-block' : 'none';
+        document.getElementById('monthlyPicker').style.display = type === 'monthly' ? 'inline-block' : 'none';
+        document.getElementById('quarterlyPicker').style.display = type === 'quarterly' ? 'inline-block' : 'none';
+        document.getElementById('yearlyPicker').style.display = type === 'yearly' ? 'inline-block' : 'none';
 
-        if (type === 'week') updateWeekLabel();
-        applyFilters();
-    };
-
-    window.changeWeek = function(delta) {
-        currentWeekOffset += delta;
-        updateWeekLabel();
         applyFilters();
     };
 
     window.applyFilters = function() {
-        let filtered = salesData.map(s => ({
-            ...s,
-            netSales: (s.price * s.qty) - s.discount,
-            totalCost: s.cost * s.qty,
-            profit: ((s.price * s.qty) - s.discount) - (s.cost * s.qty)
-        }));
+        const range = getDateRange(currentFilter);
+        if (!range) return;
 
-        // Date filter
-        if (currentFilter === 'day') {
-            const day = document.getElementById('dayFilter').value;
-            if (day) filtered = filtered.filter(r => r.date === day);
-        } else if (currentFilter === 'week') {
-            const range = getCurrentWeekRange();
-            filtered = filtered.filter(r => r.date >= range.start && r.date <= range.end);
-        } else if (currentFilter === 'month') {
-            const month = document.getElementById('monthFilter').value;
-            if (month) filtered = filtered.filter(r => r.date && r.date.startsWith(month));
+        // Filter sales by date range
+        let filtered = salesData
+            .filter(s => s.date >= range.start && s.date <= range.end)
+            .map(s => ({
+                ...s,
+                netSales: (s.price * s.qty) - s.discount,
+                totalCost: s.cost * s.qty,
+                profit: ((s.price * s.qty) - s.discount) - (s.cost * s.qty)
+            }));
+
+        // Branch filter
+        const branch = document.getElementById('branchSelect').value;
+        if (branch) {
+            filtered = filtered.filter(r => r.branch === branch);
         }
 
-        // Branch
-        const branch = document.getElementById('branchSelect').value;
-        if (branch) filtered = filtered.filter(r => r.branch === branch);
-
-        // Search
+        // Search filter
         const search = document.getElementById('searchInput').value.trim().toLowerCase();
         if (search) {
             filtered = filtered.filter(r =>
@@ -608,24 +596,23 @@
         }
 
         displayedData = filtered;
-        renderPL(filtered);
+        renderPL(filtered, range);
         updateKPIs(filtered);
-        updatePeriodDisplay();
+        updatePeriodDisplay(range);
     };
 
     window.resetFilters = function() {
         document.getElementById('branchSelect').value = '';
         document.getElementById('searchInput').value = '';
-        document.getElementById('dayFilter').value = '2026-08-19';
         document.getElementById('monthFilter').value = '2026-08';
-        currentWeekOffset = 0;
-        if (currentFilter === 'week') updateWeekLabel();
+        document.getElementById('quarterFilter').value = '2026-Q3';
+        document.getElementById('yearFilter').value = '2026';
         applyFilters();
     };
 
     // ─── RENDER P&L ──────────────────────────────────────────
 
-    function renderPL(data) {
+    function renderPL(data, range) {
         const tbody = document.getElementById('plBody');
 
         // Calculate totals
@@ -639,32 +626,17 @@
 
         const grossProfit = totalSales - totalCOGS;
 
-        // Operating expenses (from ledger, filtered by date)
-        let totalExpenses = 0;
-        let expenseDetails = [];
+        // Filter expenses by same date range
+        let expenseFiltered = ledgerExpenses.filter(e => e.date >= range.start && e.date <= range.end);
 
-        // Filter expenses by same date range as sales
-        let expenseFiltered = [...ledgerExpenses];
-        if (currentFilter === 'day') {
-            const day = document.getElementById('dayFilter').value;
-            if (day) expenseFiltered = expenseFiltered.filter(e => e.date === day);
-        } else if (currentFilter === 'week') {
-            const range = getCurrentWeekRange();
-            expenseFiltered = expenseFiltered.filter(e => e.date >= range.start && e.date <= range.end);
-        } else if (currentFilter === 'month') {
-            const month = document.getElementById('monthFilter').value;
-            if (month) expenseFiltered = expenseFiltered.filter(e => e.date && e.date.startsWith(month));
-        }
-
-        // Group expenses by description for display
+        // Group expenses by description
         const expMap = {};
         expenseFiltered.forEach(e => {
             if (!expMap[e.description]) expMap[e.description] = 0;
             expMap[e.description] += e.amount;
         });
 
-        // Calculate total expenses
-        expenseFiltered.forEach(e => totalExpenses += e.amount);
+        let totalExpenses = expenseFiltered.reduce((sum, e) => sum + e.amount, 0);
 
         const operatingIncome = grossProfit - totalExpenses;
         const taxAmount = operatingIncome > 0 ? operatingIncome * TAX_RATE : 0;
@@ -732,20 +704,14 @@
 
         const grossProfit = netSales - totalCost;
 
-        // Expenses for the period
+        // Get range for expenses
+        const range = getDateRange(currentFilter);
         let totalExpenses = 0;
-        let expenseFiltered = [...ledgerExpenses];
-        if (currentFilter === 'day') {
-            const day = document.getElementById('dayFilter').value;
-            if (day) expenseFiltered = expenseFiltered.filter(e => e.date === day);
-        } else if (currentFilter === 'week') {
-            const range = getCurrentWeekRange();
-            expenseFiltered = expenseFiltered.filter(e => e.date >= range.start && e.date <= range.end);
-        } else if (currentFilter === 'month') {
-            const month = document.getElementById('monthFilter').value;
-            if (month) expenseFiltered = expenseFiltered.filter(e => e.date && e.date.startsWith(month));
+        if (range) {
+            totalExpenses = ledgerExpenses
+                .filter(e => e.date >= range.start && e.date <= range.end)
+                .reduce((sum, e) => sum + e.amount, 0);
         }
-        expenseFiltered.forEach(e => totalExpenses += e.amount);
 
         const operatingIncome = grossProfit - totalExpenses;
         const taxAmount = operatingIncome > 0 ? operatingIncome * TAX_RATE : 0;
@@ -756,24 +722,24 @@
         document.getElementById('kpiQty').textContent = qty;
         document.getElementById('kpiNet').textContent = fmt(netProfit);
 
-        // Color the net profit
         const netEl = document.getElementById('kpiNet');
         netEl.style.color = netProfit >= 0 ? 'var(--green)' : 'var(--danger)';
     }
 
-    function updatePeriodDisplay() {
+    function updatePeriodDisplay(range) {
         let label = '';
-        if (currentFilter === 'day') {
-            const day = document.getElementById('dayFilter').value;
-            if (day) label = new Date(day).toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
-        } else if (currentFilter === 'week') {
-            const range = getCurrentWeekRange();
-            label = `Week of ${range.start} to ${range.end}`;
-        } else if (currentFilter === 'month') {
+        if (currentFilter === 'monthly') {
             const month = document.getElementById('monthFilter').value;
             if (month) label = new Date(month + '-01').toLocaleString('en-GB', { month:'long', year:'numeric' });
+        } else if (currentFilter === 'quarterly') {
+            const quarter = document.getElementById('quarterFilter').value;
+            if (quarter) label = quarter.replace('-Q', ' Q');
+        } else if (currentFilter === 'yearly') {
+            const year = document.getElementById('yearFilter').value;
+            if (year) label = 'Year ' + year;
         }
-        document.getElementById('periodDisplay').textContent = 'Period: ' + (label || 'All time');
+        document.getElementById('periodDisplay').textContent = 'Period: ' + (label || 'All time') + 
+            ' (' + range.start + ' to ' + range.end + ')';
     }
 
     // ─── EXPORT ──────────────────────────────────────────────
@@ -826,17 +792,20 @@
 
     // ─── INIT ─────────────────────────────────────────────────
 
-    // Set default date
-    document.getElementById('dayFilter').value = '2026-08-19';
+    // Set defaults
     document.getElementById('monthFilter').value = '2026-08';
-    updateWeekLabel();
-    applyFilters();
+    document.getElementById('quarterFilter').value = '2026-Q3';
+    document.getElementById('yearFilter').value = '2026';
 
     // Event listeners
-    document.getElementById('dayFilter').addEventListener('change', applyFilters);
     document.getElementById('monthFilter').addEventListener('change', applyFilters);
+    document.getElementById('quarterFilter').addEventListener('change', applyFilters);
+    document.getElementById('yearFilter').addEventListener('change', applyFilters);
     document.getElementById('branchSelect').addEventListener('change', applyFilters);
     document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); });
+
+    // Initial load
+    applyFilters();
 </script>
 </body>
 </html>
